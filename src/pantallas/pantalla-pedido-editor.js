@@ -59,7 +59,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     </div>
     <div class="totalbar"><span>Total</span><b id="ftotal" class="monto">${fmt(orig ? orig.items.reduce((s, i) => s + (Number(i.precio ?? i.price) || 0) * (Number(i.qty) || 1), 0) : 0)}</b></div>
     <label class="campo" style="margin-top:12px"><span class="campo-label">Estado</span>
-      <div class="seg" id="seg-est" role="group" aria-label="Estado del pedido">
+      <div class="seg" id="seg-est" role="group" aria-label="Elegir estado">
         ${ORDEN_ESTADOS.map(k => `<button data-k="${k}" class="${base.estado === k ? "on " + ({ paid: "s-green", msg: "s-orange", due: "s-blue" }[k] || "") : ""}" aria-pressed="${base.estado === k}">${ESTADOS[k].l}</button>`).join("")}
       </div></label>
     <div id="cuotas-wrap" style="display:${base.estado === "due" ? "block" : "none"}">

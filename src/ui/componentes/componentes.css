@@ -159,19 +159,20 @@ fieldset{border:none}
 .inv-card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;cursor:zoom-in;transition:transform var(--t-fast)}
 .inv-card:active{transform:scale(.96)}
 .inv-foto{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--card2)}
-.inv-ph{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:30px}
+.inv-ph{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:30px;padding-right:40px;padding-bottom:44px}
 .inv-cuerpo{padding:8px 10px 10px}
-.inv-cuerpo h4{font-size:12.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-cuerpo h4{font-size:12.5px;line-height:1.25;word-break:break-word;white-space:normal}
 .inv-cuerpo p{font-size:12.5px;font-weight:700;color:var(--acc-text);margin-top:1px;font-variant-numeric:tabular-nums}
-.inv-acciones{position:absolute;top:6px;right:6px;display:flex;gap:6px}
+.inv-acciones{position:absolute;top:6px;right:6px;display:flex;gap:6px;flex-direction:column}
 .inv-acciones button{
-  width:44px;height:44px;border-radius:50%;background:rgba(15,20,28,.62);backdrop-filter:blur(6px);
+  width:34px;height:34px;border-radius:50%;background:rgba(15,20,28,.62);backdrop-filter:blur(6px);
   color:#fff;border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;
   box-shadow:0 2px 8px rgba(0,0,0,.18);
 }
-.inv-acciones button svg{width:16px;height:16px}
+.inv-acciones button svg{width:15px;height:15px}
 .inv-acciones button.e svg{color:#a9c2ff}
 .inv-acciones button.d svg{color:#ffab8f}
+html[data-theme="light"] .inv-acciones button{background:rgba(255,255,255,.85);color:#17171f;border-color:rgba(20,20,40,.25)}
 
 /* ---- contactos ---- */
 .cli{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;margin-bottom:10px}
@@ -191,9 +192,13 @@ fieldset{border:none}
   display:flex;align-items:center;justify-content:center;
 }
 .cli-wa svg{width:21px;height:21px}
-.cli-wa.none{border-style:dashed;color:var(--mut);background:transparent;font-size:9.5px;font-weight:700;text-align:center;line-height:1.15;padding:2px}
+.cli-wa.none{
+  border-style:dashed;color:var(--mut);background:transparent;font-size:9.5px;font-weight:700;text-align:center;line-height:1.15;padding:2px;
+  min-width:44px;min-height:44px;
+}
+html[data-theme="light"] .cli-wa.none{color:#54545f}
 .cdots{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
-.cdot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
+.cdot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;outline:1px solid color-mix(in srgb,var(--mut) 45%,transparent);outline-offset:1px}
 
 /* ---- detalle de pedido ---- */
 .dcards{position:relative;display:block;margin-top:10px}

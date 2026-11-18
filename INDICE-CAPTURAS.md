@@ -77,3 +77,10 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 - Matrices visuales: [320](capturas/2026-11-14/extensa-bianca/coverage-320.jpg) · [393](capturas/2026-11-14/extensa-bianca/coverage-393.jpg) · [1280](capturas/2026-11-14/extensa-bianca/coverage-1280.jpg).
 - [Carpeta con 153 PNG y mosaicos](capturas/2026-11-14/extensa-bianca/): `<vista>-<tema>-<ancho>` = base; `sheet-*` = hojas, top/bottom; `empty-*` = vacíos; `long-*` = estrés; cámaras y hallazgos con nombres descriptivos. Incluye un PNG de fixture sintético, no sólo screenshots.
 - Base local `0bc1a40`, publicación aún v33. NO OK por 9 hallazgos recién detectados; 4 datos/fotos confirmados por Orion y heredados. Cámara corregida OK. No teléfono/nube/lector completo. Sin código ni publicación.
+
+## Ropa v2 · F0+F1 · Blas + Olga · 2026-11-18
+
+- Base: worktree `.worktrees/f0-f1-visual`, rama `feat/f0-f1-visual` (commit `b23ce11` + segunda tanda). App navegando con datos demo (`index.html?demo=1`).
+- **39 capturas** en `capturas/2026-11-18/`: `qa-*.png` y `*-det*.png` (QA Blas), `rev-*.png` (recorrido de Olga, 3 sesiones), `rev3-*.png` (ronda final: tema claro en 7 vistas, verificación de correcciones).
+- [Informe con hallazgos y veredicto](Revision-Olga-F0F1.md) · [Tarea](apx:tasks/task_53820456ff864518).
+- Correcciones aplicadas: moneda con decimales, truncado/superposición en inventario, `.cli-wa.none` claro, contraste `.cdot`, **persistencia de tema** (bug real), precache del SW, fechas "19 nov", aria duplicado del editor. Readiness 4/5.

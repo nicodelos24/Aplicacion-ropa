@@ -2,7 +2,7 @@
 import { esc } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
 import { fmt, totalLista, estadoDe, MESES } from "../nucleo/nucleo.js";
-import { DSEM, hoy } from "../nucleo/fechas.js";
+import { DSEM, hoy, fdateShort } from "../nucleo/fechas.js";
 import { db, pedidos } from "../estado/store.js";
 import { vista, irA } from "../estado/vista.js";
 import { cardPedidoHTML, cablearCardsPedidos } from "../ui/componentes/stack.js";
@@ -38,7 +38,7 @@ export function pintarInicio(main, abrirDetalle) {
         <div class="ev" data-pedido="${o.id}" role="button" tabindex="0">
           <div class="dot" style="background:var(--c-${estadoDe(o).c})"></div>
           <div style="flex:1;min-width:0"><h4 class="contenedor-texto">${esc(o.cliente)}</h4><p class="contenedor-texto">${esc(o.items?.[0] ? o.items[0].nombre : "Pedido")}</p></div>
-          <div class="ev-fecha">${ds === hoy() ? "Hoy" : ds.split("-").reverse().slice(0, 2).join(" ")}</div>
+          <div class="ev-fecha">${ds === hoy() ? "Hoy" : fdateShort(ds)}</div>
         </div>`).join("")}</div>` : ""}
     ${pendientes.length ? `
       <div class="sect-titulo anim-entra" style="animation-delay:160ms">Pendientes de cobro</div>

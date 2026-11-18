@@ -24,7 +24,11 @@ export function esPrecioValido(texto) {
 
 /** Formato $1.234 (es-MX, números tabulares en CSS). */
 export function fmt(n) {
-  return "$" + Number(n || 0).toLocaleString("es-MX");
+  const v = Number(n || 0);
+  const tieneDecimales = v % 1 !== 0;
+  return "$" + v.toLocaleString("es-MX", tieneDecimales
+    ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+    : { maximumFractionDigits: 0 });
 }
 
 /** Monto con decimales solo si existen: $1.234,50 */

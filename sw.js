@@ -1,12 +1,13 @@
 /* sw.js — Ropa v2: cache-first para estáticos del shell. */
-const CACHE = "ropa-v2-f0f1";
+const CACHE = "ropa-v2-f0f1-r3";
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
   "./src/main.js", "./src/main.css",
   "./src/ui/tokens.css", "./src/ui/base.css", "./src/ui/motion.css",
   "./src/ui/dom.js", "./src/ui/iconos.js",
   "./src/ui/componentes/componentes.css", "./src/ui/componentes/capas.css",
-  "./src/estado/estado.js", "./src/datos/datos.js", "./src/nucleo/ids.js",
+  "./src/estado/store.js", "./src/estado/vista.js", "./src/datos/demo.js",
+  "./src/datos/local.js", "./src/nucleo/nucleo.js", "./src/nucleo/ids.js",
   "./src/nucleo/moneda.js", "./src/nucleo/fechas.js", "./src/nucleo/pedidos.js",
   "./src/nucleo/contacto.js", "./src/nucleo/buscador.js",
 ];
