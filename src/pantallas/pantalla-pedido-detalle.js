@@ -74,7 +74,9 @@ export function abrirDetallePedido(id) {
       const cs = [...dstack.querySelectorAll(".dcard")];
       const off = cs.length > 1 ? Math.min(110, Math.max(60, (dstack.clientWidth - 240) / (cs.length - 1))) : 0;
       cs.forEach((c, i) => {
-        c.style.transform = `translateX(${i * off}px)`;
+        /* la seleccionada se eleva apenas (6px) sobre el resto del abanico */
+        const y = c.classList.contains("sel") ? -6 : 0;
+        c.style.transform = `translate(${i * off}px, ${y}px)`;
         c.style.width = Math.min(340, dstack.clientWidth - (cs.length - 1) * off) + "px";
         c.style.zIndex = c.classList.contains("sel") ? 120 : i + 2;
       });

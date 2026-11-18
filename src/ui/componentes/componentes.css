@@ -369,7 +369,7 @@ html[data-theme="light"] .cli-wa.none{color:#4d5168}
   transition:transform var(--t-slow) var(--ease-out), box-shadow var(--t-med), border-color var(--t-med);
 }
 .dcard:hover{box-shadow:var(--sh-3), var(--inset-hair)}
-.dcard.sel{box-shadow:var(--sh-3), var(--inset-hair), 0 0 0 2px var(--acc); border-color:transparent}
+.dcard.sel{box-shadow:var(--sh-3), var(--inset-hair), 0 0 0 2px var(--acc); border-color:transparent; z-index:120}
 .dthumb{
   width:52px; height:52px; border-radius:14px; object-fit:cover; background:var(--card);
   display:flex; align-items:center; justify-content:center; color:var(--ptag); flex-shrink:0; box-shadow:var(--sh-1);
