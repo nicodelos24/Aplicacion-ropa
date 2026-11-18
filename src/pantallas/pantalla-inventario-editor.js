@@ -1,7 +1,7 @@
 // pantalla-inventario-editor.js — hoja alta/edición de producto (foto cámara/galería, categoría, precio validado).
 // Fix QA F0F1: precio 0 bloqueado (>0) y alta arranca en "Accesorio / Otro" con el selector enfocado.
 import { esc, qs, qsa } from "../ui/dom.js";
-import { ICONO } from "../ui/iconos.js";
+import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { esPrecioValido, parseMoneda } from "../nucleo/moneda.js";
 import { CATEGORIAS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import { crearProducto, editarProducto, productos } from "../estado/store.js";
@@ -24,8 +24,8 @@ export function abrirEditorInventario(orig) {
       <button class="btn btn-ghost" id="photoBtn" style="margin:0;flex:1">${ICONO.image} Galería</button>
       <button class="btn btn-ghost" id="inv-photo-del" style="margin:0;display:${foto ? "flex" : "none"}">${ICONO.trash} Quitar</button>
     </div>
-    <fieldset><legend class="campo-label" style="margin-top:14px">Tipo de prenda (ícono)</legend><div class="seg" id="seg-cat" role="group" aria-label="Tipo de prenda">
-      ${CATEGORIAS.map(c => `<button data-k="${c.id}" class="${cat === c.id ? "on" : ""}" aria-pressed="${cat === c.id}">${c.icono} ${c.label}</button>`).join("")}
+    <fieldset><legend class="campo-label" style="margin-top:14px">Tipo de prenda</legend><div class="seg" id="seg-cat" role="group" aria-label="Tipo de prenda">
+      ${CATEGORIAS.map(c => `<button data-k="${c.id}" class="${cat === c.id ? "on" : ""}" aria-pressed="${cat === c.id}">${svgCategoria(c.id)} ${c.label}</button>`).join("")}
     </div></fieldset>
     <label class="campo"><span class="campo-label" style="margin-top:6px">Nombre</span><input id="inv-name" value="${esc(orig?.name || "")}" placeholder="Ej. Camisola Angélica"></label>
     <label class="campo"><span class="campo-label">Precio</span><input id="inv-price" inputmode="numeric" value="${orig?.price ?? ""}" placeholder="$"></label>
@@ -67,6 +67,6 @@ export function abrirEditorInventario(orig) {
     const datos = { name, price: precioTexto, cat, photo: foto };
     const r = esNuevo ? crearProducto(datos) : editarProducto(orig.id, datos);
     if (!r.ok) { mostrarError(qs("#inv-price"), r.error || "No se pudo guardar"); return; }
-    cerrarHoja(); toast("Inventario actualizado ✓");
+    cerrarHoja(); toast("Inventario actualizado");
   };
 }

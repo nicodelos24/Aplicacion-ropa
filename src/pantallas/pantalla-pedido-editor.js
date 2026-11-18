@@ -2,13 +2,13 @@
 // cuotas 2–12 solo en "En cuotas", fecha de entrega, notas; productos a mano entran solos al inventario.
 // Fixes QA F0F1: precio 0 bloqueado (>0, P2) y cuotas fuera de rango con error inline, sin clamp silencioso (P3).
 import { esc, qs, qsa } from "../ui/dom.js";
-import { ICONO } from "../ui/iconos.js";
+import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, parseMoneda, esPrecioValido } from "../nucleo/moneda.js";
 import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, estadoAlGuardar } from "../nucleo/pedidos.js";
 import { maskTel } from "../nucleo/contacto.js";
-import { categoria, iconoCategoria, CATEGORIAS } from "../nucleo/catalogo.js";
+import { CATEGORIAS } from "../nucleo/catalogo.js";
 import {
-  crearPedido, editarPedido, productos, clientes,
+  crearPedido, editarPedido, productos, clientes, db,
 } from "../estado/store.js";
 import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
@@ -17,7 +17,6 @@ import { comprimirFoto } from "../servicios/fotos.js";
 import { abrirDetallePedido } from "./pantalla-pedido-detalle.js";
 
 export function abrirEditorPedido(orig, presetCliente, presetDate) {
-  const d = productos.length ? null : null; // noop para linters: el store es función
   const esNuevo = !orig;
   const inv = productos();
   const cls = clientes();
@@ -35,10 +34,10 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     const items = inv.slice(0, 60);
     if (!items.length) return `<p style="font-size:13px;color:var(--mut)">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
     return `<div class="stagger" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">` + items.map(i => `
-      <button data-iid="${i.id}" aria-pressed="${sel.has(i.id)}" class="${sel.has(i.id) ? "on" : ""}" style="position:relative;background:var(--card2);border:1.5px solid ${sel.has(i.id) ? "var(--acc)" : "var(--line)"};border-radius:12px;padding:8px 6px;text-align:left">
+      <button data-iid="${i.id}" aria-pressed="${sel.has(i.id)}" class="${sel.has(i.id) ? "on" : ""}" style="position:relative;background:var(--card2);border:1.5px solid ${sel.has(i.id) ? "var(--acc)" : "var(--line)"};border-radius:12px;padding:8px 6px;text-align:left;transition:transform var(--t-fast) var(--ease-out),border-color var(--t-med)">
         <span class="pickcheck" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:999px;background:var(--acc);color:var(--acc-ink);display:flex;align-items:center;justify-content:center;opacity:${sel.has(i.id) ? 1 : 0};transition:opacity .15s;pointer-events:none">${ICONO.checkSolo}</span>
-        ${i.photo ? `<img class="thumb" src="${esc(i.photo)}" style="width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;margin-bottom:5px">` : `<div class="thumb" style="width:100%;aspect-ratio:1;border-radius:8px;margin-bottom:5px;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:22px">${iconoCategoria(i.cat)}</div>`}
-        <h5 style="font-size:12px;line-height:1.3">${esc(i.name)}</h5><p style="font-size:11px;color:var(--acc-text);margin-top:2px">${fmt(i.price)}</p>
+        ${i.photo ? `<img class="thumb" src="${esc(i.photo)}" style="width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;margin-bottom:5px">` : `<div class="thumb" style="width:100%;aspect-ratio:1;border-radius:8px;margin-bottom:5px;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--mut)">${svgCategoria(i.cat)}</div>`}
+        <h5 style="font-size:12px;line-height:1.3">${esc(i.name)}</h5><p style="font-size:11px;color:var(--acc-text);margin-top:2px;font-weight:700">${fmt(i.price)}</p>
       </button>`).join("") + `</div>`;
   };
 
@@ -46,7 +45,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     <label class="campo"><span class="campo-label">Cliente</span><input id="f-cliente" value="${esc(base.cliente)}" placeholder="Nombre del cliente" list="clients-dl" autocomplete="off"></label>
     <datalist id="clients-dl">${cls.map(c => `<option value="${esc(c.name)}">`).join("")}</datalist>
     <div id="client-hint"></div>
-    <label class="campo"><span class="campo-label">WhatsApp (opcional) · prefijo ${esc(d?.prefijo || "+598")} se agrega solo</span><input id="f-tel" value="${esc(base.tel || "")}" inputmode="tel" placeholder="099 123 123"></label>
+    <label class="campo"><span class="campo-label">WhatsApp (opcional) · prefijo ${esc(db().prefijo || "+598")} se agrega solo</span><input id="f-tel" value="${esc(base.tel || "")}" inputmode="tel" placeholder="099 123 123"></label>
     <label class="campo" style="margin-bottom:8px"><span class="campo-label">Productos</span></label>
     <div class="seg" id="mode-seg" style="margin-bottom:10px" role="group" aria-label="Modo de productos">
       <button data-m="inv" class="on">Del inventario</button>
@@ -56,7 +55,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     <div id="mode-man" style="display:none">
       <input type="file" id="man-photo" accept="image/*" capture="environment" style="display:none">
       <div id="plist"></div>
-      <button class="addp" id="addp">+ Agregar producto</button>
+      <button class="addp" id="addp">Agregar producto</button>
     </div>
     <div class="totalbar"><span>Total</span><b id="ftotal" class="monto">${fmt(orig ? orig.items.reduce((s, i) => s + (Number(i.precio ?? i.price) || 0) * (Number(i.qty) || 1), 0) : 0)}</b></div>
     <label class="campo" style="margin-top:12px"><span class="campo-label">Estado</span>
@@ -136,7 +135,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     const v = e.target.value.trim();
     const c = clientes().find(x => (x.name || "").toLowerCase() === v.toLowerCase());
     if (c) {
-      qs("#client-hint").innerHTML = `<p style="font-size:12px;color:var(--c-green-text);margin-top:4px">✓ Cliente conocido${c.tel ? " · 📞 " + esc(maskTel(c.tel)) : ""}</p>`;
+      qs("#client-hint").innerHTML = `<p style="font-size:12px;color:var(--c-green-text);margin-top:4px;display:inline-flex;align-items:center;gap:5px">${ICONO.checkSolo} Cliente conocido${c.tel ? " · " + esc(maskTel(c.tel)) : ""}</p>`;
       const telEl = qs("#f-tel");
       if (c.tel && !telEl.value.trim()) telEl.value = maskTel(c.tel);
     } else {
@@ -186,6 +185,6 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     const r = esNuevo ? crearPedido(datos) : editarPedido(orig.id, { ...datos, cuotasPagadas: orig.cuotasPagadas });
     if (!r.ok) { toast(r.error || "No se pudo guardar", "err"); return; }
     cerrarHoja();
-    toast(r.nuevosProductos ? `Guardado ✓ · ${r.nuevosProductos} producto${r.nuevosProductos > 1 ? "s" : ""} al inventario` : "Guardado ✓");
+    toast(r.nuevosProductos ? `Guardado · ${r.nuevosProductos} producto${r.nuevosProductos > 1 ? "s" : ""} al inventario` : "Guardado");
   };
 }

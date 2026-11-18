@@ -1,13 +1,13 @@
-// stack.js — stack de miniaturas de productos (foto o ícono de categoría) y card resumen de pedido.
+// stack.js — stack de miniaturas de productos (foto o ícono SVG de categoría) y card resumen de pedido.
 // Lee snapshots del ítem (v2: nombre/precio/foto) con compat v1 (name/price).
 import { esc } from "../dom.js";
-import { iconoCategoria } from "../../nucleo/catalogo.js";
+import { svgCategoria, ICONO } from "../iconos.js";
 import { total, nombreItem, precioItem, qtyDe } from "../../nucleo/pedidos.js";
 
 export function miniaturaItem(item) {
   const foto = item.foto ?? item.photo;
   if (foto) return `<span class="mini"><img src="${esc(foto)}" alt=""></span>`;
-  return `<span class="mini">${iconoCategoria(item.categoria) || "🛍️"}</span>`;
+  return `<span class="mini">${svgCategoria(item.categoria)}</span>`;
 }
 
 export function stackHTML(o, inventario = []) {
@@ -32,7 +32,7 @@ export function cardPedidoHTML(o, { mostrarFecha = false } = {}) {
   const chips = [
     `<span class="b b-${tono}">${{ new: "Nuevo", msg: "Mensaje enviado", due: "En cuotas", paid: "Pagado" }[o.estado] || "Nuevo"}</span>`,
     o.estado === "due" ? `<span class="b b-neutro monto">Pagó ${pagadas} de ${cuotas}</span>` : "",
-    mostrarFecha && o.fecha ? `<span class="b b-neutro">📅</span>` : "",
+    mostrarFecha && o.fecha ? `<span class="b b-neutro">${ICONO.cal}</span>` : "",
   ].join("");
   const barra = o.estado === "due"
     ? `<div class="barra-cuotas" style="--p:${Math.min(1, pagadas / cuotas)}"><div class="relleno"></div></div>` : "";
@@ -41,7 +41,7 @@ export function cardPedidoHTML(o, { mostrarFecha = false } = {}) {
   return `<div class="card borde-${tono}" data-pedido="${o.id}" role="button" tabindex="0" aria-label="Pedido de ${esc(o.cliente) || "cliente"}, total ${monto}">
     ${stackHTML(o)}
     <div class="card-fila"><h3 class="card-titulo contenedor-texto">${esc(o.cliente) || "Sin nombre"}</h3><span class="card-monto monto">${monto}</span></div>
-    <div class="card-sub contenedor-texto">${items}${o.fecha ? `<br>📅` : ""}</div>
+    <div class="card-sub contenedor-texto">${items}${o.fecha ? `<br>` : ""}${o.fecha ? `<span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap">${ICONO.cal} <span class="monto">${esc(o.fecha)}</span></span>` : ""}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${chips}</div>
     ${barra}</div>`;
 }

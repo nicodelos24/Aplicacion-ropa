@@ -1,33 +1,41 @@
-/* capas.css — hoja inferior con gesto, toast, confirmación, lightbox. */
+/* capas.css — hoja inferior con gesto, toast, confirmación, lightbox.
+   Spring real en la entrada de la hoja, backdrop con fade. */
 
 /* ---- hoja inferior (con agarre y cierre por gesto) ---- */
 .hoja{
   position:fixed;inset:0;z-index:40;background:var(--overlay);
   display:none;align-items:flex-end;
+  opacity:0;transition:opacity var(--t-med) ease;
 }
-.hoja.abierta{display:flex}
+.hoja.abierta{display:flex;opacity:1}
 .hoja-in{
-  background:var(--bg);width:100%;max-width:560px;margin:0 auto;
+  background:var(--bg-elev);width:100%;max-width:560px;margin:0 auto;
   max-height:min(92dvh,calc(100dvh - var(--toast-space,0px) - 8px));
   overflow-y:auto;overscroll-behavior:contain;
-  border-radius:var(--r-lg) var(--r-lg) 0 0;
+  border-radius:var(--r-xl) var(--r-xl) 0 0;
+  border:1px solid var(--line);border-bottom:none;
+  box-shadow:var(--sh-3);
   padding:10px 18px calc(24px + var(--safe-b));
-  animation:hojaEntra var(--t-slow) var(--ease-out) both;
+  animation:hojaEntra .42s var(--spring) both;
 }
-@keyframes hojaEntra{from{transform:translateY(70px);opacity:0}to{transform:none;opacity:1}}
+@keyframes hojaEntra{from{transform:translateY(100%)}to{transform:none}}
 .hoja.arrastrando .hoja-in{animation:none;transition:transform var(--t-fast) linear}
+.hoja.cerrando{opacity:0}
 .hoja.cerrando .hoja-in{animation:hojaSale var(--t-med) ease both}
-@keyframes hojaSale{from{transform:none;opacity:1}to{transform:translateY(70px);opacity:0}}
-.agarre{width:40px;height:4px;border-radius:2px;background:var(--line);margin:6px auto 4px;touch-action:none;cursor:grab}
-.hoja h2{font-size:19px;margin:8px 0 4px;overflow-wrap:anywhere}
+@keyframes hojaSale{from{transform:none;opacity:1}to{transform:translateY(60%);opacity:0}}
+.agarre{width:44px;height:5px;border-radius:3px;background:var(--line-strong);margin:8px auto 6px;touch-action:none;cursor:grab;transition:background var(--t-fast)}
+.agarre:hover{background:var(--mut)}
+.hoja h2{font-size:var(--fz-xl);font-weight:800;letter-spacing:-.3px;margin:10px 0 6px;overflow-wrap:anywhere}
 
 /* ---- toast con ícono animado ---- */
 .toast{
   position:fixed;left:0;right:0;top:0;justify-content:center;z-index:90;
-  background:var(--card2);border-bottom:1px solid var(--line);color:var(--txt);
-  padding:calc(11px + var(--safe-t)) 18px 11px;font-size:14px;
+  background:color-mix(in srgb,var(--card2) 92%,transparent);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border-bottom:1px solid var(--line);color:var(--txt);
+  padding:calc(11px + var(--safe-t)) 18px 11px;font-size:14px;font-weight:500;
   display:flex;align-items:center;gap:9px;line-height:1.45;
   opacity:0;pointer-events:none;transition:opacity var(--t-med);
+  box-shadow:var(--sh-2);
 }
 .toast.mostrar{opacity:1;animation:toastEn var(--t-med) var(--ease-out)}
 .toast svg{width:18px;height:18px;flex-shrink:0}
@@ -38,22 +46,23 @@
 .cov{position:fixed;inset:0;background:var(--overlay);z-index:100;display:none;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity var(--t-med)}
 .cov.abierta{display:flex;opacity:1}
 .cbox{
-  background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 20px 16px;
-  max-width:340px;width:100%;box-shadow:var(--sh-3);
-  transform:translateY(10px) scale(.97);transition:transform var(--t-med) var(--ease);
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px 20px 16px;
+  max-width:340px;width:100%;box-shadow:var(--sh-3), var(--inset-hair);
+  transform:translateY(14px) scale(.95);transition:transform var(--t-med) var(--spring);
 }
 .cov.abierta .cbox{transform:none}
 .cbox .cic{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
 .cbox .cic svg{width:22px;height:22px}
 .cbox .cic.danger{background:color-mix(in srgb,var(--c-orange) 16%,transparent);color:var(--c-orange)}
 .cbox .cic.info{background:color-mix(in srgb,var(--nav) 16%,transparent);color:var(--nav)}
-.cbox h3{font-size:17px;margin-bottom:6px}
+.cbox h3{font-size:17px;letter-spacing:-.2px;margin-bottom:6px}
 .cbox p{font-size:13.5px;color:var(--mut);line-height:1.55}
 .cbox .crow{display:flex;gap:8px;margin-top:16px}
-.cbox .crow button{flex:1;padding:12px;border-radius:13px;font-size:14px;font-weight:600;min-height:44px}
+.cbox .crow button{flex:1;padding:12px;border-radius:13px;font-size:14px;font-weight:700;min-height:44px;transition:transform var(--t-fast) var(--spring),filter var(--t-fast)}
+.cbox .crow button:active{transform:scale(.96)}
 .cbtn-no{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
 .cbtn-yes{background:var(--c-orange);color:var(--c-orange-ink);border:none}
-.cbtn-yes.neutral{background:var(--acc);color:var(--acc-ink)}
+.cbtn-yes.neutral{background:var(--grad-acc);color:var(--acc-ink)}
 
 /* ---- lightbox accesible ---- */
 .lightbox{

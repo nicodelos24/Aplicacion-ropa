@@ -21,22 +21,22 @@ export function pintarAjustes(main) {
     <div class="anim-entra">
     <div class="sett-card"><h3><span class="sic" style="color:var(--pcal)">${ICONO.moon}</span> Apariencia</h3>
       <p>Cambiá entre modo oscuro y claro (también con el botón de arriba).</p>
-      <button class="btn btn-ghost" id="tema-btn" style="margin-top:12px">Cambiar a modo ${esOscuro ? "claro ☀️" : "oscuro 🌙"}</button>
+      <button class="btn btn-ghost" id="tema-btn" style="margin-top:12px">${ICONO.sun} Cambiar a modo ${esOscuro ? "claro" : "oscuro"}</button>
     </div>
     <div class="sett-card"><h3><span class="sic" style="color:var(--acc-text)">${ICONO.check}</span> Prefijo de país</h3>
       <p>Se agrega automáticamente a los números de WhatsApp que no lo traigan. Ej: ${esc(d.prefijo || "+598")} (Uruguay).</p>
-      <input id="prefijo-in" value="${esc(d.prefijo || "+598")}" style="margin-top:10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%" placeholder="+598">
+      <input id="prefijo-in" value="${esc(d.prefijo || "+598")}" class="campo-input" style="margin-top:10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;outline:none" placeholder="+598">
       <button class="btn btn-ghost" id="prefijo-save" style="margin-top:8px">Guardar prefijo</button>
     </div>
-    <div class="sett-card"><h3>📥 Respaldo</h3>
+    <div class="sett-card"><h3><span class="sic" style="color:var(--pcal)">${ICONO.download}</span> Respaldo</h3>
       <p>Guardá una copia de pedidos, inventario, clientes y agenda en un archivo.</p>
-      <button class="btn btn-primario" id="exp-btn" style="margin-top:12px">Descargar respaldo</button>
+      <button class="btn btn-primario" id="exp-btn" style="margin-top:12px">${ICONO.download} Descargar respaldo</button>
     </div>
-    <div class="sett-card"><h3>🧪 Datos de demo</h3>
+    <div class="sett-card"><h3><span class="sic" style="color:var(--pclock)">${ICONO.flask}</span> Datos de demo</h3>
       <p>${d.demo ? "Estás navegando con datos de demostración." : "Estás navegando con datos locales de este dispositivo."} Los demás modos llegan en las próximas fases.</p>
-      ${d.demo ? `<button class="btn btn-ghost danger" id="reset-btn">Restaurar demo</button>` : ""}
+      ${d.demo ? `<button class="btn btn-ghost danger" id="reset-btn">${ICONO.espejo} Restaurar demo</button>` : ""}
     </div>
-    <p style="text-align:center;font-size:12px;color:var(--mut);padding:10px 0">Ropa v2 · F0+F1 visual</p>
+    <p style="text-align:center;font-size:12px;color:var(--mut);padding:10px 0">Ropa v2 · Rediseño visual</p>
     </div>`;
 
   qs("#tema-btn").onclick = () => {
@@ -50,7 +50,7 @@ export function pintarAjustes(main) {
     const v = qs("#prefijo-in").value.trim();
     if (!/^\+\d{1,4}$/.test(v)) { toast("Prefijo inválido: debe empezar con + (ej. +598)", "warn"); return; }
     setPrefijo(v);
-    toast("Prefijo guardado ✓");
+    toast("Prefijo guardado");
   };
   qs("#exp-btn").onclick = () => {
     const blob = new Blob([exportar()], { type: "application/json" });
@@ -58,7 +58,7 @@ export function pintarAjustes(main) {
     a.href = URL.createObjectURL(blob);
     a.download = nombreArchivo();
     a.click();
-    toast("Respaldo descargado ✓");
+    toast("Respaldo descargado");
   };
   if (qs("#reset-btn")) qs("#reset-btn").onclick = async () => {
     if (!(await confirmar({ title: "¿Restaurar datos de demo?", msg: "Vuelve al conjunto de datos de demostración original.", ok: "Restaurar" }))) return;

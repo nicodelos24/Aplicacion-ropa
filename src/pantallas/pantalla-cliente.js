@@ -25,9 +25,9 @@ export function abrirHojaCliente(id) {
   const filaPedido = o => `
     <div class="card borde-${TONOS[o.estado] || "yellow"}" data-pedido="${o.id}" role="button" tabindex="0">
       <div class="card-fila"><h3 class="card-titulo" style="font-size:14px;overflow-wrap:anywhere">${esc((o.items || []).map(nombreItem).join(", ")) || "Pedido"}</h3><span class="card-monto monto" style="font-size:14px">${fmt(total(o))}</span></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center">
         <span class="b b-${TONOS[o.estado] || "yellow"}">${estadoDe(o).l}</span>
-        ${o.fecha ? `<span style="font-size:11px;color:var(--mut)">📅 ${fdateShort(o.fecha)}</span>` : ""}
+        ${o.fecha ? `<span style="font-size:11px;color:var(--mut);display:inline-flex;align-items:center;gap:4px">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : ""}
       </div>
     </div>`;
 
@@ -37,17 +37,17 @@ export function abrirHojaCliente(id) {
       <div style="min-width:0"><h2 class="contenedor-texto">${esc(c.name)}</h2><p style="font-size:13px;color:var(--mut)">${c.tel ? esc(fmtTel(c.tel, d.prefijo)) : "Sin teléfono"}</p></div>
     </div>
     <button class="btn btn-ghost" id="cli-edit" style="margin-top:12px">${ICONO.pencil} Editar datos del cliente</button>
-    ${c.tel ? `<button class="btn btn-primario" id="cli-wa" style="margin-top:10px">${ICONO.wa} Escribir por WhatsApp</button>` : ""}
-    ${c.notas ? `<p style="font-size:13px;color:var(--mut);margin:10px 2px 0">📝 ${esc(c.notas)}</p>` : ""}
+    ${c.tel ? `<button class="btn btn-primario" id="cli-wa" style="margin-top:10px;background:color-mix(in srgb,var(--c-green) 16%,var(--card));color:var(--c-green-text);box-shadow:none;border:1.5px solid color-mix(in srgb,var(--c-green) 55%,var(--line))">${ICONO.wa} Escribir por WhatsApp</button>` : ""}
+    ${c.notas ? `<p style="font-size:13px;color:var(--mut);margin:10px 2px 0;display:flex;gap:6px;align-items:flex-start">${ICONO.nota} ${esc(c.notas)}</p>` : ""}
     <div class="sect-titulo">Pendientes (${pendientes.length})</div>
     ${pendientes.length ? pendientes.map(filaPedido).join("") : `<p style="font-size:13px;color:var(--mut)">Nada pendiente de cobro.</p>`}
     <div class="sect-titulo">Hechos (${hechos.length})</div>
     ${hechos.length ? hechos.map(o => `
       <div class="card borde-green" data-pedido="${o.id}" role="button" tabindex="0">
         <div class="card-fila"><h3 class="card-titulo" style="font-size:14px;overflow-wrap:anywhere">${esc((o.items || []).map(nombreItem).join(", ")) || "Pedido"}</h3><span class="card-monto monto" style="font-size:14px">${fmt(total(o))}</span></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"><span class="b b-green">Pagado</span>${o.fecha ? `<span style="font-size:11px;color:var(--mut)">📅 ${fdateShort(o.fecha)}</span>` : ""}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center"><span class="b b-green">Pagado</span>${o.fecha ? `<span style="font-size:11px;color:var(--mut);display:inline-flex;align-items:center;gap:4px">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : ""}</div>
       </div>`).join("") : `<p style="font-size:13px;color:var(--mut)">Todavía no cerró ningún pedido.</p>`}
-    <button class="btn btn-primario" id="cli-new-order">+ Nuevo pedido para ${esc((c.name || "").split(" ")[0])}</button>
+    <button class="btn btn-primario" id="cli-new-order">Nuevo pedido para ${esc((c.name || "").split(" ")[0])}</button>
     <button class="btn btn-ghost" id="cli-cerrar">Cerrar</button>`);
 
   qs("#cli-edit").onclick = () => abrirEditorCliente(c);

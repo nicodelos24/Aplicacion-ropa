@@ -25,12 +25,12 @@ export function pintarInicio(main, abrirDetalle) {
     <div class="hi anim-entra">Hola, ${esc((d.users.find(u => u.id === d.usuarioId) || {}).nombre?.split(" ")[0] || "")}</div>
     <div class="hdate anim-entra" style="animation-delay:30ms">${DSEM[t.getDay()]}, ${t.getDate()} de ${MESES[t.getMonth()]}</div>
     <div class="hgrid stagger">
-      <button class="hcard" data-go="pedidos"><span class="go">›</span><span class="ic ic-cash">${ICONO.cash}</span><b class="monto">${fmt(totalLista(pendientes))}</b><small>Por cobrar · ${pendientes.length} pedido${pendientes.length !== 1 ? "s" : ""}</small></button>
-      <button class="hcard" data-go="pedidos" data-f="paid"><span class="go">›</span><span class="ic ic-check">${ICONO.check}</span><b class="monto">${fmt(totalLista(pagados))}</b><small>Cobrado · ${pagados.length} pedido${pagados.length !== 1 ? "s" : ""}</small></button>
-      <button class="hcard" data-go="pedidos" data-f="due"><span class="go">›</span><span class="ic ic-clock">${ICONO.clock}</span><b>${enCuotas.length}</b><small>En ${enCuotas.length === 1 ? "cuota" : "cuotas"}</small></button>
-      <button class="hcard" data-go="agenda"><span class="go">›</span><span class="ic ic-cal">${ICONO.cal}</span><b>${diasAgenda.length}</b><small>Día${diasAgenda.length !== 1 ? "s" : ""} con cosas en agenda</small></button>
-      <button class="hcard" data-go="inventario"><span class="go">›</span><span class="ic ic-tag">${ICONO.tag}</span><b>${d.inventory.length}</b><small>Producto${d.inventory.length !== 1 ? "s" : ""} en inventario</small></button>
-      <button class="hcard" data-go="contactos"><span class="go">›</span><span class="ic ic-people">${ICONO.people}</span><b>${d.clients.length}</b><small>Cliente${d.clients.length !== 1 ? "s" : ""}</small></button>
+      <button class="hcard" data-go="pedidos"><span class="go">${ICONO.chevDerChico}</span><span class="ic ic-cash">${ICONO.cash}</span><b class="monto">${fmt(totalLista(pendientes))}</b><small>Por cobrar · ${pendientes.length} pedido${pendientes.length !== 1 ? "s" : ""}</small></button>
+      <button class="hcard" data-go="pedidos" data-f="paid"><span class="go">${ICONO.chevDerChico}</span><span class="ic ic-check">${ICONO.check}</span><b class="monto">${fmt(totalLista(pagados))}</b><small>Cobrado · ${pagados.length} pedido${pagados.length !== 1 ? "s" : ""}</small></button>
+      <button class="hcard" data-go="pedidos" data-f="due"><span class="go">${ICONO.chevDerChico}</span><span class="ic ic-clock">${ICONO.clock}</span><b>${enCuotas.length}</b><small>En ${enCuotas.length === 1 ? "cuota" : "cuotas"}</small></button>
+      <button class="hcard" data-go="agenda"><span class="go">${ICONO.chevDerChico}</span><span class="ic ic-cal">${ICONO.cal}</span><b>${diasAgenda.length}</b><small>Día${diasAgenda.length !== 1 ? "s" : ""} con cosas en agenda</small></button>
+      <button class="hcard" data-go="inventario"><span class="go">${ICONO.chevDerChico}</span><span class="ic ic-tag">${ICONO.tag}</span><b>${d.inventory.length}</b><small>Producto${d.inventory.length !== 1 ? "s" : ""} en inventario</small></button>
+      <button class="hcard" data-go="contactos"><span class="go">${ICONO.chevDerChico}</span><span class="ic ic-people">${ICONO.people}</span><b>${d.clients.length}</b><small>Cliente${d.clients.length !== 1 ? "s" : ""}</small></button>
     </div>
     ${proximos.length ? `
       <div class="sect-titulo anim-entra" style="animation-delay:140ms">Próximos en agenda</div>
@@ -43,12 +43,11 @@ export function pintarInicio(main, abrirDetalle) {
     ${pendientes.length ? `
       <div class="sect-titulo anim-entra" style="animation-delay:160ms">Pendientes de cobro</div>
       <div class="stagger">${pendientes.slice(0, 3).map(o => cardPedidoHTML(o)).join("")}
-      <button class="hlink" data-go="pedidos">Ver todos los pedidos ›</button></div>` : ""}`;
+      <button class="hlink" data-go="pedidos">Ver todos los pedidos</button></div>` : ""}`;
 
   main.querySelectorAll("[data-go]").forEach(b => b.onclick = () => irA(b.dataset.go, b.dataset.f ? { filtro: b.dataset.f } : {}));
   main.querySelectorAll(".ev[data-pedido]").forEach(c => {
     c.onclick = () => abrirDetalle(c.dataset.pedido);
     c.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrirDetalle(c.dataset.pedido); } };
   });
-  cablearCardsPedidos(main, abrirDetalle);
 }

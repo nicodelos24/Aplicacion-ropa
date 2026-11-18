@@ -28,7 +28,7 @@ export function abrirEditorCliente(c) {
     const datos = { name, tel: qs("#ce-tel").value.trim(), notas: qs("#ce-notas").value.trim() };
     const r = esNuevo ? crearCliente(datos) : editarCliente(cl.id, datos);
     if (!r.ok) { mostrarError(qs("#ce-name"), r.error || "No se pudo guardar"); return; }
-    cerrarHoja(); toast("Cliente guardado ✓");
+    cerrarHoja(); toast("Cliente guardado");
   };
   if (!esNuevo) qs("#ce-del").onclick = () => borrarCliente(cl);
 }

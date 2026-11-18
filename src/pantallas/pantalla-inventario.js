@@ -1,4 +1,4 @@
-// pantalla-inventario.js — grilla 3× con foto (o ícono de categoría), editar/eliminar con confirmación, lightbox.
+// pantalla-inventario.js — grilla 3× con foto (o ícono SVG de categoría), editar/eliminar con confirmación, lightbox.
 import { esc, qsa } from "../ui/dom.js";
 import { fmt } from "../nucleo/nucleo.js";
 import { db, productos, eliminarProducto } from "../estado/store.js";
@@ -9,7 +9,7 @@ import { confirmar } from "../ui/componentes/confirmar.js";
 import { abrirEditorInventario } from "./pantalla-inventario-editor.js";
 import { pintarStats } from "./pantalla-pedidos.js";
 import { categoria } from "../nucleo/catalogo.js";
-import { ICONO } from "../ui/iconos.js";
+import { ICONO, VACIO_SVG, svgCategoria } from "../ui/iconos.js";
 
 export function pintarInventario(main) {
   const d = db();
@@ -18,12 +18,12 @@ export function pintarInventario(main) {
 
   if (!lista.length) {
     main.innerHTML = vista.busqueda
-      ? `<div class="vacio anim-entra"><div class="viso">🔍</div><b>Sin resultados</b><p>Nada coincide con “${esc(vista.busqueda)}”. Probá con otro nombre.</p></div>`
-      : `<div class="vacio anim-entra"><div class="viso">📦</div><b>Inventario vacío</b><p>Agregá tus productos con nombre, precio y foto.<br>Después los elegís al crear un pedido.</p><button class="btn btn-primario" style="max-width:240px;margin:0 auto" data-acc="nuevo">+ Agregar producto</button></div>`;
+      ? `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nada coincide con “${esc(vista.busqueda)}”. Probá con otro nombre.</p></div>`
+      : `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.inventario}</div><b>Inventario vacío</b><p>Agregá tus productos con nombre, precio y foto.<br>Después los elegís al crear un pedido.</p><button class="btn btn-primario" style="max-width:240px;margin:0 auto" data-acc="nuevo">Agregar producto</button></div>`;
   } else {
     main.innerHTML = `<div class="inv stagger">${lista.map(i => `
       <div class="inv-card" tabindex="0" role="button" aria-label="Ver foto de ${esc(i.name)}" data-id="${i.id}">
-        ${i.photo ? `<img class="inv-foto" src="${esc(i.photo)}" alt="">` : `<div class="inv-ph">${categoria(i.cat).icono}</div>`}
+        ${i.photo ? `<img class="inv-foto" src="${esc(i.photo)}" alt="">` : `<div class="inv-ph">${svgCategoria(i.cat)}</div>`}
         <div class="inv-cuerpo"><h4>${esc(i.name)}</h4><p>${fmt(i.price)}${i.cat ? ` · ${esc(categoria(i.cat).label)}` : ""}</p></div>
         <div class="inv-acciones">
           <button class="e" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ICONO.pencil}</button>

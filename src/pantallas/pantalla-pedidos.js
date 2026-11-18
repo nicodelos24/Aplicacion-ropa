@@ -1,5 +1,6 @@
 // pantalla-pedidos.js — lista con filtros por estado (contador), búsqueda y vacíos con salida.
 import { esc, qs, qsa } from "../ui/dom.js";
+import { ICONO, VACIO_SVG } from "../ui/iconos.js";
 import { fmt } from "../nucleo/nucleo.js";
 import { FILTROS } from "../nucleo/filtros.js";
 import { pedidos, pedidosFiltrados, conteo, db } from "../estado/store.js";
@@ -41,6 +42,6 @@ function pintarChips(cuento) {
 }
 
 function vacioHTML(q) {
-  if (q) return `<div class="vacio anim-entra"><div class="viso">🔍</div><b>Sin resultados</b><p>Nada coincide con “${esc(q)}”. Probá con otro nombre o producto.</p></div>`;
-  return `<div class="vacio anim-entra"><div class="viso">🛍️</div><b>Sin pedidos aquí</b><p>Usá el botón + para registrar un pedido: cliente, productos y estado.</p><button class="btn btn-primario" style="max-width:240px;margin:0 auto" data-acc="nuevo">+ Nuevo pedido</button></div>`;
+  if (q) return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nada coincide con “${esc(q)}”. Probá con otro nombre o producto.</p></div>`;
+  return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.pedidos}</div><b>Sin pedidos aquí</b><p>Usá el botón + para registrar un pedido: cliente, productos y estado.</p><button class="btn btn-primario" style="max-width:240px;margin:0 auto" data-acc="nuevo">Nuevo pedido</button></div>`;
 }

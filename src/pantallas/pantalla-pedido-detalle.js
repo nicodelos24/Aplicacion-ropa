@@ -1,12 +1,11 @@
 // pantalla-pedido-detalle.js — detalle: stack seleccionable + lightbox, cambio de estado con confirmación,
 // cuotas con +/− y auto-paso a Pagado, WhatsApp directo; momento premiante al completar cuotas.
 import { esc, qs, qsa } from "../ui/dom.js";
-import { ICONO } from "../ui/iconos.js";
+import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, fdateShort } from "../nucleo/nucleo.js";
 import {
   ESTADOS, ORDEN_ESTADOS, total, cuotasDe, cuotasPagadasDe, cuotaStep, nombreItem, precioItem, qtyDe,
 } from "../nucleo/pedidos.js";
-import { iconoCategoria } from "../nucleo/catalogo.js";
 import { setEstadoPedido, cuotaPedido, pedidoPorId, db, eliminarPedido } from "../estado/store.js";
 import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
@@ -25,7 +24,7 @@ export function abrirDetallePedido(id) {
   const hero = items.find(i => i.foto || i.photo);
   const dcards = items.map(i => `
     <div class="dcard" role="button" tabindex="0" aria-pressed="false" aria-label="Seleccionar ${esc(nombreItem(i)) || "producto"}" data-ph="${esc(i.foto ?? i.photo ?? "")}">
-      ${i.foto || i.photo ? `<img class="dthumb" src="${esc(i.foto ?? i.photo)}" alt="">` : `<div class="dthumb">${iconoCategoria(i.categoria) || "👗"}</div>`}
+      ${i.foto || i.photo ? `<img class="dthumb" src="${esc(i.foto ?? i.photo)}" alt="">` : `<div class="dthumb">${svgCategoria(i.categoria)}</div>`}
       <div style="min-width:0">
         <div class="dprecio monto">${fmt(precioItem(i) * qtyDe(i))}</div>
         <div class="dnombre contenedor-texto">${esc(nombreItem(i)) || "Producto"}</div>
@@ -46,7 +45,7 @@ export function abrirDetallePedido(id) {
       <div class="strow" style="flex:1">
         ${ORDEN_ESTADOS.map(k => `<button class="b b-${ESTADOS[k].c} ${k === o.estado ? "on" : ""}" data-st="${k}" aria-pressed="${k === o.estado}">${ESTADOS[k].l}</button>`).join("")}
       </div>
-      ${o.fecha ? `<span style="font-size:11px;color:var(--mut)">📅 ${fdateShort(o.fecha)}</span>` : ""}
+      ${o.fecha ? `<span style="font-size:11px;color:var(--mut);display:inline-flex;align-items:center;gap:4px">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : ""}
     </div>
     ${items.length ? `
       <div class="dcards" id="dstack" style="position:relative;margin-top:12px">${dcards}</div>

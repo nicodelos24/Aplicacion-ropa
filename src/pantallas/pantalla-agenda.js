@@ -38,8 +38,8 @@ export function pintarAgenda(main, abrirDetalle) {
   const hayHoy = vista.diaSel && !!(porFecha[vista.diaSel] || []).length;
   const totalOtras = Object.keys(porFecha).filter(x => x !== vista.diaSel).length;
   const plegableHTML = `
-    <button class="addp" id="fold-otras" style="margin:2px 0 8px;border-style:solid">
-      ${vista.verPasadas ? "▾ Ocultar otras entregas" : "▸ Ver otras entregas (" + totalOtras + ")"}
+    <button class="addp" id="fold-otras" style="margin:2px 0 8px">
+      ${ICONO.chevAbajo} ${vista.verPasadas ? "Ocultar otras entregas" : `Ver otras entregas (${totalOtras})`}
     </button>
     ${vista.verPasadas ? listaHTML() : ""}`;
 
@@ -58,7 +58,7 @@ export function pintarAgenda(main, abrirDetalle) {
       <div class="sect-titulo">${ICONO.cal} ${fdate(vista.diaSel)}</div>
       ${filaDia(vista.diaSel) || `<p style="font-size:13px;color:var(--mut);padding:4px 2px">Nada agendado este día.</p>`}` : ""}
     ${hayHoy ? plegableHTML : listaHTML()}
-    ${vista.diaSel ? `<button class="addp" id="add-order-day" style="margin:10px 0 8px">+ Nuevo pedido con entrega este día</button>` : ""}`;
+    ${vista.diaSel ? `<button class="addp" id="add-order-day" style="margin:10px 0 8px">Nuevo pedido con entrega este día</button>` : ""}`;
 
   qs("#cal-prev").onclick = () => { const r = sumarMes(vista.calAnio, vista.calMes, -1); vista.calAnio = r.anio; vista.calMes = r.mes; emitirVista(); };
   qs("#cal-next").onclick = () => { const r = sumarMes(vista.calAnio, vista.calMes, 1); vista.calAnio = r.anio; vista.calMes = r.mes; emitirVista(); };
