@@ -1,8 +1,9 @@
 // pantalla-inventario-editor.js — hoja alta/edición de producto (foto cámara/galería, categoría, precio validado).
+// Fix QA F0F1: precio 0 bloqueado (>0) y alta arranca en "Accesorio / Otro" con el selector enfocado.
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
 import { esPrecioValido, parseMoneda } from "../nucleo/moneda.js";
-import { CATEGORIAS } from "../nucleo/catalogo.js";
+import { CATEGORIAS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import { crearProducto, editarProducto, productos } from "../estado/store.js";
 import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
@@ -11,7 +12,7 @@ import { comprimirFoto } from "../servicios/fotos.js";
 
 export function abrirEditorInventario(orig) {
   const esNuevo = !orig;
-  let cat = orig?.cat || "vestido";
+  let cat = orig?.cat || CATEGORIA_DEFECTO;
   let foto = orig?.photo || null;
 
   abrirHoja(`<div class="agarre"></div><h2>${esNuevo ? "Nuevo producto" : "Editar producto"}</h2>
@@ -46,12 +47,21 @@ export function abrirEditorInventario(orig) {
   qs("#inv-cam").onchange = e => { const f = e.target.files[0]; if (f) comprimirFoto(f).then(updPrev).catch(er => toast(er.message, "err")); };
   qs("#inv-photo").onchange = e => { const f = e.target.files[0]; if (f) comprimirFoto(f).then(updPrev).catch(er => toast(er.message, "err")); };
   qs("#inv-cancelar").onclick = cerrarHoja;
+  if (esNuevo && !orig?.cat) {
+    const segCat = qs("#seg-cat");
+    segCat.setAttribute("tabindex", "-1");
+    segCat.focus({ preventScroll: false });
+  }
   qs("#inv-save").onclick = () => {
     const name = qs("#inv-name").value.trim();
     if (!name) { mostrarError(qs("#inv-name"), "Escribí el nombre del producto"); return; }
     const precioTexto = qs("#inv-price").value;
     if (!esPrecioValido(precioTexto)) {
       mostrarError(qs("#inv-price"), "Precio inválido: solo números y un punto (ej. 1200 o 1250.50)");
+      return;
+    }
+    if (precioTexto.trim() !== "" && (parseMoneda(precioTexto) ?? 0) <= 0) {
+      mostrarError(qs("#inv-price"), "El precio debe ser mayor a $0");
       return;
     }
     const datos = { name, price: precioTexto, cat, photo: foto };

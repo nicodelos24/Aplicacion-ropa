@@ -1,5 +1,6 @@
 // pantalla-pedido-editor.js — editor de pedido: cliente conocido, WhatsApp, productos del inventario o a mano,
 // cuotas 2–12 solo en "En cuotas", fecha de entrega, notas; productos a mano entran solos al inventario.
+// Fixes QA F0F1: precio 0 bloqueado (>0, P2) y cuotas fuera de rango con error inline, sin clamp silencioso (P3).
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
 import { fmt, parseMoneda, esPrecioValido } from "../nucleo/moneda.js";
@@ -144,6 +145,12 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   };
   qs("#cancelar").onclick = cerrarHoja;
 
+  const errorCuotas = () => {
+    const inp = qs("#f-cuotas");
+    mostrarError(inp, "Entre 2 y 12 cuotas");
+    return false;
+  };
+
   qs("#saveBtn").onclick = () => {
     const cliente = qs("#f-cliente").value.trim();
     if (!cliente) { mostrarError(qs("#f-cliente"), "Escribí el nombre del cliente"); return; }
@@ -151,6 +158,11 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       if (i.nombre.trim() && !esPrecioValido(i.precio)) {
         mostrarError(qs("#saveBtn"), "Hay un precio inválido en los productos a mano");
         toast("Precio inválido en un producto", "warn");
+        return;
+      }
+      if (i.nombre.trim() && i.precio.trim() !== "" && (parseMoneda(i.precio) ?? 0) <= 0) {
+        mostrarError(qs(".pp[data-i='" + manuales.indexOf(i) + "']"), "El precio debe ser mayor a $0");
+        toast("El precio no puede ser $0", "warn");
         return;
       }
     }
@@ -161,13 +173,14 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     if (!items.length) { toast("Agregá al menos un producto", "warn"); return; }
 
     const cuotasEntrada = Number(qs("#f-cuotas")?.value) || CUOTAS_MIN;
+    if (estado === "due" && cuotasValidas(cuotasEntrada) === null) { errorCuotas(); return; }
     const datos = {
       cliente,
       tel: qs("#f-tel").value.trim(),
       fecha: qs("#f-fecha").value,
       notas: qs("#f-notas").value.trim(),
       estado,
-      cuotas: cuotasValidas(estado === "due" ? cuotasEntrada : CUOTAS_MIN) ?? CUOTAS_MIN,
+      cuotas: estado === "due" ? cuotasValidas(cuotasEntrada) : CUOTAS_MIN,
       items,
     };
     const r = esNuevo ? crearPedido(datos) : editarPedido(orig.id, { ...datos, cuotasPagadas: orig.cuotasPagadas });
