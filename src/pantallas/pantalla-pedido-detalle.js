@@ -96,6 +96,7 @@ export function abrirDetallePedido(id) {
   }
 
   qs("#hClose").onclick = cerrarHoja;
+  qs("#dCerrar").onclick = cerrarHoja;
   qs("#hEdit").onclick = () => abrirEditorPedido(o);
   qs("#hDel").onclick = async () => {
     if (!(await confirmar({ title: "¿Eliminar este pedido?", msg: `El pedido de ${o.cliente || "este cliente"} se quita de la lista. El inventario no cambia.`, ok: "Eliminar pedido" }))) return;
@@ -157,7 +158,7 @@ const HOJA = `
       <div class="strow">{{estados}}</div>
       {{fecha}}
     </div>
-    {{dcards}}
+    <div class="dcards" id="dstack">{{dcards}}</div>
     {{ayuda}}
     <div class="totalbar"><span>Total</span><b class="monto">{{total}}</b></div>
     {{cuotasHtml}}

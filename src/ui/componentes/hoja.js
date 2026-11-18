@@ -5,12 +5,24 @@ import { espacioToast } from "../dom.js";
 const hoja = () => qs("#hoja");
 const hojaIn = () => qs("#hoja-in");
 
+/* si true, cerrarHoja NO toca history (porque el cierre ya vino del popstate) */
+let cerrandoPorBack = false;
+/* true mientras la hoja se está cerrando: evita reentrar desde popstate */
+let cerrando = false;
+export function marcarCierrePorBack() { cerrandoPorBack = true; }
+
 export function abrirHoja(html) {
   const h = hoja(), hi = hojaIn();
+  const yaAbierta = h.classList.contains("abierta");
   hi.innerHTML = html;
   hi.scrollTop = 0;
   h.className = "hoja abierta";
   hi.style.transform = "";
+  /* registra la apertura como entrada de history para que "atrás" cierre la hoja */
+  if (!yaAbierta && !cerrandoPorBack) {
+    try { history.pushState({ hoja: 1 }, "", location.href); } catch (e) { /* sin history */ }
+  }
+  cerrandoPorBack = false;
   espacioToast();
   engancharGesto();
   const foco = hi.querySelector("h2");
@@ -20,13 +32,22 @@ export function abrirHoja(html) {
 
 export function cerrarHoja() {
   const h = hoja();
-  if (!h.classList.contains("abierta")) return;
+  if (!h.classList.contains("abierta") || cerrando) return;
+  cerrando = true;
   h.classList.add("cerrando");
   setTimeout(() => {
     h.className = "hoja";
     hojaIn().innerHTML = "";
     espacioToast();
+    cerrando = false;
   }, 180);
+  /* sincroniza el botón atrás del móvil: cerrar la hoja consume su entrada de history */
+  if (!cerrandoPorBack) {
+    try {
+      if (history.state && history.state.hoja) history.back();
+    } catch (e) { /* sin history */ }
+  }
+  cerrandoPorBack = false;
 }
 
 /* gesto: agarrar la barra y deslizar hacia abajo cierra */

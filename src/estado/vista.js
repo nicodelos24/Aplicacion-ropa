@@ -15,6 +15,11 @@ export function suscribirVista(fn) { oyentes.add(fn); return () => oyentes.delet
 export function emitirVista() { for (const fn of oyentes) { try { fn(vista); } catch (e) { console.error(e); } } }
 export function irA(seccion, { filtro } = {}) {
   if (filtro !== undefined) vista.filtro = filtro;
-  vista.seccion = seccion;
-  emitirVista();
+  const cambioSeccion = vista.seccion !== seccion;
+  if (cambioSeccion) {
+    vista.seccion = seccion;
+    /* integra con el botón atrás del navegador: cada sección es una entrada */
+    try { history.pushState({ seccion }, "", "#" + seccion); } catch (e) { /* sin history */ }
+  }
+  if (cambioSeccion || filtro !== undefined) emitirVista();
 }

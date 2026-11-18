@@ -4,7 +4,7 @@ import { qs, qsa, espacioToast } from "./ui/dom.js";
 import { ICONO } from "./ui/iconos.js";
 import { boot, db, suscribir, setTema } from "./estado/store.js";
 import { datosDemo } from "./datos/demo.js";
-import { vista, emitirVista, suscribirVista } from "./estado/vista.js";
+import { vista, emitirVista, suscribirVista, irA } from "./estado/vista.js";
 import { aplicarTema } from "./pantallas/pantalla-ajustes.js";
 import { pintarInicio } from "./pantallas/pantalla-inicio.js";
 import { pintarPedidos } from "./pantallas/pantalla-pedidos.js";
@@ -17,7 +17,7 @@ import { abrirDetallePedido } from "./pantallas/pantalla-pedido-detalle.js";
 import { abrirEditorPedido } from "./pantallas/pantalla-pedido-editor.js";
 import { abrirEditorInventario } from "./pantallas/pantalla-inventario-editor.js";
 import { abrirEditorCliente } from "./pantallas/pantalla-cliente-editor.js";
-import { cerrarHoja } from "./ui/componentes/hoja.js";
+import { cerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
 
 /* arranque: modo demo (?demo=1) o datos locales */
 const DEMO = /[?&]demo=1/.test(location.search);
@@ -71,7 +71,7 @@ suscribirVista(render);
 render();
 
 /* cableado del shell */
-qsa("#nav button").forEach(b => b.onclick = () => { vista.seccion = b.dataset.v; emitirVista(); });
+qsa("#nav button").forEach(b => b.onclick = () => irA(b.dataset.v));
 qs("#search").oninput = e => { vista.busqueda = e.target.value; emitirVista(); };
 qs("#themeBtn").onclick = () => {
   const nuevo = (localStorage.getItem("ropa_v2_tema") || db().theme || "dark") === "dark" ? "light" : "dark";
@@ -93,6 +93,25 @@ qs("#fab").onclick = () => {
 qs("#hoja").onclick = e => { if (e.target.id === "hoja") cerrarHoja(); };
 window.addEventListener("resize", espacioToast);
 window.addEventListener("keydown", e => { if (e.key === "Escape") cerrarHoja(); });
+
+/* la entrada raíz también lleva la sección, para que "atrás" hasta el inicio sepa volver */
+try { history.replaceState({ seccion: vista.seccion }, "", location.href); } catch (e) { /* sin history */ }
+
+/* botón atrás del navegador: cierra la hoja o vuelve a la sección anterior */
+window.addEventListener("popstate", e => {
+  const h = qs("#hoja");
+  if (h && h.classList.contains("abierta")) {
+    marcarCierrePorBack(); /* ya vino del history: no volver a llamar a back() */
+    cerrarHoja();
+    return;
+  }
+  /* si no, navega a la sección del estado (o a inicio por defecto) */
+  const destino = (e.state && e.state.seccion) || (location.hash || "").replace("#", "") || "inicio";
+  if (destino !== vista.seccion) {
+    vista.seccion = destino;
+    emitirVista();
+  }
+});
 
 /* service worker (PWA) */
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
