@@ -84,3 +84,10 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 - **39 capturas** en `capturas/2026-11-18/`: `qa-*.png` y `*-det*.png` (QA Blas), `rev-*.png` (recorrido de Olga, 3 sesiones), `rev3-*.png` (ronda final: tema claro en 7 vistas, verificación de correcciones).
 - [Informe con hallazgos y veredicto](Revision-Olga-F0F1.md) · [Tarea](apx:tasks/task_53820456ff864518).
 - Correcciones aplicadas: moneda con decimales, truncado/superposición en inventario, `.cli-wa.none` claro, contraste `.cdot`, **persistencia de tema** (bug real), precache del SW, fechas "19 nov", aria duplicado del editor. Readiness 4/5.
+
+## Ropa v2 · QA F0+F1 · Flor + fixes de Dino · 2026-11-18
+
+- Base: commit `be8a545` (fixes) en `feat/f0-f1-visual`, worktree `.worktrees/f0-f1-visual`. [Informe QA](QA-Flor-F0F1.md).
+- Correcciones de los 3 hallazgos (P2 precio $0, P3 clamp de cuotas, P3 categoría default): error inline "El precio debe ser mayor a $0" unificado en pedido editor e inventario; cuotas fuera de 2–12 con error "Entre 2 y 12 cuotas" sin clamp silencioso; productos a mano con "Accesorio / Otro" (👜) y selector enfocado en el alta.
+- Capturas en `capturas/2026-11-18/qa-flor/fixes/`: [precio 0 bloqueado](capturas/2026-11-18/qa-flor/fixes/01-fix-precio-0-error.png) · [cuotas rechazadas](capturas/2026-11-18/qa-flor/fixes/02-fix-cuotas-error-inline.png) · [inventario con Otro](capturas/2026-11-18/qa-flor/fixes/03-fix-categoria-otro-inventario.png) · [alta con Otro + foco](capturas/2026-11-18/qa-flor/fixes/04-fix-categoria-default-foco.png).
+- Verificado en Chrome (`index.html?demo=1`, origen limpio, 0 errores de consola); `npm test` en `.worktrees/v2-nucleo` 39/39. Commits `be8a545` + `34ab448`.
