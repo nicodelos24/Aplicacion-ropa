@@ -11,8 +11,31 @@ import { abrirEditorCliente } from "./pantalla-cliente-editor.js";
 import { abrirEditorPedido } from "./pantalla-pedido-editor.js";
 import { abrirDetallePedido } from "./pantalla-pedido-detalle.js";
 import { toast } from "../ui/componentes/toast.js";
+import { plantilla } from "../ui/plantilla.js";
 
 const TONOS = { new: "yellow", msg: "orange", due: "blue", paid: "green" };
+
+/* fila de pedido dentro de la hoja: título = productos, monto a la derecha, estado + fecha */
+function filaPedido(o) {
+  const tono = TONOS[o.estado] || "yellow";
+  return plantilla(FILA, {
+    id: o.id,
+    tono,
+    items: esc((o.items || []).map(nombreItem).join(", ")) || "Pedido",
+    monto: fmt(total(o)),
+    estado: estadoDe(o).l,
+    fecha: o.fecha ? `<span class="fila-fecha">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : "",
+  });
+}
+
+const FILA = `
+  <div class="card fila-pedido borde-{{tono}}" data-pedido="{{id}}" role="button" tabindex="0">
+    <div class="card-fila">
+      <h3 class="card-titulo contenedor-texto">{{items}}</h3>
+      <span class="card-monto monto">{{monto}}</span>
+    </div>
+    <div class="card-chips"><span class="b b-{{tono}}">{{estado}}</span>{{fecha}}</div>
+  </div>`;
 
 export function abrirHojaCliente(id) {
   const d = db();
@@ -22,33 +45,24 @@ export function abrirHojaCliente(id) {
   const pendientes = r.pedidos.filter(o => o.estado !== "paid");
   const hechos = r.pedidos.filter(o => o.estado === "paid");
 
-  const filaPedido = o => `
-    <div class="card borde-${TONOS[o.estado] || "yellow"}" data-pedido="${o.id}" role="button" tabindex="0">
-      <div class="card-fila"><h3 class="card-titulo" style="font-size:14px;overflow-wrap:anywhere">${esc((o.items || []).map(nombreItem).join(", ")) || "Pedido"}</h3><span class="card-monto monto" style="font-size:14px">${fmt(total(o))}</span></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center">
-        <span class="b b-${TONOS[o.estado] || "yellow"}">${estadoDe(o).l}</span>
-        ${o.fecha ? `<span style="font-size:11px;color:var(--mut);display:inline-flex;align-items:center;gap:4px">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : ""}
-      </div>
-    </div>`;
-
-  abrirHoja(`<div class="agarre"></div>
-    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
-      <div class="avatar" style="width:52px;height:52px;font-size:20px">${esc((c.name || "?")[0].toUpperCase())}</div>
-      <div style="min-width:0"><h2 class="contenedor-texto">${esc(c.name)}</h2><p style="font-size:13px;color:var(--mut)">${c.tel ? esc(fmtTel(c.tel, d.prefijo)) : "Sin teléfono"}</p></div>
-    </div>
-    <button class="btn btn-ghost" id="cli-edit" style="margin-top:12px">${ICONO.pencil} Editar datos del cliente</button>
-    ${c.tel ? `<button class="btn btn-primario" id="cli-wa" style="margin-top:10px;background:color-mix(in srgb,var(--c-green) 16%,var(--card));color:var(--c-green-text);box-shadow:none;border:1.5px solid color-mix(in srgb,var(--c-green) 55%,var(--line))">${ICONO.wa} Escribir por WhatsApp</button>` : ""}
-    ${c.notas ? `<p style="font-size:13px;color:var(--mut);margin:10px 2px 0;display:flex;gap:6px;align-items:flex-start">${ICONO.nota} ${esc(c.notas)}</p>` : ""}
-    <div class="sect-titulo">Pendientes (${pendientes.length})</div>
-    ${pendientes.length ? pendientes.map(filaPedido).join("") : `<p style="font-size:13px;color:var(--mut)">Nada pendiente de cobro.</p>`}
-    <div class="sect-titulo">Hechos (${hechos.length})</div>
-    ${hechos.length ? hechos.map(o => `
-      <div class="card borde-green" data-pedido="${o.id}" role="button" tabindex="0">
-        <div class="card-fila"><h3 class="card-titulo" style="font-size:14px;overflow-wrap:anywhere">${esc((o.items || []).map(nombreItem).join(", ")) || "Pedido"}</h3><span class="card-monto monto" style="font-size:14px">${fmt(total(o))}</span></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center"><span class="b b-green">Pagado</span>${o.fecha ? `<span style="font-size:11px;color:var(--mut);display:inline-flex;align-items:center;gap:4px">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : ""}</div>
-      </div>`).join("") : `<p style="font-size:13px;color:var(--mut)">Todavía no cerró ningún pedido.</p>`}
-    <button class="btn btn-primario" id="cli-new-order">Nuevo pedido para ${esc((c.name || "").split(" ")[0])}</button>
-    <button class="btn btn-ghost" id="cli-cerrar">Cerrar</button>`);
+  abrirHoja(plantilla(HOJA, {
+    inicial: esc((c.name || "?")[0].toUpperCase()),
+    nombre: esc(c.name),
+    tel: c.tel ? esc(fmtTel(c.tel, d.prefijo)) : "Sin teléfono",
+    notas: c.notas ? plantilla(NOTA, { texto: esc(c.notas), icono: ICONO.nota }) : "",
+    wa: c.tel
+      ? `<button class="btn btn-wa" id="cli-wa">${ICONO.wa} Escribir por WhatsApp</button>` : "",
+    nPend: pendientes.length,
+    filaPend: pendientes.length
+      ? pendientes.map(filaPedido).join("")
+      : `<p class="nota-vacia">Nada pendiente de cobro.</p>`,
+    nHechos: hechos.length,
+    filaHechos: hechos.length
+      ? hechos.map(filaPedido).join("")
+      : `<p class="nota-vacia">Todavía no cerró ningún pedido.</p>`,
+    primero: esc((c.name || "").split(" ")[0]),
+    icPencil: ICONO.pencil,
+  }));
 
   qs("#cli-edit").onclick = () => abrirEditorCliente(c);
   if (qs("#cli-wa")) qs("#cli-wa").onclick = () => abrirWhatsApp(c.tel, "", d.prefijo);
@@ -59,6 +73,27 @@ export function abrirHojaCliente(id) {
     el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrirDetallePedido(el.dataset.pedido); } };
   });
 }
+
+const HOJA = `
+  <div class="agarre"></div>
+  <div class="perfil">
+    <div class="avatar avatar-gran">${"{{inicial}}"}</div>
+    <div class="contenedor-texto">
+      <h2 class="perfil-nombre">{{nombre}}</h2>
+      <p class="perfil-tel">{{tel}}</p>
+    </div>
+  </div>
+  <button class="btn btn-ghost" id="cli-edit">{{icPencil}} Editar datos del cliente</button>
+  {{wa}}
+  {{notas}}
+  <div class="sect-titulo">Pendientes ({{nPend}})</div>
+  {{filaPend}}
+  <div class="sect-titulo">Hechos ({{nHechos}})</div>
+  {{filaHechos}}
+  <button class="btn btn-primario" id="cli-new-order">Nuevo pedido para {{primero}}</button>
+  <button class="btn btn-ghost" id="cli-cerrar">Cerrar</button>`;
+
+const NOTA = `<p class="perfil-nota">{{icono}} <span class="contenedor-texto">{{texto}}</span></p>`;
 
 /** Elimina cliente desde la hoja de edición (sus pedidos se conservan). */
 export async function borrarCliente(c) {

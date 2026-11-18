@@ -43,5 +43,5 @@ function pintarChips(cuento) {
 
 function vacioHTML(q) {
   if (q) return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nada coincide con “${esc(q)}”. Probá con otro nombre o producto.</p></div>`;
-  return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.pedidos}</div><b>Sin pedidos aquí</b><p>Usá el botón + para registrar un pedido: cliente, productos y estado.</p><button class="btn btn-primario" style="max-width:240px;margin:0 auto" data-acc="nuevo">Nuevo pedido</button></div>`;
+  return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.pedidos}</div><b>Sin pedidos aquí</b><p>Usá el botón + para registrar un pedido: cliente, productos y estado.</p><button class="btn btn-primario btn-vacio" data-acc="nuevo">Nuevo pedido</button></div>`;
 }

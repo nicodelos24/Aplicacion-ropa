@@ -32,12 +32,12 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
 
   const invHTML = sel => {
     const items = inv.slice(0, 60);
-    if (!items.length) return `<p style="font-size:13px;color:var(--mut)">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
-    return `<div class="stagger" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">` + items.map(i => `
-      <button data-iid="${i.id}" aria-pressed="${sel.has(i.id)}" class="${sel.has(i.id) ? "on" : ""}" style="position:relative;background:var(--card2);border:1.5px solid ${sel.has(i.id) ? "var(--acc)" : "var(--line)"};border-radius:12px;padding:8px 6px;text-align:left;transition:transform var(--t-fast) var(--ease-out),border-color var(--t-med)">
-        <span class="pickcheck" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:999px;background:var(--acc);color:var(--acc-ink);display:flex;align-items:center;justify-content:center;opacity:${sel.has(i.id) ? 1 : 0};transition:opacity .15s;pointer-events:none">${ICONO.checkSolo}</span>
-        ${i.photo ? `<img class="thumb" src="${esc(i.photo)}" style="width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;margin-bottom:5px">` : `<div class="thumb" style="width:100%;aspect-ratio:1;border-radius:8px;margin-bottom:5px;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--mut)">${svgCategoria(i.cat)}</div>`}
-        <h5 style="font-size:12px;line-height:1.3">${esc(i.name)}</h5><p style="font-size:11px;color:var(--acc-text);margin-top:2px;font-weight:700">${fmt(i.price)}</p>
+    if (!items.length) return `<p class="nota-vacia">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
+    return `<div class="pick-grid stagger">` + items.map(i => `
+      <button class="pick ${sel.has(i.id) ? "on" : ""}" data-iid="${i.id}" aria-pressed="${sel.has(i.id)}">
+        <span class="pickcheck">${ICONO.checkSolo}</span>
+        ${i.photo ? `<img class="thumb" src="${esc(i.photo)}" alt="">` : `<div class="thumb ph">${svgCategoria(i.cat)}</div>`}
+        <h5 class="contenedor-texto">${esc(i.name)}</h5><p>${fmt(i.price)}</p>
       </button>`).join("") + `</div>`;
   };
 
@@ -46,23 +46,23 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     <datalist id="clients-dl">${cls.map(c => `<option value="${esc(c.name)}">`).join("")}</datalist>
     <div id="client-hint"></div>
     <label class="campo"><span class="campo-label">WhatsApp (opcional) · prefijo ${esc(db().prefijo || "+598")} se agrega solo</span><input id="f-tel" value="${esc(base.tel || "")}" inputmode="tel" placeholder="099 123 123"></label>
-    <label class="campo" style="margin-bottom:8px"><span class="campo-label">Productos</span></label>
-    <div class="seg" id="mode-seg" style="margin-bottom:10px" role="group" aria-label="Modo de productos">
+    <span class="campo-label campo-label-solo">Productos</span>
+    <div class="seg seg-modo" id="mode-seg" role="group" aria-label="Modo de productos">
       <button data-m="inv" class="on">Del inventario</button>
       <button data-m="man">Escribir a mano</button>
     </div>
     <div id="mode-inv">${invHTML(selInicial)}</div>
-    <div id="mode-man" style="display:none">
-      <input type="file" id="man-photo" accept="image/*" capture="environment" style="display:none">
+    <div id="mode-man" class="oculto">
+      <input type="file" id="man-photo" accept="image/*" capture="environment" class="oculto">
       <div id="plist"></div>
       <button class="addp" id="addp">Agregar producto</button>
     </div>
     <div class="totalbar"><span>Total</span><b id="ftotal" class="monto">${fmt(orig ? orig.items.reduce((s, i) => s + (Number(i.precio ?? i.price) || 0) * (Number(i.qty) || 1), 0) : 0)}</b></div>
-    <label class="campo" style="margin-top:12px"><span class="campo-label">Estado</span>
+    <label class="campo campo-est"><span class="campo-label">Estado</span>
       <div class="seg" id="seg-est" role="group" aria-label="Elegir estado">
         ${ORDEN_ESTADOS.map(k => `<button data-k="${k}" class="${base.estado === k ? "on " + ({ paid: "s-green", msg: "s-orange", due: "s-blue" }[k] || "") : ""}" aria-pressed="${base.estado === k}">${ESTADOS[k].l}</button>`).join("")}
       </div></label>
-    <div id="cuotas-wrap" style="display:${base.estado === "due" ? "block" : "none"}">
+    <div id="cuotas-wrap" class="${base.estado === "due" ? "" : "oculto"}">
       <label class="campo"><span class="campo-label">Número de cuotas (2–12)</span><input id="f-cuotas" type="number" min="2" max="12" value="${base.cuotas || CUOTAS_MIN}"></label>
     </div>
     <label class="campo"><span class="campo-label">Fecha de entrega / recordatorio (opcional)</span><input id="f-fecha" type="date" value="${base.fecha || ""}"></label>
@@ -114,13 +114,13 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
 
   drawInv(); drawMan(); calc();
   qsa("#mode-seg button").forEach(x => x.classList.toggle("on", x.dataset.m === "inv"));
-  qs("#mode-inv").style.display = "block";
-  qs("#mode-man").style.display = "none";
+  qs("#mode-inv").classList.remove("oculto");
+  qs("#mode-man").classList.add("oculto");
 
   qsa("#mode-seg button").forEach(b => b.onclick = () => {
     qsa("#mode-seg button").forEach(x => x.classList.toggle("on", x === b));
-    qs("#mode-inv").style.display = b.dataset.m === "inv" ? "block" : "none";
-    qs("#mode-man").style.display = b.dataset.m === "man" ? "block" : "none";
+    qs("#mode-inv").classList.toggle("oculto", b.dataset.m !== "inv");
+    qs("#mode-man").classList.toggle("oculto", b.dataset.m !== "man");
     calc();
   });
 
@@ -128,18 +128,18 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   qsa("#seg-est button").forEach(b => b.onclick = () => {
     estado = b.dataset.k;
     qsa("#seg-est button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
-    qs("#cuotas-wrap").style.display = estado === "due" ? "block" : "none";
+    qs("#cuotas-wrap").classList.toggle("oculto", estado !== "due");
   });
   qs("#f-tel").oninput = e => { e.target.value = maskTel(e.target.value); };
   qs("#f-cliente").oninput = e => {
     const v = e.target.value.trim();
     const c = clientes().find(x => (x.name || "").toLowerCase() === v.toLowerCase());
     if (c) {
-      qs("#client-hint").innerHTML = `<p style="font-size:12px;color:var(--c-green-text);margin-top:4px;display:inline-flex;align-items:center;gap:5px">${ICONO.checkSolo} Cliente conocido${c.tel ? " · " + esc(maskTel(c.tel)) : ""}</p>`;
+      qs("#client-hint").innerHTML = `<p class="hint hint-ok">${ICONO.checkSolo} Cliente conocido${c.tel ? " · " + esc(maskTel(c.tel)) : ""}</p>`;
       const telEl = qs("#f-tel");
       if (c.tel && !telEl.value.trim()) telEl.value = maskTel(c.tel);
     } else {
-      qs("#client-hint").innerHTML = `<p style="font-size:12px;color:var(--mut);margin-top:4px">Nuevo cliente · se guardará automáticamente</p>`;
+      qs("#client-hint").innerHTML = `<p class="hint">Nuevo cliente · se guardará automáticamente</p>`;
     }
   };
   qs("#cancelar").onclick = cerrarHoja;

@@ -17,8 +17,7 @@ export function stackHTML(o, inventario = []) {
   return `<div class="stack">
     <div class="stack-mini">${vistos.map(miniaturaItem).join("")}${its.length > 4 ? `<span class="mini mas">+${its.length - 4}</span>` : ""}</div>
     <span class="stack-n">${its.reduce((s, i) => s + qtyDe(i), 0)}</span>
-    <span style="font-size:12px;color:var(--mut)">${its.length === 1 ? "producto" : its.length + " productos"}</span>
-  </div>`;
+    <span class="stack-lbl">${its.length === 1 ? "producto" : its.length + " productos"}</span>  </div>`;
 }
 
 const TONOS = { new: "yellow", msg: "orange", due: "blue", paid: "green" };
@@ -34,15 +33,17 @@ export function cardPedidoHTML(o, { mostrarFecha = false } = {}) {
     o.estado === "due" ? `<span class="b b-neutro monto">Pagó ${pagadas} de ${cuotas}</span>` : "",
     mostrarFecha && o.fecha ? `<span class="b b-neutro">${ICONO.cal}</span>` : "",
   ].join("");
-  const barra = o.estado === "due"
-    ? `<div class="barra-cuotas" style="--p:${Math.min(1, pagadas / cuotas)}"><div class="relleno"></div></div>` : "";
+  const pasos = 24;
+  const nBarra = Math.round(Math.max(0, Math.min(1, pagadas / cuotas)) * pasos);
+  const barra = o.estado === "due" && nBarra > 0
+    ? `<div class="barra-cuotas" data-r="${nBarra}/${pasos}"><div class="relleno"></div></div>` : "";
   const items = esc((o.items || []).map(i => `${qtyDe(i) > 1 ? qtyDe(i) + "× " : ""}${nombreItem(i)}`).join(" · ")) || "Sin productos";
   const monto = "$" + Number(total(o)).toLocaleString("es-MX");
   return `<div class="card borde-${tono}" data-pedido="${o.id}" role="button" tabindex="0" aria-label="Pedido de ${esc(o.cliente) || "cliente"}, total ${monto}">
     ${stackHTML(o)}
     <div class="card-fila"><h3 class="card-titulo contenedor-texto">${esc(o.cliente) || "Sin nombre"}</h3><span class="card-monto monto">${monto}</span></div>
-    <div class="card-sub contenedor-texto">${items}${o.fecha ? `<br>` : ""}${o.fecha ? `<span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap">${ICONO.cal} <span class="monto">${esc(o.fecha)}</span></span>` : ""}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${chips}</div>
+    <div class="card-sub contenedor-texto">${items}${o.fecha ? `<br>` : ""}${o.fecha ? `<span class="card-fecha">${ICONO.cal} <span class="monto">${esc(o.fecha)}</span></span>` : ""}</div>
+    <div class="card-chips">${chips}</div>
     ${barra}</div>`;
 }
 

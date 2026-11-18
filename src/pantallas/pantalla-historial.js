@@ -14,7 +14,7 @@ export function pintarHistorial(main) {
   const lista = filtrarPorAutor(todos, vista.logFiltro).slice().reverse();
 
   main.innerHTML = `
-    <div class="chips" style="margin:2px 0 12px">${chips.map(([k, l]) =>
+    <div class="chips chips-hist">${chips.map(([k, l]) =>
       `<button class="chip chip-neutral ${vista.logFiltro === k ? "on" : ""}" data-k="${esc(k)}" aria-pressed="${vista.logFiltro === k}">${esc(l)}</button>`).join("")}</div>
     ${lista.length ? `<div class="stagger">${lista.map(e => {
       const dd = new Date(e.ts || 0);
@@ -23,8 +23,8 @@ export function pintarHistorial(main) {
       const dtxt = ok ? (dd.getDate() === new Date().getDate() ? "Hoy" : dd.getDate() + " " + MESES[dd.getMonth()].slice(0, 3)) : "";
       return `<div class="ev">
         <div class="ev-ico t-${e.svg.tono}">${e.svg.i}</div>
-        <div style="flex:1;min-width:0"><h4 style="font-size:14px">${e.meta.label}</h4><p class="contenedor-texto">${esc(e.detail || "")}</p></div>
-        <div class="ev-fecha">${dtxt ? dtxt + "<br>" : ""}${hh}${hh ? " · " : ""}<b style="color:var(--acc-text)">${esc(e.who)}</b></div>
+        <div class="ev-txt"><h4>${e.meta.label}</h4><p class="contenedor-texto">${esc(e.detail || "")}</p></div>
+        <div class="ev-fecha">${dtxt ? dtxt + "<br>" : ""}${hh}${hh ? " · " : ""}<b>${esc(e.who)}</b></div>
       </div>`;
     }).join("")}</div>`
     : `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.historial}</div><b>Sin movimientos todavía</b><p>Cada pedido, producto o cambio<br>quedará registrado aquí con su autor.</p></div>`}`;

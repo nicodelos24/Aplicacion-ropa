@@ -31,14 +31,14 @@ export function pintarAgenda(main, abrirDetalle) {
     const otrasP = vista.diaSel ? pasadas.filter(x => x !== vista.diaSel) : pasadas;
     return `
       <div class="sect-titulo">Próximas entregas</div>
-      ${otrasF.length ? otrasF.map(ds => filaDia(ds, true)).join("") : `<p style="font-size:13px;color:var(--mut);padding:4px 2px">Nada agendado a futuro.</p>`}
+      ${otrasF.length ? otrasF.map(ds => filaDia(ds, true)).join("") : `<p class="nota-vacia">Nada agendado a futuro.</p>`}
       ${otrasP.length ? `<div class="sect-titulo">Pasadas</div>${otrasP.map(ds => filaDia(ds, true)).join("")}` : ""}`;
   };
 
   const hayHoy = vista.diaSel && !!(porFecha[vista.diaSel] || []).length;
   const totalOtras = Object.keys(porFecha).filter(x => x !== vista.diaSel).length;
   const plegableHTML = `
-    <button class="addp" id="fold-otras" style="margin:2px 0 8px">
+    <button class="addp addp-tight" id="fold-otras">
       ${ICONO.chevAbajo} ${vista.verPasadas ? "Ocultar otras entregas" : `Ver otras entregas (${totalOtras})`}
     </button>
     ${vista.verPasadas ? listaHTML() : ""}`;
@@ -51,14 +51,14 @@ export function pintarAgenda(main, abrirDetalle) {
         <button id="cal-next" aria-label="Mes siguiente">${ICONO.chevDer}</button>
       </div>
       <div class="cal-grid">${DOW.map(x => `<div class="dow">${x}</div>`).join("")}${celdas.map(c => c ? `
-        <div class="cal-dia ${c.esHoy ? "hoy" : ""} ${c.ds === vista.diaSel ? "sel" : ""} ${(porFecha[c.ds] || []).length ? "tiene" : ""}" data-ds="${c.ds}" role="button" tabindex="0" aria-label="${c.dia} de ${MESES[vista.calMes]}, ${(porFecha[c.ds] || []).length} entregas">${c.dia}${(porFecha[c.ds] || []).length ? `<div class="dots">${porFecha[c.ds].map(o => `<i style="background:var(--c-${estadoDe(o).c})"></i>`).join("")}</div>` : ""}</div>` : `<div></div>`).join("")}</div>
-      <p style="font-size:11px;color:var(--mut);text-align:center;margin-top:8px">Tocá un día para ver sus entregas</p>
+        <div class="cal-dia ${c.esHoy ? "hoy" : ""} ${c.ds === vista.diaSel ? "sel" : ""} ${(porFecha[c.ds] || []).length ? "tiene" : ""}" data-ds="${c.ds}" role="button" tabindex="0" aria-label="${c.dia} de ${MESES[vista.calMes]}, ${(porFecha[c.ds] || []).length} entregas">${c.dia}${(porFecha[c.ds] || []).length ? `<div class="dots">${porFecha[c.ds].map(o => `<i class="d-${estadoDe(o).c}"></i>`).join("")}</div>` : ""}</div>` : `<div></div>`).join("")}</div>
+      <p class="ayuda">Tocá un día para ver sus entregas</p>
     </div>
     ${vista.diaSel ? `
       <div class="sect-titulo">${ICONO.cal} ${fdate(vista.diaSel)}</div>
-      ${filaDia(vista.diaSel) || `<p style="font-size:13px;color:var(--mut);padding:4px 2px">Nada agendado este día.</p>`}` : ""}
+      ${filaDia(vista.diaSel) || `<p class="nota-vacia">Nada agendado este día.</p>`}` : ""}
     ${hayHoy ? plegableHTML : listaHTML()}
-    ${vista.diaSel ? `<button class="addp" id="add-order-day" style="margin:10px 0 8px">Nuevo pedido con entrega este día</button>` : ""}`;
+    ${vista.diaSel ? `<button class="addp addp-dia" id="add-order-day">Nuevo pedido con entrega este día</button>` : ""}`;
 
   qs("#cal-prev").onclick = () => { const r = sumarMes(vista.calAnio, vista.calMes, -1); vista.calAnio = r.anio; vista.calMes = r.mes; emitirVista(); };
   qs("#cal-next").onclick = () => { const r = sumarMes(vista.calAnio, vista.calMes, 1); vista.calAnio = r.anio; vista.calMes = r.mes; emitirVista(); };

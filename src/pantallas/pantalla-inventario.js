@@ -19,7 +19,7 @@ export function pintarInventario(main) {
   if (!lista.length) {
     main.innerHTML = vista.busqueda
       ? `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nada coincide con “${esc(vista.busqueda)}”. Probá con otro nombre.</p></div>`
-      : `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.inventario}</div><b>Inventario vacío</b><p>Agregá tus productos con nombre, precio y foto.<br>Después los elegís al crear un pedido.</p><button class="btn btn-primario" style="max-width:240px;margin:0 auto" data-acc="nuevo">Agregar producto</button></div>`;
+      : `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.inventario}</div><b>Inventario vacío</b><p>Agregá tus productos con nombre, precio y foto.<br>Después los elegís al crear un pedido.</p><button class="btn btn-primario btn-vacio" data-acc="nuevo">Agregar producto</button></div>`;
   } else {
     main.innerHTML = `<div class="inv stagger">${lista.map(i => `
       <div class="inv-card" tabindex="0" role="button" aria-label="Ver foto de ${esc(i.name)}" data-id="${i.id}">

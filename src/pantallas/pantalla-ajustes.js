@@ -19,24 +19,24 @@ export function pintarAjustes(main) {
   const esOscuro = (localStorage.getItem("ropa_v2_tema") || d.theme || "dark") === "dark";
   main.innerHTML = `
     <div class="anim-entra">
-    <div class="sett-card"><h3><span class="sic" style="color:var(--pcal)">${ICONO.moon}</span> Apariencia</h3>
+    <div class="sett-card"><h3><span class="sic sic-cal">${ICONO.moon}</span> Apariencia</h3>
       <p>Cambiá entre modo oscuro y claro (también con el botón de arriba).</p>
-      <button class="btn btn-ghost" id="tema-btn" style="margin-top:12px">${ICONO.sun} Cambiar a modo ${esOscuro ? "claro" : "oscuro"}</button>
+      <button class="btn btn-ghost sett-btn" id="tema-btn">${ICONO.sun} Cambiar a modo ${esOscuro ? "claro" : "oscuro"}</button>
     </div>
-    <div class="sett-card"><h3><span class="sic" style="color:var(--acc-text)">${ICONO.check}</span> Prefijo de país</h3>
+    <div class="sett-card"><h3><span class="sic sic-acc">${ICONO.check}</span> Prefijo de país</h3>
       <p>Se agrega automáticamente a los números de WhatsApp que no lo traigan. Ej: ${esc(d.prefijo || "+598")} (Uruguay).</p>
-      <input id="prefijo-in" value="${esc(d.prefijo || "+598")}" class="campo-input" style="margin-top:10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;outline:none" placeholder="+598">
-      <button class="btn btn-ghost" id="prefijo-save" style="margin-top:8px">Guardar prefijo</button>
+      <input id="prefijo-in" value="${esc(d.prefijo || "+598")}" class="sett-input" placeholder="+598" inputmode="tel">
+      <button class="btn btn-ghost sett-btn sett-btn-sub" id="prefijo-save">Guardar prefijo</button>
     </div>
-    <div class="sett-card"><h3><span class="sic" style="color:var(--pcal)">${ICONO.download}</span> Respaldo</h3>
+    <div class="sett-card"><h3><span class="sic sic-cal">${ICONO.download}</span> Respaldo</h3>
       <p>Guardá una copia de pedidos, inventario, clientes y agenda en un archivo.</p>
-      <button class="btn btn-primario" id="exp-btn" style="margin-top:12px">${ICONO.download} Descargar respaldo</button>
+      <button class="btn btn-primario sett-btn" id="exp-btn">${ICONO.download} Descargar respaldo</button>
     </div>
-    <div class="sett-card"><h3><span class="sic" style="color:var(--pclock)">${ICONO.flask}</span> Datos de demo</h3>
+    <div class="sett-card"><h3><span class="sic sic-clock">${ICONO.flask}</span> Datos de demo</h3>
       <p>${d.demo ? "Estás navegando con datos de demostración." : "Estás navegando con datos locales de este dispositivo."} Los demás modos llegan en las próximas fases.</p>
       ${d.demo ? `<button class="btn btn-ghost danger" id="reset-btn">${ICONO.espejo} Restaurar demo</button>` : ""}
     </div>
-    <p style="text-align:center;font-size:12px;color:var(--mut);padding:10px 0">Ropa v2 · Rediseño visual</p>
+    <p class="sett-pie">Ropa v2 · Rediseño visual</p>
     </div>`;
 
   qs("#tema-btn").onclick = () => {

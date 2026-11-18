@@ -14,6 +14,14 @@ import { abrirLightbox } from "../ui/componentes/lightbox.js";
 import { stackHTML } from "../ui/componentes/stack.js";
 import { abrirWhatsApp } from "../servicios/whatsapp.js";
 import { abrirEditorPedido } from "./pantalla-pedido-editor.js";
+import { plantilla } from "../ui/plantilla.js";
+
+/* fracción "pagadas/total" para la barra de cuotas (en 8avos, sin estilo inline) */
+function fraccion(pagadas, cuotas, pasos = 24) {
+  const p = Math.max(0, Math.min(1, pagadas / cuotas));
+  const n = Math.round(p * pasos);
+  return n === 0 ? "" : `${n}/24`;
+}
 
 export function abrirDetallePedido(id) {
   const d = db();
@@ -22,46 +30,43 @@ export function abrirDetallePedido(id) {
   const st = ESTADOS[o.estado] || ESTADOS.new;
   const items = o.items || [];
   const hero = items.find(i => i.foto || i.photo);
-  const dcards = items.map(i => `
-    <div class="dcard" role="button" tabindex="0" aria-pressed="false" aria-label="Seleccionar ${esc(nombreItem(i)) || "producto"}" data-ph="${esc(i.foto ?? i.photo ?? "")}">
-      ${i.foto || i.photo ? `<img class="dthumb" src="${esc(i.foto ?? i.photo)}" alt="">` : `<div class="dthumb">${svgCategoria(i.categoria)}</div>`}
-      <div style="min-width:0">
-        <div class="dprecio monto">${fmt(precioItem(i) * qtyDe(i))}</div>
-        <div class="dnombre contenedor-texto">${esc(nombreItem(i)) || "Producto"}</div>
-        <div class="dqty">${qtyDe(i) > 1 ? `${qtyDe(i)} × ${fmt(precioItem(i))} la unidad` : "Precio unitario"}</div>
-      </div>
-    </div>`).join("");
 
-  abrirHoja(`<div class="detail">
-    <div class="agarre"></div>
-    <div class="dclose" style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn-mini" id="hEdit" aria-label="Editar pedido">${ICONO.pencil}</button>
-      <button class="btn-mini danger" id="hDel" aria-label="Eliminar pedido">${ICONO.trash}</button>
-      <button class="btn-mini" id="hClose" aria-label="Cerrar detalle">${ICONO.x}</button>
-    </div>
-    ${stackHTML(o)}
-    <h2 class="contenedor-texto">${esc(o.cliente) || "Cliente"}</h2>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
-      <div class="strow" style="flex:1">
-        ${ORDEN_ESTADOS.map(k => `<button class="b b-${ESTADOS[k].c} ${k === o.estado ? "on" : ""}" data-st="${k}" aria-pressed="${k === o.estado}">${ESTADOS[k].l}</button>`).join("")}
-      </div>
-      ${o.fecha ? `<span style="font-size:11px;color:var(--mut);display:inline-flex;align-items:center;gap:4px">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : ""}
-    </div>
-    ${items.length ? `
-      <div class="dcards" id="dstack" style="position:relative;margin-top:12px">${dcards}</div>
-      ${(items.length > 1 || hero) ? `<p style="font-size:11px;color:var(--mut);margin:8px 2px 0">Tocá una tarjeta para traerla al frente${hero ? " · otro toque amplía su foto" : ""}</p>` : ""}`
-      : `<p style="color:var(--mut);font-size:14px;margin-top:12px">Sin productos</p>`}
-    <div class="totalbar"><span>Total</span><b class="monto">${fmt(total(o))}</b></div>
-    ${o.estado === "due" ? `
-      <div class="barra-cuotas" style="margin-top:12px;--p:${Math.min(1, cuotasPagadasDe(o) / cuotasDe(o))}"><div class="relleno"></div></div>
-      <div class="cuotas-ctrl">
-        <button class="btn cqbtn" id="cq-minus" aria-label="Quitar una cuota pagada">− Cuota</button>
-        <div style="color:var(--mut);font-size:13px;text-align:center;line-height:1.35">Pagó <b style="display:block;white-space:nowrap;color:var(--txt);font-variant-numeric:tabular-nums">${cuotasPagadasDe(o)} de ${cuotasDe(o)}</b></div>
-        <button class="btn cqbtn" id="cq-plus" aria-label="Agregar una cuota pagada">+ Cuota</button>
-      </div>` : ""}
-    ${o.tel ? `<button class="btn btn-primario" id="waBtn" style="background:color-mix(in srgb,var(--c-green) 16%,var(--card));color:var(--c-green-text);box-shadow:none;border:1.5px solid color-mix(in srgb,var(--c-green) 55%,var(--line))">${ICONO.wa} Escribir por WhatsApp</button>` : ""}
-    <button class="btn btn-ghost" id="dCerrar">Cerrar</button>
-  </div>`);
+  const dcards = items.map(i => {
+    const foto = i.foto ?? i.photo;
+    return plantilla(DCARD, {
+      ph: esc(foto ?? ""),
+      thumb: foto ? `<img class="dthumb" src="${esc(foto)}" alt="">` : `<div class="dthumb">${svgCategoria(i.categoria)}</div>`,
+      precio: fmt(precioItem(i) * qtyDe(i)),
+      nombre: esc(nombreItem(i)) || "Producto",
+      qty: qtyDe(i) > 1 ? `${qtyDe(i)} × ${fmt(precioItem(i))} la unidad` : "Precio unitario",
+      label: esc(nombreItem(i)) || "producto",
+    });
+  }).join("");
+
+  const estados = ORDEN_ESTADOS.map(k =>
+    `<button class="b b-${ESTADOS[k].c} ${k === o.estado ? "on" : ""}" data-st="${k}" aria-pressed="${k === o.estado}">${ESTADOS[k].l}</button>`
+  ).join("");
+
+  const pagadas = cuotasPagadasDe(o);
+  const cuotas = cuotasDe(o);
+
+  abrirHoja(plantilla(HOJA, {
+    stack: stackHTML(o),
+    cliente: esc(o.cliente) || "Cliente",
+    estados,
+    fecha: o.fecha ? `<span class="det-fecha">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : "",
+    dcards,
+    ayuda: (items.length > 1 || hero)
+      ? `<p class="ayuda ayuda-izq">Tocá una tarjeta para traerla al frente${hero ? " · otro toque amplía su foto" : ""}</p>` : "",
+    total: fmt(total(o)),
+    cuotasHtml: o.estado === "due" ? plantilla(BLOQUE_CUOTAS, {
+      r: fraccion(pagadas, cuotas),
+      pagadas,
+      cuotas,
+    }) : "",
+    wa: o.tel ? `<button class="btn btn-wa" id="waBtn">${ICONO.wa} Escribir por WhatsApp</button>` : "",
+    icPencil: ICONO.pencil, icTrash: ICONO.trash, icX: ICONO.x,
+  }));
 
   const dstack = qs("#dstack");
   if (dstack) {
@@ -97,21 +102,24 @@ export function abrirDetallePedido(id) {
     eliminarPedido(id);
     cerrarHoja(); toast("Pedido eliminado");
   };
+
   qsa(".strow .b").forEach(b => b.onclick = async () => {
     if (b.dataset.st === o.estado) return;
     const nk = ESTADOS[b.dataset.st];
     if (!(await confirmar({ title: `¿Cambiar estado a “${nk.l}”?`, msg: `El pedido de ${o.cliente || "este cliente"} pasa de “${st.l}” a “${nk.l}”.`, ok: "Cambiar estado", danger: false }))) return;
     const r = setEstadoPedido(id, b.dataset.st);
     if (!r.ok) { toast("No se pudo cambiar el estado", "err"); return; }
-    if (r.pedido.estado === "paid") cerrarHoja();
-    else abrirDetallePedido(id);
-    toast(`Estado: ${nk.l}`);
+    /* premio: al pasar a Pagado, celebración breve en vez de un simple toast */
+    if (r.pedido.estado === "paid") { cerrarHoja(); celebrar("¡Pedido pagado!"); }
+    else { abrirDetallePedido(id); toast(`Estado: ${nk.l}`); }
   });
+
   const waBtn = qs("#waBtn");
   if (waBtn) waBtn.onclick = () => {
     const msg = `Hola ${o.cliente}! Te escribo por tu pedido: ${items.map(nombreItem).join(", ")}. Total ${fmt(total(o))}.`;
     abrirWhatsApp(o.tel, msg, d.prefijo);
   };
+
   const bump = delta => {
     const r = cuotaPedido(id, delta);
     if (!r.ok) return;
@@ -122,15 +130,61 @@ export function abrirDetallePedido(id) {
   if (qs("#cq-minus")) qs("#cq-minus").onclick = () => bump(-1);
 }
 
-/** Momento premiante: check animado + micro-celebración (sin exagerar). */
-function celebrar(mensaje) {
+/** Momento premiante: anillos + check dibujado + mensaje. Respeta prefers-reduced-motion. */
+export function celebrar(mensaje) {
+  const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const d = document.createElement("div");
-  d.style.cssText = "position:fixed;inset:0;z-index:600;display:grid;place-items:center;background:var(--overlay);opacity:1;transition:opacity .2s";
-  d.innerHTML = `<div style="text-align:center">
-    <div class="check-premiado"><div class="anillo"></div><div class="disco">${ICONO.checkSolo}</div></div>
-    <p style="margin-top:12px;font-weight:700;color:var(--txt)">${esc(mensaje)}</p>
-  </div>`;
+  d.className = "celebra";
+  d.setAttribute("role", "status");
+  d.innerHTML = plantilla(CELEBRA, { mensaje: esc(mensaje), check: ICONO.checkSolo });
   document.body.appendChild(d);
-  setTimeout(() => { d.style.opacity = "0"; }, 900);
-  setTimeout(() => d.remove(), 1150);
+  const fuera = () => { d.classList.add("saliendo"); setTimeout(() => d.remove(), 240); };
+  d.addEventListener("click", fuera);
+  setTimeout(fuera, quieto ? 400 : 1250);
 }
+
+const HOJA = `
+  <div class="detail">
+    <div class="agarre"></div>
+    <div class="dclose">
+      <button class="btn-mini" id="hEdit" aria-label="Editar pedido">{{icPencil}}</button>
+      <button class="btn-mini danger" id="hDel" aria-label="Eliminar pedido">{{icTrash}}</button>
+      <button class="btn-mini" id="hClose" aria-label="Cerrar detalle">{{icX}}</button>
+    </div>
+    {{stack}}
+    <h2 class="contenedor-texto">{{cliente}}</h2>
+    <div class="det-est">
+      <div class="strow">{{estados}}</div>
+      {{fecha}}
+    </div>
+    {{dcards}}
+    {{ayuda}}
+    <div class="totalbar"><span>Total</span><b class="monto">{{total}}</b></div>
+    {{cuotasHtml}}
+    {{wa}}
+    <button class="btn btn-ghost" id="dCerrar">Cerrar</button>
+  </div>`;
+
+const DCARD = `
+    <div class="dcard" role="button" tabindex="0" aria-pressed="false" aria-label="Seleccionar {{label}}" data-ph="{{ph}}">
+      {{thumb}}
+      <div class="dcard-txt">
+        <div class="dprecio monto">{{precio}}</div>
+        <div class="dnombre contenedor-texto">{{nombre}}</div>
+        <div class="dqty">{{qty}}</div>
+      </div>
+    </div>`;
+
+const BLOQUE_CUOTAS = `
+      <div class="barra-cuotas barra-det" data-r="{{r}}"><div class="relleno"></div></div>
+      <div class="cuotas-ctrl">
+        <button class="btn cqbtn" id="cq-minus" aria-label="Quitar una cuota pagada">− Cuota</button>
+        <div class="cuotas-mid">Pagó <b>{{pagadas}} de {{cuotas}}</b></div>
+        <button class="btn cqbtn" id="cq-plus" aria-label="Agregar una cuota pagada">+ Cuota</button>
+      </div>`;
+
+const CELEBRA = `
+  <div class="celebra-in">
+    <div class="check-premiado"><div class="anillo"></div><div class="anillo b"></div><div class="disco">{{check}}</div></div>
+    <p>{{mensaje}}</p>
+  </div>`;
