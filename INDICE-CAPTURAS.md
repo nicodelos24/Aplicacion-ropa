@@ -78,6 +78,28 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 - [Carpeta con 153 PNG y mosaicos](capturas/2026-11-14/extensa-bianca/): `<vista>-<tema>-<ancho>` = base; `sheet-*` = hojas, top/bottom; `empty-*` = vacíos; `long-*` = estrés; cámaras y hallazgos con nombres descriptivos. Incluye un PNG de fixture sintético, no sólo screenshots.
 - Base local `0bc1a40`, publicación aún v33. NO OK por 9 hallazgos recién detectados; 4 datos/fotos confirmados por Orion y heredados. Cámara corregida OK. No teléfono/nube/lector completo. Sin código ni publicación.
 
+## Ropa v2 · F0+F1 · Blas + Olga · 2026-11-18
+
+- Base: worktree `.worktrees/f0-f1-visual`, rama `feat/f0-f1-visual` (commit `b23ce11` + segunda tanda). App navegando con datos demo (`index.html?demo=1`).
+- **39 capturas** en `capturas/2026-11-18/`: `qa-*.png` y `*-det*.png` (QA Blas), `rev-*.png` (recorrido de Olga, 3 sesiones), `rev3-*.png` (ronda final: tema claro en 7 vistas, verificación de correcciones).
+- [Informe con hallazgos y veredicto](Revision-Olga-F0F1.md) · [Tarea](apx:tasks/task_53820456ff864518).
+- Correcciones aplicadas: moneda con decimales, truncado/superposición en inventario, `.cli-wa.none` claro, contraste `.cdot`, **persistencia de tema** (bug real), precache del SW, fechas "19 nov", aria duplicado del editor. Readiness 4/5.
+
+## Ropa v2 · QA F0+F1 · Flor + fixes de Dino · 2026-11-18
+
+- Base: commit `be8a545` (fixes) en `feat/f0-f1-visual`, worktree `.worktrees/f0-f1-visual`. [Informe QA](QA-Flor-F0F1.md).
+- Correcciones de los 3 hallazgos (P2 precio $0, P3 clamp de cuotas, P3 categoría default): error inline "El precio debe ser mayor a $0" unificado en pedido editor e inventario; cuotas fuera de 2–12 con error "Entre 2 y 12 cuotas" sin clamp silencioso; productos a mano con "Accesorio / Otro" (👜) y selector enfocado en el alta.
+- Capturas en `capturas/2026-11-18/qa-flor/fixes/`: [precio 0 bloqueado](capturas/2026-11-18/qa-flor/fixes/01-fix-precio-0-error.png) · [cuotas rechazadas](capturas/2026-11-18/qa-flor/fixes/02-fix-cuotas-error-inline.png) · [inventario con Otro](capturas/2026-11-18/qa-flor/fixes/03-fix-categoria-otro-inventario.png) · [alta con Otro + foco](capturas/2026-11-18/qa-flor/fixes/04-fix-categoria-default-foco.png).
+- Verificado en Chrome (`index.html?demo=1`, origen limpio, 0 errores de consola); `npm test` en `.worktrees/v2-nucleo` 39/39. Commits `be8a545` + `34ab448`.
+
+## Ropa v2 · REDESIGN TOTAL · Blas · 2026-11-18
+
+- Base: worktree `.worktrees/f0-f1-visual`, rama `feat/redesign-v2`. Rediseño estético completo solicitado por Nico ("casera/parcheada" → profesional/moderno con dopamina visual).
+- Tokens nuevos (`src/ui/tokens.css`): escala tipográfica, paleta 1 color marca + neutrales, sombras escalonadas, motion con spring; `prefers-reduced-motion` respetado. Íconos: set SVG inline propio en `src/ui/iconos.js` (cero emojis de texto suelto en las 7 secciones, verificado por DOM).
+- **36 capturas** en `capturas/2026-11-18/redesign/`: `rd-<vista>.png` por sección (dark/light), `rd-editor-*` y `rd-*err` (validaciones QA conservadas), `rd-celebracion.png` (momento de pedido pagado).
+- Capturas clave: [inicio dark](capturas/2026-11-18/redesign/rd-inicio-dark-top.png) · [pedidos con filtro](capturas/2026-11-18/redesign/rd-pedidos-filtro.png) · [detalle pedido](capturas/2026-11-18/redesign/rd-detalle-final.png) · [cuotas rechazadas](capturas/2026-11-18/redesign/rd-editor-cuotas-err.png) · [celebración pagado](capturas/2026-11-18/redesign/rd-celebracion.png) · [agenda con plegado](capturas/2026-11-18/redesign/rd-agenda-fold.png) · [ajustes dark](capturas/2026-11-18/redesign/rd-ajustes-dark.png) · [inicio light](capturas/2026-11-18/redesign/rd-inicio-light.png).
+- Verificado en Chrome (`index.html?demo=1`): navegación 7 secciones, filtros de chips, editor pedido/producto/cliente con errores inline, celebración de pago, tema claro/dark persistente, 0 errores de consola.
+
 ## Rediseño total (dopamina visual) · Blas + Echo · 2026-11-18
 
 - Pedido de Nico: rediseño estético total — sombras, jerarquía, animación, íconos SVG, sin emojis.

@@ -1,0 +1,56 @@
+// hoja.js — hoja inferior con agarre, cierre por gesto (drag hacia abajo) y Escape.
+import { qs } from "../dom.js";
+import { espacioToast } from "../dom.js";
+
+const hoja = () => qs("#hoja");
+const hojaIn = () => qs("#hoja-in");
+
+export function abrirHoja(html) {
+  const h = hoja(), hi = hojaIn();
+  hi.innerHTML = html;
+  hi.scrollTop = 0;
+  h.className = "hoja abierta";
+  hi.style.transform = "";
+  espacioToast();
+  engancharGesto();
+  const foco = hi.querySelector("h2");
+  (foco || hi).setAttribute("tabindex", "-1");
+  (foco || hi).focus({ preventScroll: true });
+}
+
+export function cerrarHoja() {
+  const h = hoja();
+  if (!h.classList.contains("abierta")) return;
+  h.classList.add("cerrando");
+  setTimeout(() => {
+    h.className = "hoja";
+    hojaIn().innerHTML = "";
+    espacioToast();
+  }, 180);
+}
+
+/* gesto: agarrar la barra y deslizar hacia abajo cierra */
+function engancharGesto() {
+  const h = hoja(), hi = hojaIn();
+  const agarre = hi.querySelector(".agarre");
+  if (!agarre) return;
+  let y0 = null, dy = 0;
+  const inicio = e => { y0 = (e.touches ? e.touches[0].clientY : e.clientY); h.classList.add("arrastrando"); };
+  const mover = e => {
+    if (y0 == null) return;
+    dy = Math.max(0, (e.touches ? e.touches[0].clientY : e.clientY) - y0);
+    hi.style.transform = `translateY(${dy}px)`;
+    if (e.cancelable && dy > 10) e.preventDefault();
+  };
+  const soltar = () => {
+    if (y0 == null) return;
+    h.classList.remove("arrastrando");
+    if (dy > 110) { cerrarHoja(); }
+    else hi.style.transform = "";
+    y0 = null; dy = 0;
+  };
+  agarre.onpointerdown = e => { agarre.setPointerCapture(e.pointerId); inicio(e); };
+  agarre.onpointermove = mover;
+  agarre.onpointerup = soltar;
+  agarre.onpointercancel = soltar;
+}
