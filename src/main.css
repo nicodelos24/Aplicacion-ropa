@@ -1,0 +1,6 @@
+/* main.css — hoja única de la app: importa las cinco capas del design system. */
+@import url("./ui/tokens.css");
+@import url("./ui/base.css");
+@import url("./ui/motion.css");
+@import url("./ui/componentes/componentes.css");
+@import url("./ui/componentes/capas.css");

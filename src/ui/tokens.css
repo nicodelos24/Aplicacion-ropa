@@ -1,0 +1,87 @@
+/* tokens.css — Ropa v2 · design system.
+   Paleta oscura por defecto + clara, acento verde-teal (herencia de marca) re-equilibrado para AA,
+   semánticos por estado, escala tipográfica con tabulares, espaciado 4/8, radios 12/16/24. */
+
+:root{
+  color-scheme:dark;
+
+  /* superficies */
+  --bg:#0e0e13; --bg-elev:#15151c; --card:#1a1a22; --card2:#22222c;
+  --line:#2b2b37; --line-strong:#3a3a4a;
+  --txt:#f2f2f7; --txt-2:#c4c4d4; --mut:#9a9aa8;
+  --overlay:rgba(5,5,10,.66);
+
+  /* acento de marca: verde-teal re-equilibrado (AA sobre texto #052e28) */
+  --acc:#17d1b8; --acc-strong:#0bb5a0; --acc-ink:#04352e; --acc-soft:rgba(23,209,184,.14);
+  --acc-text:#3fe0cd;             /* texto acentuado sobre fondo oscuro */
+
+  /* navegación activa */
+  --nav:#9db8ff;
+
+  /* semánticos por estado (nuevo amarillo, mensaje naranja, cuotas azul, pagado verde) */
+  --c-green:#22c55e;  --c-green-ink:#052e16;  --c-green-text:#86efac;
+  --c-orange:#ff9100; --c-orange-ink:#3d2500; --c-orange-text:#ffc48f;
+  --c-blue:#4d7cff;   --c-blue-ink:#0b1e5e;   --c-blue-text:#b6c6ff;
+  --c-yellow:#ffd60a; --c-yellow-ink:#3d3000; --c-yellow-text:#ffe58a;
+  --c-red:#ff5470;
+
+  /* equipo de inicio */
+  --pcash:#9fe3c9; --pcheck:#8ee0c9; --pclock:#f5d9a8; --pcal:#a8cdf0; --ptag:#f2b8d0; --ppeople:#cbb8f0;
+
+  /* tipografía */
+  --fz-xs:11px; --fz-sm:12.5px; --fz-md:14px; --fz-lg:16px; --fz-xl:20px; --fz-2xl:24px; --fz-3xl:30px;
+
+  /* espaciado 4/8 */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px; --s-8:32px;
+
+  /* radios */
+  --r-sm:12px; --r-md:16px; --r-lg:24px; --r-full:999px;
+
+  /* elevación */
+  --sh-1:0 2px 8px rgba(0,0,0,.35);
+  --sh-2:0 8px 28px rgba(0,0,0,.45);
+  --sh-3:0 18px 60px rgba(0,0,0,.55);
+  --sh-acc:0 6px 24px rgba(23,209,184,.4);
+  --blur:blur(16px);
+
+  /* motion tokens (Plan V2 §5): duraciones 120/200/320, curva estándar */
+  --t-fast:120ms; --t-med:200ms; --t-slow:320ms;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --ease-out:cubic-bezier(.22,1,.36,1);
+
+  /* safe areas */
+  --nav-h:64px;
+  --safe-b:env(safe-area-inset-bottom, 0px);
+  --safe-t:env(safe-area-inset-top, 0px);
+}
+
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f3f3f8; --bg-elev:#ffffff; --card:#ffffff; --card2:#ecECf3;
+  --card2:#ececf3; --line:#dcdce6; --line-strong:#c9c9d8;
+  --txt:#17171f; --txt-2:#3d3d4e; --mut:#6b6b7a;
+  --overlay:rgba(20,20,35,.45);
+  --acc:#0aa695; --acc-strong:#089582; --acc-ink:#ffffff; --acc-soft:rgba(10,166,149,.12);
+  --acc-text:#086759;
+  --nav:#4d6fe0;
+  --c-green:#0f9d5f;  --c-green-ink:#ffffff;  --c-green-text:#0a6e40;
+  --c-orange:#e07800; --c-orange-ink:#ffffff; --c-orange-text:#9c5400;
+  --c-blue:#3b64e8;   --c-blue-ink:#ffffff;   --c-blue-text:#2748c9;
+  --c-yellow:#e6b800; --c-yellow-ink:#3d3000; --c-yellow-text:#8a6d00;
+  --c-red:#e0355e;
+  --pcash:#0f9d70; --pcheck:#0f9d8a; --pclock:#c98a2e; --pcal:#3d84c9; --ptag:#d15d9c; --ppeople:#7d5dc9;
+  --sh-1:0 2px 8px rgba(20,20,40,.08);
+  --sh-2:0 8px 28px rgba(20,20,40,.12);
+  --sh-3:0 18px 60px rgba(20,20,40,.18);
+  --sh-acc:0 6px 24px rgba(10,166,149,.35);
+}
+
+/* reducción de movimiento: primero de todo */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    scroll-behavior:auto!important;
+  }
+}

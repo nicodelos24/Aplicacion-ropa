@@ -1,0 +1,80 @@
+/* motion.css — dopamina con intención (Plan V2 §5).
+   Stagger de entrada ~30 ms por card, crossfade de sección, tap 0.96,
+   contadores que cuentan, barra de cuotas progresiva, check premiante en Pagado. */
+
+/* ---- entrada de pantallas con stagger ---- */
+@keyframes sube{
+  from{opacity:0;transform:translateY(14px) scale(.98)}
+  to{opacity:1;transform:none}
+}
+.anim-entra{animation:sube var(--t-slow) var(--ease-out) both}
+.stagger>*{animation:sube var(--t-slow) var(--ease-out) both}
+.stagger>*:nth-child(1){animation-delay:20ms}
+.stagger>*:nth-child(2){animation-delay:50ms}
+.stagger>*:nth-child(3){animation-delay:80ms}
+.stagger>*:nth-child(4){animation-delay:110ms}
+.stagger>*:nth-child(5){animation-delay:140ms}
+.stagger>*:nth-child(6){animation-delay:170ms}
+.stagger>*:nth-child(7){animation-delay:200ms}
+.stagger>*:nth-child(8){animation-delay:230ms}
+.stagger>*:nth-child(n+9){animation-delay:260ms}
+
+/* ---- transición entre secciones: crossfade + deslizo corto ---- */
+.vista{animation:vistaEntra var(--t-med) var(--ease-out) both}
+@keyframes vistaEntra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---- tap físico ---- */
+.tocable{transition:transform var(--t-fast) var(--ease-out)}
+.tocable:active{transform:scale(.96)}
+
+/* ---- contadores que cuentan ---- */
+.contador{display:inline-block;will-change:transform,opacity}
+@keyframes cuenta{
+  from{opacity:.25;transform:translateY(4px)}
+  to{opacity:1;transform:none}
+}
+.contador.cuenta{animation:cuenta .5s var(--ease-out) both}
+
+/* ---- barra de cuotas progresiva ---- */
+.barra-cuotas{--p:0;position:relative;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.barra-cuotas .relleno{
+  position:absolute;inset:0;right:auto;width:calc(var(--p)*100%);
+  background:linear-gradient(90deg,var(--c-blue-text),var(--c-blue));
+  border-radius:3px;transition:width var(--t-slow) var(--ease-out);
+}
+
+/* ---- momento premiante al marcar Pagado ---- */
+@keyframes celebro{
+  0%{transform:scale(.4);opacity:0}
+  55%{transform:scale(1.18);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+@keyframes anillos{
+  0%{transform:scale(.4);opacity:.7}
+  100%{transform:scale(2.1);opacity:0}
+}
+.check-premiado{position:relative;display:grid;place-items:center;width:64px;height:64px;margin:6px auto 2px}
+.check-premiado .anillo{position:absolute;inset:0;border-radius:50%;border:2px solid var(--c-green);animation:anillos .7s var(--ease-out) .15s both}
+.check-premiado .disco{
+  width:56px;height:56px;border-radius:50%;background:var(--c-green);color:var(--c-green-ink);
+  display:grid;place-items:center;animation:celebro .55s var(--ease-out) both;
+  box-shadow:0 8px 30px color-mix(in srgb,var(--c-green) 55%,transparent);
+}
+.check-premiado svg{width:30px;height:30px;stroke-width:2.6}
+.check-premiado svg path{stroke-dasharray:26;stroke-dashoffset:26;animation:dibuja .35s var(--ease-out) .25s forwards}
+@keyframes dibuja{to{stroke-dashoffset:0}}
+
+/* ---- skeletons ---- */
+@keyframes brillo{from{background-position:-180% 0}to{background-position:180% 0}}
+.skel{
+  border-radius:var(--r-sm);
+  background:linear-gradient(100deg,var(--card2) 40%,color-mix(in srgb,var(--card2) 55%,var(--line)) 50%,var(--card2) 60%);
+  background-size:200% 100%;
+  animation:brillo 1.3s linear infinite;
+  color:transparent!important;user-select:none;pointer-events:none;
+}
+
+/* ---- pop de toast con ícono animado ---- */
+@keyframes toastEn{from{opacity:0;transform:translateY(-14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes tachuela{from{transform:scale(.3) rotate(-30deg);opacity:0}to{transform:none;opacity:1}}
+.toast-ico{animation:tachuela .4s var(--ease-out) both}
