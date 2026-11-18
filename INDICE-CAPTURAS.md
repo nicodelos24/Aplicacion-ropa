@@ -77,3 +77,11 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 - Matrices visuales: [320](capturas/2026-11-14/extensa-bianca/coverage-320.jpg) · [393](capturas/2026-11-14/extensa-bianca/coverage-393.jpg) · [1280](capturas/2026-11-14/extensa-bianca/coverage-1280.jpg).
 - [Carpeta con 153 PNG y mosaicos](capturas/2026-11-14/extensa-bianca/): `<vista>-<tema>-<ancho>` = base; `sheet-*` = hojas, top/bottom; `empty-*` = vacíos; `long-*` = estrés; cámaras y hallazgos con nombres descriptivos. Incluye un PNG de fixture sintético, no sólo screenshots.
 - Base local `0bc1a40`, publicación aún v33. NO OK por 9 hallazgos recién detectados; 4 datos/fotos confirmados por Orion y heredados. Cámara corregida OK. No teléfono/nube/lector completo. Sin código ni publicación.
+
+## Rediseño total (dopamina visual) · Blas + Echo · 2026-11-18
+
+- Pedido de Nico: rediseño estético total — sombras, jerarquía, animación, íconos SVG, sin emojis.
+- Base: worktree `.worktrees/redesign-total`, rama `feat/redesign-total` (desde `35cb938`), app con datos demo (`index.html?demo=1`).
+- [Brief de rediseño](BRIEF-REDESIGN.md): diagnóstico y dirección de diseño.
+- **11 capturas** en `capturas/2026-11-18/` con prefijo `red-`: Inicio, Pedidos, Inventario, Contactos, Ajustes, Agenda, Historial y detalle de pedido (oscuro y claro) + verificación de chips de filtro en claro.
+- Verificación: Inicio con moneycard protagonista y contadores animados, nav con píldora activa, halo de fondo, chips de estado con contraste ≥6.4:1, inventario a 2 columnas en móvil (≤560px). `node --check` OK en todo `src/`. Los tests `ui.test.cjs` y `check-syntax.cjs` son de v1 y fallan igual en la base (preexistentes).
