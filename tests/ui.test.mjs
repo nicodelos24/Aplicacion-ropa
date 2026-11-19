@@ -279,6 +279,51 @@ test("detalle: abanico tipo carta (thumb arriba, tamaño y giro acotado, teclado
   assert.deepEqual(errores, []);
 });
 
+test("detalle: el abanico tipo carta queda centrado en su sección (claro/oscuro)", async () => {
+  /* helper: bounding box horizontal del conjunto a partir de los transforms inline.
+     jsdom no hace layout real, pero el centroid del abanico se resuelve en JS puro. */
+  const cajaAbanico = () => {
+    const cs = qsa("#dstack .dcard");
+    const anchoCaja = qs("#dstack").clientWidth || 396; // fallback del propio relayout
+    let min = Infinity, max = -Infinity;
+    cs.forEach(c => {
+      const wC = parseFloat(c.style.width);
+      const hC = parseFloat(c.style.height);
+      const tx = /translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/.exec(c.style.transform);
+      const rot = /rotate\((-?[\d.]+)deg\)/.exec(c.style.transform);
+      assert.ok(tx && rot, "carta con translate y rotate");
+      const th = parseFloat(rot[1]) * Math.PI / 180;
+      const cx = parseFloat(tx[1]) + wC / 2;
+      const semi = (Math.abs(wC * Math.cos(th)) + Math.abs(hC * Math.sin(th))) / 2;
+      min = Math.min(min, cx - semi);
+      max = Math.max(max, cx + semi);
+    });
+    return { min, max, anchoCaja };
+  };
+  const assertCentrado = (etiqueta) => {
+    const { min, max, anchoCaja } = cajaAbanico();
+    const izq = min;
+    const der = anchoCaja - max;
+    assert.ok(Math.abs(izq - der) <= 1.5,
+      `${etiqueta}: abanico centrado (márgenes izq ${izq.toFixed(1)} vs der ${der.toFixed(1)})`);
+  };
+
+  for (const tema of ["light", "dark"]) {
+    await reiniciar();
+    store.db().theme = tema;
+    aplicarTema();
+    irA("pedidos");
+    click('#main .card[data-pedido="d2"]');
+    assertCentrado(tema + " (sin seleccionar)");
+    /* seleccionar una carta no debe descentrar el conjunto ni perder el orden */
+    const cs = qsa("#dstack .dcard");
+    cs[0].click();
+    assertCentrado(tema + " (con seleccionada)");
+    assert.equal(cs[0].getAttribute("aria-pressed"), "true", "selección conservada");
+  }
+  assert.deepEqual(errores, []);
+});
+
 test("ajustes: restaurar demo pide confirmación y vuelve a los datos originales", async () => {
   await reiniciar();
   store.crearPedido({ cliente: "Prueba", items: [{ productoId: "di1", qty: 1 }] });

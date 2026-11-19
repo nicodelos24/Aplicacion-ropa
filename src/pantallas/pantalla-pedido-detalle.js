@@ -95,16 +95,31 @@ export function abrirDetallePedido(id) {
       const w = (CARD_W * escala) | 0;
       const h = (CARD_H * escala) | 0;
       const grow = CRECE * escala;
+      const grados = i => (i - (n - 1) / 2) * rotMax;
+      /* Centrado del conjunto: se mide la caja rotada de cada carta (con su
+         proyección horizontal exacta) y se desplaza todo el abanico para que su
+         bounding box quede centrada en el canal. Se calcula con la geometría base
+         (sin contar el crecimiento de la seleccionada) para que al tocar una carta
+         el conjunto no salte: la seleccionada crece alrededor de su propio centro. */
+      let minX = Infinity, maxX = -Infinity;
+      cs.forEach((_, i) => {
+        const th = grados(i) * Math.PI / 180;
+        const cx = i * off + w / 2;
+        const semi = (Math.abs(w * Math.cos(th)) + Math.abs(h * Math.sin(th))) / 2;
+        minX = Math.min(minX, cx - semi);
+        maxX = Math.max(maxX, cx + semi);
+      });
+      const shiftX = (anchoCaja - (maxX - minX)) / 2 - minX;
       cs.forEach((c, i) => {
         const sel = c.classList.contains("sel");
-        const rot = (i - (n - 1) / 2) * rotMax;
+        const rot = grados(i);
         const th = rot * Math.PI / 180;
         const yBase = Math.abs(i - (n - 1) / 2) * 1.2;
         const y = sel ? -SUBE : yBase;
         c.style.width = (w + (sel ? grow : 0)) + "px";
         c.style.height = (h + (sel ? grow : 0)) + "px";
         c.style.transformOrigin = "50% 50%";
-        c.style.transform = `translate(${i * off}px, ${y}px) rotate(${rot}deg)`;
+        c.style.transform = `translate(${shiftX + i * off}px, ${y}px) rotate(${rot}deg)`;
         c.style.zIndex = sel ? 120 : i + 2;
         /* compensa la proyección vertical de la rotación para no recortar esquinas */
         const alto = h + (sel ? grow : 0);
