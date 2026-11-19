@@ -250,6 +250,35 @@ test("detalle: Enter en una tarjeta del stack la selecciona sin abrir el lightbo
   assert.deepEqual(errores, []);
 });
 
+test("detalle: abanico tipo carta (thumb arriba, tamaño y giro acotado, teclado)", async () => {
+  await reiniciar();
+  irA("pedidos");
+  /* d3 tiene un solo ítem; d2 tiene dos → usamos d2 para ver el abanico */
+  click('#main .card[data-pedido="d2"]');
+  const cards = qsa("#dstack .dcard");
+  assert.ok(cards.length >= 2, "varias tarjetas en el abanico");
+  for (const c of cards) {
+    /* la plantilla pone el thumb antes que el texto (thumb arriba) */
+    assert.ok(c.firstElementChild.classList.contains("dthumb"), "thumb es el primer hijo");
+    assert.ok(c.querySelector(".dcard-txt"), "texto debajo del thumb");
+    const w = parseFloat(c.style.width);
+    const h = parseFloat(c.style.height);
+    assert.ok(w >= 110 && w <= 150, "ancho tipo carta " + w);
+    assert.ok(h >= 100 && h <= 140, "alto tipo carta " + h);
+    const m = /rotate\((-?[\d.]+)deg\)/.exec(c.style.transform);
+    assert.ok(m, "la carta gira");
+    assert.ok(Math.abs(parseFloat(m[1])) <= 4.001, "giro dentro del tope de 4° (" + m[1] + ")");
+  }
+  /* un click por teclado selecciona y eleva (translateY negativo) sin perder el foco */
+  const primera = cards[0];
+  primera.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+  assert.equal(primera.getAttribute("aria-pressed"), "true");
+  const ty = /translate\([^,]+,\s*(-?[\d.]+)px\)/.exec(primera.style.transform);
+  assert.ok(ty && parseFloat(ty[1]) < 0, "seleccionada sube");
+  assert.equal(qs(".lightbox"), null);
+  assert.deepEqual(errores, []);
+});
+
 test("ajustes: restaurar demo pide confirmación y vuelve a los datos originales", async () => {
   await reiniciar();
   store.crearPedido({ cliente: "Prueba", items: [{ productoId: "di1", qty: 1 }] });

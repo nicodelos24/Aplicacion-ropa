@@ -70,48 +70,52 @@ export function abrirDetallePedido(id) {
 
   const dstack = qs("#dstack");
   if (dstack) {
-    /* abanico: rotación por índice, ancho común y la seleccionada crece 14px y sube */
+    /* Abanico tipo carta: thumb arriba y texto abajo, rotación suave (tope 4°),
+       tarjetas ~120–150px de ancho por ~110–140px de alto. La seleccionada sube y
+       crece sin desbordar: el alto del stack se mide contra la caja ya rotada. */
+    const ROT_MAX = 4;            /* tope duro, Nico pidió ~3° con máximo 4° */
+    const CARD_W = 132;           /* ancho base en el rango 120–150 */
+    const CARD_H = 122;           /* alto base en el rango 110–140 */
+    const CRECE = 12;             /* px extra de ancho/alto al seleccionar */
+    const SUBE = 14;              /* px que sube la seleccionada */
+    const SOLAPE = 34;            /* solapamiento entre cartas */
     const relayout = () => {
       const cs = [...dstack.querySelectorAll(".dcard")];
       const n = cs.length;
-      const W = dstack.clientWidth;
-      const rotMax = n > 1 ? Math.min(7, 11 / (n - 1)) : 0;
-      const extra = (rotMax * Math.PI / 180) * 90;
-      const avail = W - 12 - extra;
-      const floor = n >= 4 ? 100 : 124;
-      const offBlas = n > 1
-        ? Math.min(64, Math.max(28, Math.min(avail / (n + 0.2), (avail - floor) / (n - 1))))
-        : 0;
-      /* piso de legibilidad: thumb 52 + gap 12 + padding 28 + borde 2 + 128px de texto */
-      const offLegible = (avail - 222) / Math.max(1, n - 1);
-      const off = n > 1 ? Math.max(28, Math.min(offBlas, offLegible)) : 0;
-      /* ancho de la tarjeta = ancho del canal menos la proyección horizontal de la rotación */
-      const hBase = cs.length ? cs[0].offsetHeight || 76 : 76;
-      const projectedAncho = Math.min(340, Math.max(floor, avail - (n - 1) * off));
-      const ancho = Math.max(72, projectedAncho - ((Math.abs(Math.sin(rotMax * Math.PI / 180)) * hBase) / 2));
+      if (!n) return;
+      const anchoCaja = dstack.clientWidth || CARD_W * 3;
+      const anchoSel = CARD_W + CRECE;
+      const rotMax = n > 1 ? Math.min(ROT_MAX, 9 / (n - 1)) : 0;
+      /* ancho total: cartas + solapes + la proyección horizontal de la rotación */
+      const paso = Math.min(CARD_W - SOLAPE, Math.max(18, (anchoCaja - anchoSel - 24) / Math.max(1, n - 1)));
+      const projX = (CARD_H / 2) * Math.abs(Math.sin(rotMax * Math.PI / 180));
+      const total = CARD_W + paso * (n - 1) + projX * 2 + CRECE;
+      const escala = total > anchoCaja ? anchoCaja / total : 1;
+      const off = paso * escala;
+      const w = (CARD_W * escala) | 0;
+      const h = (CARD_H * escala) | 0;
+      const grow = CRECE * escala;
       cs.forEach((c, i) => {
         const sel = c.classList.contains("sel");
         const rot = (i - (n - 1) / 2) * rotMax;
         const th = rot * Math.PI / 180;
-        const yBase = Math.abs(i - (n - 1) / 2) * 0.8;
-        const y = sel ? -14 : yBase;
-        c.style.width = ancho + "px";
+        const yBase = Math.abs(i - (n - 1) / 2) * 1.2;
+        const y = sel ? -SUBE : yBase;
+        c.style.width = (w + (sel ? grow : 0)) + "px";
+        c.style.height = (h + (sel ? grow : 0)) + "px";
         c.style.transformOrigin = "50% 50%";
         c.style.transform = `translate(${i * off}px, ${y}px) rotate(${rot}deg)`;
         c.style.zIndex = sel ? 120 : i + 2;
-        /* compensa la proyección de la rotación: la tarjeta queda centrada en su alto real */
-        const hSel = cs.find(c => c.classList.contains("sel"))?.offsetHeight || cs[0]?.offsetHeight || 76;
-        const hProy = Math.abs(ancho * Math.sin(th)) + hSel * Math.cos(th);
-        c.style.marginTop = Math.max(0, (hProy - hSel) / 2) + "px";
+        /* compensa la proyección vertical de la rotación para no recortar esquinas */
+        const alto = h + (sel ? grow : 0);
+        const hProy = Math.abs(w * Math.sin(th)) + alto * Math.cos(th);
+        c.style.marginTop = Math.max(0, (hProy - alto) / 2) + "px";
       });
       /* alto del stack medido contra su caja, con respiro para la que sobresale */
       const base = dstack.getBoundingClientRect().top;
-      let h = 0;
-      cs.forEach(c => {
-        const r = c.getBoundingClientRect();
-        h = Math.max(h, r.bottom - base);
-      });
-      dstack.style.height = (h + 16 + 10) + "px";
+      let bottom = 0;
+      cs.forEach(c => { bottom = Math.max(bottom, c.getBoundingClientRect().bottom); });
+      dstack.style.height = Math.ceil(bottom - base + 18) + "px";
     };
     relayout();
     let sel = null;
@@ -204,7 +208,6 @@ const DCARD = `
       <div class="dcard-txt">
         <div class="dprecio monto">{{precio}}</div>
         <div class="dnombre contenedor-texto">{{nombre}}</div>
-        <div class="dqty">{{qty}}</div>
       </div>
     </div>`;
 
