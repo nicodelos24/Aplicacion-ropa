@@ -31,6 +31,13 @@
 .borde-orange{box-shadow:var(--sh-1), var(--inset-hair), inset 14px 0 22px -18px color-mix(in srgb,var(--c-orange) 65%,transparent)}
 .borde-blue{box-shadow:var(--sh-1), var(--inset-hair), inset 14px 0 22px -18px color-mix(in srgb,var(--c-blue) 65%,transparent)}
 .borde-green{box-shadow:var(--sh-1), var(--inset-hair), inset 14px 0 22px -18px color-mix(in srgb,var(--c-green) 65%,transparent)}
+/* Modo oscuro: se quita sólo el resplandor interior (neon) del borde de estado.
+   El color de la barra/borde queda intacto y se conservan sombra base y hairline.
+   --sh-acc no se toca: es global de botones/FAB, ajeno a las tarjetas. */
+html:not([data-theme="light"]) .borde-yellow,
+html:not([data-theme="light"]) .borde-orange,
+html:not([data-theme="light"]) .borde-blue,
+html:not([data-theme="light"]) .borde-green{box-shadow:var(--sh-1), var(--inset-hair)}
 
 /* ---- squircle de ícono con color de su métrica ---- */
 .sq{
