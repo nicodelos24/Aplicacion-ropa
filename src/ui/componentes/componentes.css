@@ -595,8 +595,8 @@ nav button{
 nav button:active{transform:scale(.92)}
 nav button svg{width:23px; height:23px; stroke-width:1.9; transition:transform var(--t-med) var(--spring)}
 nav button .nav-lbl{
-  font-size:9.5px; letter-spacing:.1px; max-width:0; overflow:hidden; opacity:0; white-space:nowrap;
-  transition:max-width var(--t-med) var(--ease-out), opacity var(--t-med);
+  max-width:none; opacity:1; white-space:nowrap;
+  font-size:9px; font-weight:600; letter-spacing:.1px; line-height:1.05;
 }
 nav button.on{
   color:var(--acc-text);
@@ -604,7 +604,6 @@ nav button.on{
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 26%,transparent), 0 6px 18px color-mix(in srgb,var(--acc) 16%,transparent);
 }
 nav button.on svg{transform:translateY(-1px) scale(1.05); filter:drop-shadow(0 0 8px color-mix(in srgb,var(--acc) 55%,transparent))}
-nav button.on .nav-lbl{max-width:64px; opacity:1}
 
 /* ==================== TOPBAR ==================== */
 .toprow{display:flex; justify-content:space-between; align-items:center; max-width:560px; margin:0 auto}
@@ -727,6 +726,10 @@ nav button.on .nav-lbl{max-width:64px; opacity:1}
   .inv{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   nav{left:8px; right:8px; bottom:calc(8px + var(--safe-b)); padding:0 4px}
-  nav button .nav-lbl{font-size:9px}
-  nav button.on .nav-lbl{max-width:56px}
+}
+
+/* ---- pantallas compactas (<=360px): etiquetas visibles sin colisión ---- */
+@media (max-width:360px){
+  nav{left:4px; right:4px; padding:0}
+  nav button .nav-lbl{font-size:8px}
 }
