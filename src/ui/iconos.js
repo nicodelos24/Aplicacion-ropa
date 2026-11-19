@@ -8,6 +8,7 @@ export const ICONO = {
   checkSolo: SVG(`<path d="M5 12.5l4.5 4.5L19 7.5"/>`),
   clock: SVG(`<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>`),
   cal: SVG(`<rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M3 9.5h18M8 2.5v4m8-4v4"/>`),
+  lista: SVG(`<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>`),
   tag: SVG(`<path d="M3 11.5V4a1 1 0 0 1 1-1h7.5L21 12.5a1.5 1.5 0 0 1 0 2.1l-6.4 6.4a1.5 1.5 0 0 1-2.1 0L3 11.5z"/><circle cx="7.5" cy="7.5" r="1.4"/>`),
   people: SVG(`<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><path d="M17 8.5a3 3 0 1 1 .5 5.9M17.5 14.5c2.6.3 4 2 4 4.5"/>`),
   plus: SVG(`<path d="M12 5v14M5 12h14"/>`),

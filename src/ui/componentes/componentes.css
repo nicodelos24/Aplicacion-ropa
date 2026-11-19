@@ -287,6 +287,81 @@ fieldset{border:none}
 .cal-dia.sel .dots i{outline:1px solid rgba(0,0,0,.22)}
 .ayuda{font-size:11px; color:var(--mut); text-align:center; margin-top:10px; position:relative}
 
+/* ---- Alternador Calendario ↔ Semanas (segmentado, estilo propio V2) ---- */
+.agenda-switch{
+  display:flex; gap:4px; padding:4px; margin-bottom:14px;
+  background:var(--card2); border:1px solid var(--line); border-radius:var(--r-full);
+  box-shadow:var(--sh-1);
+}
+.agenda-switch-b{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+  padding:9px 12px; border-radius:var(--r-full); font-size:var(--fz-sm); font-weight:750;
+  color:var(--mut); background:transparent;
+  transition:background var(--t-med), color var(--t-med), box-shadow var(--t-med), transform var(--t-fast) var(--spring);
+}
+.agenda-switch-b svg{width:15px; height:15px}
+.agenda-switch-b:hover{color:var(--txt)}
+.agenda-switch-b:active{transform:scale(.96)}
+.agenda-switch-b.on{
+  background:var(--grad-acc); color:var(--acc-ink); box-shadow:var(--sh-acc);
+}
+
+/* ---- Vista Semanas: franja LU…DO + pedidos agrupados por día ---- */
+.semana{
+  position:relative; background:var(--card); border:1px solid var(--line);
+  border-radius:var(--r-xl); padding:16px 15px 6px; margin-bottom:76px;
+  box-shadow:var(--sh-2), var(--inset-hair);
+}
+.sem-cab{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:relative}
+.sem-cab b{font-size:16px; letter-spacing:-.3px; font-weight:750; text-transform:capitalize}
+.sem-cab button{
+  width:44px; height:44px; border-radius:13px; background:var(--card2); color:var(--txt-2);
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--inset-hair);
+  transition:background var(--t-med), transform var(--t-fast) var(--spring), color var(--t-med);
+}
+.sem-cab button:hover{background:var(--card3); color:var(--txt)}
+.sem-cab button:active{transform:scale(.9)}
+.sem-cab button svg{width:18px; height:18px}
+.sem-franja{display:grid; grid-template-columns:repeat(7,1fr); gap:5px}
+.sem-dia{
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px;
+  min-height:74px; padding:9px 2px 7px; border-radius:var(--r-md);
+  background:var(--card2); border:1px solid var(--line); color:var(--txt-2);
+  transition:transform var(--t-fast) var(--spring), background var(--t-fast),
+    box-shadow var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.sem-dia:hover{background:var(--card3)}
+.sem-dia:active{transform:scale(.94)}
+.sem-dia.hoy{border-color:color-mix(in srgb,var(--acc) 45%,var(--line))}
+.sem-dia.sel{
+  background:var(--grad-acc); color:var(--acc-ink); border-color:transparent; box-shadow:var(--sh-acc);
+}
+.sem-dow{font-size:10px; font-weight:800; letter-spacing:.6px; opacity:.85}
+.sem-num{font-size:18px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums}
+.sem-dots{display:flex; gap:2.5px; height:5px; align-items:center; justify-content:center}
+.sem-dots i{width:4px; height:4px; border-radius:50%; display:block}
+.sem-dia.sel .sem-dots i{outline:1px solid rgba(0,0,0,.22)}
+
+/* Agrupación por día con eje vertical, inspirada en la referencia (estructura, no estilo). */
+.sem-grupo{margin-top:16px}
+.sem-grupo-titulo{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding-left:18px; margin-bottom:8px; position:relative;
+}
+.sem-grupo-titulo::before{
+  content:""; position:absolute; left:3px; top:50%; width:8px; height:8px;
+  border-radius:50%; background:var(--acc); transform:translateY(-50%); box-shadow:0 0 0 3px var(--acc-soft);
+}
+.sem-grupo-dia{
+  font-size:var(--fz-xs); font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--acc-text);
+}
+.sem-grupo-n{font-size:var(--fz-2xs); color:var(--mut); font-weight:700}
+.sem-grupo-eje{
+  position:relative; margin-left:6px; padding-left:12px;
+  border-left:2px solid color-mix(in srgb,var(--acc) 28%,var(--line));
+  display:flex; flex-direction:column; gap:9px;
+}
+
 /* ==================== INVENTARIO ==================== */
 .inv{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
 .inv-card{

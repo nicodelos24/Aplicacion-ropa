@@ -9,6 +9,8 @@ export const vista = {
   calAnio: new Date().getFullYear(),
   diaSel: null,
   verPasadas: false,
+  /* agenda: "calendario" (mensual, el de siempre) o "semanas" (franja LU…DO). */
+  agendaModo: "calendario",
   logFiltro: "all",
 };
 export function suscribirVista(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }

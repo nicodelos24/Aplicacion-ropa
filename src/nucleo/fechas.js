@@ -53,3 +53,36 @@ export function sumarMes(anio, mes, delta) {
   if (m > 11) { m = 0; a++; }
   return { anio: a, mes: m };
 }
+
+/** "2026-11-19" → Date local (media noche), sin las rarezas de parsear ISO UTC. */
+export function dateDe(s) {
+  const [y, m, d] = String(s).split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
+/** Lunes de la semana (lunes→domingo) que contiene "AAAA-MM-DD". Devuelve "AAAA-MM-DD". */
+export function lunesDe(s) {
+  const dt = s ? dateDe(s) : new Date();
+  const dia = dt.getDay();            // 0=domingo … 6=sábado
+  const atras = (dia + 6) % 7;        // días desde el lunes
+  dt.setDate(dt.getDate() - atras);
+  return dstr(dt);
+}
+
+/** Desplaza una fecha "AAAA-MM-DD" n días y la devuelve "AAAA-MM-DD". */
+export function sumarDias(s, n) {
+  const dt = dateDe(s);
+  dt.setDate(dt.getDate() + n);
+  return dstr(dt);
+}
+
+/** Los 7 días lunes→domingo de la semana que contiene s: [{ds, dia, dow, mes, esHoy}]. */
+export function diasSemana(s) {
+  const lun = lunesDe(s);
+  const t = hoy();
+  return [0, 1, 2, 3, 4, 5, 6].map(i => {
+    const ds = sumarDias(lun, i);
+    const dt = dateDe(ds);
+    return { ds, dia: dt.getDate(), mes: dt.getMonth(), dow: DOW[dt.getDay()], esHoy: ds === t };
+  });
+}

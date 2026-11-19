@@ -250,6 +250,51 @@ test("detalle: Enter en una tarjeta del stack la selecciona sin abrir el lightbo
   assert.deepEqual(errores, []);
 });
 
+test("agenda: alternador Calendario ↔ Semanas, franja LU…DO y datos reales agrupados", async () => {
+  await reiniciar();
+  irA("agenda");
+  /* Vista por defecto: calendario mensual, con el control de dos opciones. */
+  assert.ok(qs("#main .cal"), "calendario presente por defecto");
+  const switches = qsa("#main .agenda-switch-b");
+  assert.equal(switches.length, 2, "dos opciones en el control");
+  assert.deepEqual(switches.map((b) => b.dataset.modo), ["calendario", "semanas"]);
+  assert.equal(switches[0].getAttribute("aria-pressed"), "true", "Calendario activo");
+
+  /* Cambio a Semanas: franja de 7 días, encabezado L…D, día de hoy marcado. */
+  click('#main .agenda-switch-b[data-modo="semanas"]');
+  assert.ok(qs("#main .semana"), "vista semana activa");
+  assert.equal(qs("#main .cal"), null, "calendario se oculta");
+  assert.equal(qs('#main .agenda-switch-b[data-modo="semanas"]').getAttribute("aria-pressed"), "true", "Semanas activo");
+  const dias = qsa("#main .sem-dia");
+  assert.equal(dias.length, 7, "siete días en la franja");
+  assert.deepEqual(dias.map((x) => x.querySelector(".sem-dow").textContent), ["L", "M", "M", "J", "V", "S", "D"]);
+  assert.equal(qsa("#main .sem-dia.hoy").length, 1, "un solo día resaltado como hoy");
+
+  /* Agrupación con datos reales: hay pedidos demo con fecha en la semana actual. */
+  const cards = qsa("#main .sem-grupo .card[data-pedido]");
+  assert.ok(cards.length >= 1, "pedidos reales agrupados por día");
+  const nombres = cards.map((c) => c.querySelector(".card-titulo").textContent);
+  assert.ok(nombres.some((n) => /Rosita|Paco|Lucía|María/.test(n)), "clientes reales, no inventados");
+  assert.ok(cards.every((c) => /Pagado|Nuevo|Mensaje|cuotas/.test(c.textContent)), "estado real en cada card");
+  assert.ok(!/\d{1,2}:\d{2}/.test(qs("#main .semana").textContent), "sin horas inventadas");
+
+  /* Tocar un día filtra al día elegido; navegar semana no pierde el modo. */
+  const conPedido = dias.find((x) => x.querySelectorAll(".sem-dots i").length > 0);
+  assert.ok(conPedido, "algún día tiene puntos de pedido");
+  click(conPedido);
+  assert.equal(qsa("#main .sem-dia.sel").length, 1, "día elegido resaltado");
+  assert.match(qs("#main .sect-titulo").textContent, /\d+ de \w+/, "encabezado del día elegido");
+  click("#sem-next");
+  assert.ok(qs("#main .semana"), "sigue en vista semanas al navegar");
+  assert.equal(qsa("#main .sem-dia").length, 7);
+
+  /* Volver a Calendario conserva la pantalla mensual de siempre. */
+  click('#main .agenda-switch-b[data-modo="calendario"]');
+  assert.ok(qs("#main .cal"), "vuelve el calendario");
+  assert.equal(qs("#main .semana"), null, "franja se oculta");
+  assert.deepEqual(errores, []);
+});
+
 test("ajustes: restaurar demo pide confirmación y vuelve a los datos originales", async () => {
   await reiniciar();
   store.crearPedido({ cliente: "Prueba", items: [{ productoId: "di1", qty: 1 }] });
