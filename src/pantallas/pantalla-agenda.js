@@ -96,21 +96,15 @@ export function pintarAgenda(main, abrirDetalle) {
       </button>`;
     }).join("");
 
-    /* Agrupación por día: se muestran los pedidos del día; sin hora de entrega en el
-       modelo, se omite ese dato en vez de inventarlo. Cliente/producto/monto/estado
-       salen de la card real reutilizada. */
-    const diasConPedidos = dias.filter(x => (porFecha[x.ds] || []).length);
+    /* Solo se muestran las tarjetas del día tocado en la franja, con su encabezado.
+       Sin día elegido NO se despliegan las cards de toda la semana juntas: se invita
+       a tocar un día. Así el resaltado de la franja y las cards siempre coinciden.
+       Nota: sin hora de entrega en el modelo, se omite ese dato en vez de inventarlo;
+       cliente/producto/monto/estado salen de la card real reutilizada. */
     const grouping = sel
       ? `<div class="sect-titulo">${ICONO.cal} ${fdate(sel)}</div>
          ${filaDia(sel) || `<p class="nota-vacia">Nada agendado este día.</p>`}`
-      : diasConPedidos.length
-        ? diasConPedidos.map(x => `
-            <div class="sem-grupo">
-              <div class="sem-grupo-titulo"><span class="sem-grupo-dia">${x.dow} ${x.dia} ${MESES[x.mes].slice(0, 3)}</span>
-                <span class="sem-grupo-n">${porFecha[x.ds].length} ${porFecha[x.ds].length === 1 ? "pedido" : "pedidos"}</span></div>
-              <div class="sem-grupo-eje">${filaDia(x.ds)}</div>
-            </div>`).join("")
-        : `<p class="nota-vacia">No hay entregas entre el ${fdateShort(lunes)} y el ${fdateShort(domingo)}.</p>`;
+      : `<p class="nota-vacia">Tocá un día de la franja para ver sus pedidos.</p>`;
 
     return `
       <div class="semana anim-entra">

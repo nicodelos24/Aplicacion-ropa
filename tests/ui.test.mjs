@@ -250,7 +250,7 @@ test("detalle: Enter en una tarjeta del stack la selecciona sin abrir el lightbo
   assert.deepEqual(errores, []);
 });
 
-test("agenda: alternador Calendario ↔ Semanas, franja LU…DO y datos reales agrupados", async () => {
+test("agenda: alternador Calendario ↔ Semanas y franja LU…DO con un solo día a la vez", async () => {
   await reiniciar();
   irA("agenda");
   /* Vista por defecto: calendario mensual, con el control de dos opciones. */
@@ -270,20 +270,44 @@ test("agenda: alternador Calendario ↔ Semanas, franja LU…DO y datos reales a
   assert.deepEqual(dias.map((x) => x.querySelector(".sem-dow").textContent), ["L", "M", "M", "J", "V", "S", "D"]);
   assert.equal(qsa("#main .sem-dia.hoy").length, 1, "un solo día resaltado como hoy");
 
-  /* Agrupación con datos reales: hay pedidos demo con fecha en la semana actual. */
-  const cards = qsa("#main .sem-grupo .card[data-pedido]");
-  assert.ok(cards.length >= 1, "pedidos reales agrupados por día");
+  /* REGRESIÓN: sin día elegido NO se muestran todas las cards de la semana juntas.
+     Antes se agrupaban V 20/S 21 con el 19 resaltado: eso es lo que se corrige. */
+  assert.equal(qsa("#main .sem-dia.sel").length, 0, "ningún día resaltado sin selección");
+  assert.equal(qsa("#main .card[data-pedido]").length, 0, "sin selección no se listan tarjetas");
+  assert.match(qs("#main .nota-vacia").textContent, /Tocá un día/, "invita a tocar un día");
+
+  /* Tocar un día con pedidos: SOLO sus cards, con encabezado de ese día. */
+  const conPedido = dias.find((x) => x.querySelectorAll(".sem-dots i").length > 0);
+  assert.ok(conPedido, "algún día tiene puntos de pedido");
+  const dsElegido = conPedido.dataset.ds;
+  const esperados = store.pedidos().filter((o) => o.fecha === dsElegido).map((o) => o.id).sort();
+  click(conPedido);
+  assert.equal(qsa("#main .sem-dia.sel").length, 1, "día elegido resaltado");
+  assert.match(qs("#main .sect-titulo").textContent, /\d+ de \w+/, "encabezado del día elegido");
+  const cards = qsa("#main .card[data-pedido]");
+  assert.ok(cards.length >= 1, "el día elegido tiene pedidos");
+  assert.deepEqual(cards.map((c) => c.dataset.pedido).sort(), esperados, "solo los pedidos del día elegido");
   const nombres = cards.map((c) => c.querySelector(".card-titulo").textContent);
   assert.ok(nombres.some((n) => /Rosita|Paco|Lucía|María/.test(n)), "clientes reales, no inventados");
   assert.ok(cards.every((c) => /Pagado|Nuevo|Mensaje|cuotas/.test(c.textContent)), "estado real en cada card");
   assert.ok(!/\d{1,2}:\d{2}/.test(qs("#main .semana").textContent), "sin horas inventadas");
 
-  /* Tocar un día filtra al día elegido; navegar semana no pierde el modo. */
-  const conPedido = dias.find((x) => x.querySelectorAll(".sem-dots i").length > 0);
-  assert.ok(conPedido, "algún día tiene puntos de pedido");
-  click(conPedido);
-  assert.equal(qsa("#main .sem-dia.sel").length, 1, "día elegido resaltado");
-  assert.match(qs("#main .sect-titulo").textContent, /\d+ de \w+/, "encabezado del día elegido");
+  /* Cambiar de día actualiza: las cards ya no son del día anterior. */
+  const otro = qsa("#main .sem-dia").find((x) => x.dataset.ds !== dsElegido && x.querySelectorAll(".sem-dots i").length > 0);
+  if (otro) {
+    const dsOtro = otro.dataset.ds;
+    const esperadosOtro = store.pedidos().filter((o) => o.fecha === dsOtro).map((o) => o.id).sort();
+    click(otro);
+    assert.deepEqual(qsa("#main .card[data-pedido]").map((c) => c.dataset.pedido).sort(), esperadosOtro, "al cambiar de día se actualizan las cards");
+    assert.equal(qsa("#main .sem-dia.sel").length, 1, "sigue un solo día resaltado");
+  }
+
+  /* Tocar el día ya elegido lo deselecciona: vuelve al aviso, NUNCA a todas las cards. */
+  click(qsa("#main .sem-dia.sel")[0]);
+  assert.equal(qsa("#main .sem-dia.sel").length, 0, "día deseleccionado");
+  assert.equal(qsa("#main .card[data-pedido]").length, 0, "al deseleccionar no reaparece la semana completa");
+  assert.match(qs("#main .nota-vacia").textContent, /Tocá un día/, "vuelve el aviso");
+
   click("#sem-next");
   assert.ok(qs("#main .semana"), "sigue en vista semanas al navegar");
   assert.equal(qsa("#main .sem-dia").length, 7);
