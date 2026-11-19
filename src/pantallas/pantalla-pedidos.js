@@ -28,7 +28,7 @@ export function pintarPedidos(main, abrirDetalle) {
 
   pintarChips(conteo());
 
-  if (!lista.length) main.innerHTML = vacioHTML(vista.busqueda);
+  if (!lista.length) main.innerHTML = vacioHTML(vista.busqueda, vista.filtro);
   else main.innerHTML = `<div class="stagger">${lista.map(o => cardPedidoHTML(o)).join("")}</div>`;
   cablearCardsPedidos(main, abrirDetalle);
   main.querySelectorAll("[data-acc='nuevo']").forEach(b => b.onclick = () => abrirEditorPedido(null));
@@ -41,7 +41,11 @@ function pintarChips(cuento) {
   qsa(".chip", cont).forEach(ch => ch.onclick = () => { vista.filtro = ch.dataset.k; emitirVista(); });
 }
 
-function vacioHTML(q) {
+function vacioHTML(q, filtro) {
   if (q) return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nada coincide con “${esc(q)}”. Probá con otro nombre o producto.</p></div>`;
+  if (filtro && filtro !== "all") {
+    const etiqueta = FILTROS.find(f => f.id === filtro)?.label || filtro;
+    return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.pedidos}</div><b>No hay pedidos con este filtro</b><p>No hay pedidos en “${esc(etiqueta)}”. Probá con otro filtro o registrá uno nuevo.</p><button class="btn btn-primario btn-vacio" data-acc="nuevo">Nuevo pedido</button></div>`;
+  }
   return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.pedidos}</div><b>Sin pedidos aquí</b><p>Usá el botón + para registrar un pedido: cliente, productos y estado.</p><button class="btn btn-primario btn-vacio" data-acc="nuevo">Nuevo pedido</button></div>`;
 }
