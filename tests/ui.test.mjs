@@ -283,6 +283,31 @@ test("demo no toca la red: ningún fetch y ninguna referencia a Firebase en el c
   assert.deepEqual(errores, []);
 });
 
+test("tema oscuro: se quita el neon de las tarjetas sin tocar el color ni el modo claro", async () => {
+  const css = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/componentes.css"), "utf8");
+  /* La regla base (modo claro) conserva el resplandor interior tal cual. */
+  for (const color of ["yellow", "orange", "blue", "green"]) {
+    const base = new RegExp(`\\.borde-${color}\\{box-shadow:var\\(--sh-1\\), var\\(--inset-hair\\), inset 14px 0 22px -18px color-mix`);
+    assert.match(css, base, `modo claro conserva el resplandor de ${color}`);
+    /* El borde de color sigue existiendo (no se pierde el color). */
+    assert.match(css, new RegExp(`\\.borde-${color}\\{border-left:3px solid var\\(--c-${color}\\)\\}`),
+      `se conserva el color del borde ${color}`);
+  }
+  /* Existe el override sólo para oscuro (html sin data-theme="light"). */
+  assert.match(css, /html:not\(\[data-theme="light"\]\) \.borde-yellow/, "override en modo oscuro");
+  const dark = /html:not\(\[data-theme="light"\]\)\s+([^{]+)\{box-shadow:([^}]+)\}/.exec(css);
+  assert.ok(dark, "regla de box-shadow en oscuro");
+  for (const color of ["yellow", "orange", "blue", "green"]) {
+    assert.match(dark[1], new RegExp(`\\.borde-${color}`), `oscuro cubre ${color}`);
+  }
+  assert.match(dark[2], /var\(--sh-1\)/, "conserva sombra base");
+  assert.match(dark[2], /var\(--inset-hair\)/, "conserva hairline interior");
+  assert.doesNotMatch(dark[2], /inset 14px|color-mix|neon/, "sin resplandor interior en oscuro");
+  /* El token global de acento (botones/FAB) no se modifica en la regla oscura. */
+  assert.doesNotMatch(dark[2], /--sh-acc/, "no toca --sh-acc");
+  assert.deepEqual(errores, []);
+});
+
 test("PWA: el ícono existe, la app carga como módulo y el service worker cachea el shell", async () => {
   assert.equal(fs.readFileSync(path.join(RAIZ, "favicon.ico")).readUInt32LE(0), 65536);
   assert.match(HTML, /<link rel="icon" href="favicon.ico"/);
