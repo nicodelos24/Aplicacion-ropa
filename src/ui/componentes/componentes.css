@@ -444,22 +444,23 @@ html[data-theme="light"] .cli-wa.none{color:#4d5168}
 .detail{position:relative}
 .dclose{position:relative}
 .dcards{position:relative; display:block; margin-top:34px; padding-top:16px}
+/* Abanico tipo carta: thumb arriba, texto abajo, formato cuadrado y giro suave. */
 .dcard{
-  position:absolute; left:0; top:0; display:flex; gap:12px; align-items:center;
-  height:76px; min-width:0;
-  background:var(--card2); border:1px solid var(--line-strong); border-radius:18px; padding:10px 12px;
-  box-shadow:var(--sh-2), var(--inset-hair); backface-visibility:hidden;
+  position:absolute; left:0; top:0; display:flex; flex-direction:column; align-items:stretch; gap:8px;
+  width:132px; height:122px; min-width:0; overflow:hidden;
+  background:var(--card2); border:1px solid var(--line-strong); border-radius:var(--r-md); padding:11px;
+  box-shadow:var(--sh-2), var(--inset-hair); backface-visibility:hidden; will-change:transform;
   transition:transform var(--t-slow) var(--ease-out), box-shadow var(--t-med), border-color var(--t-med),
-             height var(--t-slow) var(--ease-out), padding var(--t-slow) var(--ease-out),
-             border-radius var(--t-slow) var(--ease-out);
+             width var(--t-slow) var(--ease-out), height var(--t-slow) var(--ease-out),
+             padding var(--t-slow) var(--ease-out), border-radius var(--t-slow) var(--ease-out);
 }
 .dcard:hover{box-shadow:var(--sh-3), var(--inset-hair)}
-/* con una seleccionada, las de atrás muestran sólo icono + borde: el texto de una
+/* con una seleccionada, las de atrás muestran sólo el borde: el texto de una
    tarjeta tapada colgaba a medias por la punta visible bajo la seleccionada */
-.dcard-txt{transition:opacity var(--t-med)}
+.dcard-txt{transition:opacity var(--t-med); min-width:0}
 .dcards:has(.dcard.sel) .dcard:not(.sel) .dcard-txt{opacity:0}
 .dcard.sel{
-  height:90px; padding:12px 14px; border-radius:var(--r-lg);
+  padding:13px; border-radius:var(--r-lg);
   /* gradiente 100% opaco: --acc-soft es translúcido y dejaba ver las tarjetas de atrás */
   background:linear-gradient(150deg,var(--card2) 60%,color-mix(in srgb, var(--card2) 88%, var(--acc)));
   box-shadow:var(--sh-3), var(--inset-hair), 0 0 0 2px var(--acc); border-color:transparent; z-index:120;
@@ -471,17 +472,16 @@ html[data-theme="light"] .cli-wa.none{color:#4d5168}
   z-index:-1; pointer-events:none;
 }
 html[data-theme="light"] .dcard.sel::after{opacity:.30}
-.dcard.sel .dcard-txt{transform:translateX(-3px)}
-/* el secundario usa --txt-2: sobre el tinte del degradado --mut no llega a AA */
-.dcard.sel .dqty{color:var(--txt-2)}
+.dcard.sel .dcard-txt{transform:translateX(-2px)}
 .dthumb{
-  width:52px; height:52px; border-radius:14px; object-fit:cover; background:var(--card);
+  width:100%; height:58px; border-radius:var(--r-sm); object-fit:cover; background:var(--card);
   display:flex; align-items:center; justify-content:center; color:var(--ptag); flex-shrink:0; box-shadow:var(--sh-1);
 }
-.dthumb svg{width:24px; height:24px}
+.dthumb svg{width:26px; height:26px}
+.dcard-txt{display:flex; flex-direction:column; justify-content:flex-end; flex:1; min-height:0}
 .dprecio{font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.3px; font-size:var(--fz-md)}
-.dnombre{font-size:var(--fz-sm); overflow-wrap:anywhere; color:var(--txt-2)}
-.dqty{font-size:var(--fz-2xs); color:var(--mut); margin-top:2px}
+.dnombre{font-size:var(--fz-xs); overflow-wrap:anywhere; color:var(--txt-2);
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
 .strow{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; width:100%}
 .strow .b{
   display:flex; align-items:center; justify-content:center; gap:6px; min-height:44px; line-height:1.25;
