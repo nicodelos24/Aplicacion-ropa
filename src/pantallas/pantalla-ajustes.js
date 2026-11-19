@@ -8,7 +8,7 @@ import { confirmar } from "../ui/componentes/confirmar.js";
 import { nombreArchivo } from "../servicios/respaldo.js";
 
 export function aplicarTema() {
-  const t = localStorage.getItem("ropa_v2_tema") || db().theme || "dark";
+  const t = db().theme || "dark";
   document.documentElement.dataset.theme = t;
   const btn = qs("#themeBtn");
   if (btn) btn.innerHTML = t === "dark" ? ICONO.moon : ICONO.sun;
@@ -16,11 +16,10 @@ export function aplicarTema() {
 
 export function pintarAjustes(main) {
   const d = db();
-  const esOscuro = (localStorage.getItem("ropa_v2_tema") || d.theme || "dark") === "dark";
+  const esOscuro = (d.theme || "dark") === "dark";
   main.innerHTML = `
     <div class="anim-entra">
     <div class="sett-card"><h3><span class="sic sic-cal">${ICONO.moon}</span> Apariencia</h3>
-      <p>Cambiá entre modo oscuro y claro (también con el botón de arriba).</p>
       <button class="btn btn-ghost sett-btn" id="tema-btn">${ICONO.sun} Cambiar a modo ${esOscuro ? "claro" : "oscuro"}</button>
     </div>
     <div class="sett-card"><h3><span class="sic sic-acc">${ICONO.check}</span> Prefijo de país</h3>
@@ -42,7 +41,6 @@ export function pintarAjustes(main) {
   qs("#tema-btn").onclick = () => {
     const nuevo = esOscuro ? "light" : "dark";
     setTema(nuevo);
-    localStorage.setItem("ropa_v2_tema", nuevo);
     aplicarTema();
     pintarAjustes(main);
   };

@@ -74,9 +74,8 @@ render();
 qsa("#nav button").forEach(b => b.onclick = () => irA(b.dataset.v));
 qs("#search").oninput = e => { vista.busqueda = e.target.value; emitirVista(); };
 qs("#themeBtn").onclick = () => {
-  const nuevo = (localStorage.getItem("ropa_v2_tema") || db().theme || "dark") === "dark" ? "light" : "dark";
+  const nuevo = (db().theme || "dark") === "dark" ? "light" : "dark";
   setTema(nuevo);
-  localStorage.setItem("ropa_v2_tema", nuevo);
   aplicarTema();
   if (vista.seccion === "ajustes") emitirVista();
 };
