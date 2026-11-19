@@ -10,7 +10,7 @@ import {
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, resumenGeneral, ordenarPedidos } from "../src/nucleo/filtros.js";
 import { itemDesdeProducto, normalizarItem, pedidoDesdeDatos, productoNuevo } from "../src/nucleo/entidades.js";
 import { waTel, maskTel, fmtTel, linkWhatsApp } from "../src/nucleo/contacto.js";
-import { celdasMes, desplazarDias, fdate } from "../src/nucleo/fechas.js";
+import { celdasMes, desplazarDias, fdate, lunesDe, sumarDias, diasSemana } from "../src/nucleo/fechas.js";
 import { uid } from "../src/nucleo/ids.js";
 import { CATEGORIAS_IDS, iconoCategoria } from "../src/nucleo/catalogo.js";
 
@@ -141,6 +141,24 @@ test("fechas: desplazamiento, formato largo y celdas de mes", () => {
   assert.ok(celdas.filter(Boolean).length === 30);
   assert.match(fdate("2026-11-24"), /^24 de noviembre/);
   assert.match(fdate("2024-03-05"), / de 2024$/);
+});
+
+test("semana: lunes→domingo, cruces de mes y desplazamiento de 7 días", () => {
+  /* 19-nov-2026 es jueves → lunes de esa semana es 16 y domingo 22. */
+  assert.equal(lunesDe("2026-11-19"), "2026-11-16");
+  assert.equal(lunesDe("2026-11-16"), "2026-11-16", "el lunes es él mismo");
+  assert.equal(lunesDe("2026-11-22"), "2026-11-16", "el domingo cierra la misma semana");
+  /* cruce de mes: 1-dic-2026 es martes → lunes 30-nov. */
+  assert.equal(lunesDe("2026-12-01"), "2026-11-30");
+  assert.equal(sumarDias("2026-11-30", 6), "2026-12-06");
+  const dias = diasSemana("2026-11-19");
+  assert.equal(dias.length, 7);
+  assert.deepEqual(dias.map((x) => x.ds), [
+    "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19",
+    "2026-11-20", "2026-11-21", "2026-11-22",
+  ]);
+  assert.deepEqual(dias.map((x) => x.dow), ["L", "M", "M", "J", "V", "S", "D"]);
+  assert.ok(dias.some((x) => x.ds === "2026-11-30") === false);
 });
 
 test("uid: únicos y con prefijo", () => {
