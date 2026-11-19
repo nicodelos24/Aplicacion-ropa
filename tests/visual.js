@@ -56,7 +56,7 @@ async function matrix(){
       await scene('editor');contrastCheck(label+' precios editor AA','.invpick p');
       const chosen=d().querySelectorAll('.invpick button');chosen[0].click();chosen[1].click();click('#saveBtn');await wait(200);
       await scene('detail');record(label+' edición conserva tres productos',d().querySelectorAll('.dcard').length===3);
-      const card=d().querySelector('.dcard'),before=rect(card);card.click();const after=rect(card);record(label+' selección sin salto',Math.abs(before.x-after.x)<1&&Math.abs(before.y-after.y)<1);noOverflow(label+' tres productos sin overflow');
+      const card=d().querySelector('.dcard'),before=rect(card);card.click();const after=rect(card);record(label+' selección crece y sube',after.height>before.height+8&&after.top<before.top-6&&Math.abs((after.left+after.width/2)-(before.left+before.width/2))<1,{before:{h:before.height,t:before.top},after:{h:after.height,t:after.top}});noOverflow(label+' tres productos sin overflow');
       w().closeSheet();await photoFixture();w().openOrder('d3');click('.dcard');const trigger=click('.dcard');await wait(200);
       const box=d().querySelector('.lightbox');record(label+' foto modal y foco',box?.getAttribute('aria-modal')==='true'&&d().activeElement===box.querySelector('button'));
       d().dispatchEvent(new (w().KeyboardEvent)('keydown',{key:'Tab',cancelable:true}));record(label+' Tab contenido',d().activeElement===box.querySelector('button'));

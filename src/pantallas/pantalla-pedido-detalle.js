@@ -70,18 +70,48 @@ export function abrirDetallePedido(id) {
 
   const dstack = qs("#dstack");
   if (dstack) {
+    /* abanico: rotación por índice, ancho común y la seleccionada crece 14px y sube */
     const relayout = () => {
       const cs = [...dstack.querySelectorAll(".dcard")];
-      const off = cs.length > 1 ? Math.min(110, Math.max(60, (dstack.clientWidth - 240) / (cs.length - 1))) : 0;
+      const n = cs.length;
+      const W = dstack.clientWidth;
+      const rotMax = n > 1 ? Math.min(7, 11 / (n - 1)) : 0;
+      const extra = (rotMax * Math.PI / 180) * 90;
+      const avail = W - 12 - extra;
+      const floor = n >= 4 ? 100 : 124;
+      const offBlas = n > 1
+        ? Math.min(64, Math.max(28, Math.min(avail / (n + 0.2), (avail - floor) / (n - 1))))
+        : 0;
+      /* piso de legibilidad: thumb 52 + gap 12 + padding 28 + borde 2 + 128px de texto */
+      const offLegible = (avail - 222) / Math.max(1, n - 1);
+      const off = n > 1 ? Math.max(28, Math.min(offBlas, offLegible)) : 0;
+      /* ancho de la tarjeta = ancho del canal menos la proyección horizontal de la rotación */
+      const hBase = cs.length ? cs[0].offsetHeight || 76 : 76;
+      const projectedAncho = Math.min(340, Math.max(floor, avail - (n - 1) * off));
+      const ancho = Math.max(72, projectedAncho - ((Math.abs(Math.sin(rotMax * Math.PI / 180)) * hBase) / 2));
       cs.forEach((c, i) => {
-        /* la seleccionada se eleva apenas (6px) sobre el resto del abanico */
-        const y = c.classList.contains("sel") ? -6 : 0;
-        c.style.transform = `translate(${i * off}px, ${y}px)`;
-        c.style.width = Math.min(340, dstack.clientWidth - (cs.length - 1) * off) + "px";
-        c.style.zIndex = c.classList.contains("sel") ? 120 : i + 2;
+        const sel = c.classList.contains("sel");
+        const rot = (i - (n - 1) / 2) * rotMax;
+        const th = rot * Math.PI / 180;
+        const yBase = Math.abs(i - (n - 1) / 2) * 0.8;
+        const y = sel ? -14 : yBase;
+        c.style.width = ancho + "px";
+        c.style.transformOrigin = "50% 50%";
+        c.style.transform = `translate(${i * off}px, ${y}px) rotate(${rot}deg)`;
+        c.style.zIndex = sel ? 120 : i + 2;
+        /* compensa la proyección de la rotación: la tarjeta queda centrada en su alto real */
+        const hSel = cs.find(c => c.classList.contains("sel"))?.offsetHeight || cs[0]?.offsetHeight || 76;
+        const hProy = Math.abs(ancho * Math.sin(th)) + hSel * Math.cos(th);
+        c.style.marginTop = Math.max(0, (hProy - hSel) / 2) + "px";
       });
-      const h = cs.reduce((m, c) => Math.max(m, c.offsetTop + c.offsetHeight), 0);
-      dstack.style.height = (h + 6) + "px";
+      /* alto del stack medido contra su caja, con respiro para la que sobresale */
+      const base = dstack.getBoundingClientRect().top;
+      let h = 0;
+      cs.forEach(c => {
+        const r = c.getBoundingClientRect();
+        h = Math.max(h, r.bottom - base);
+      });
+      dstack.style.height = (h + 16 + 10) + "px";
     };
     relayout();
     let sel = null;
