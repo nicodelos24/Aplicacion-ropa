@@ -237,16 +237,35 @@ test("detalle: cambiar estado pide confirmación, cancelar no muta y aceptar sí
   assert.deepEqual(errores, []);
 });
 
-test("detalle: Enter en una tarjeta del stack la selecciona sin abrir el lightbox", async () => {
+test("detalle: el primer toque selecciona y solo el segundo con foto abre el visor", async () => {
   await reiniciar();
+  const foto = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E";
+  const items = [
+    { nombre: "Artículo con imagen", precio: 100, qty: 2, foto },
+    { nombre: "Artículo sin imagen", precio: 50, qty: 1, categoria: "ropa" },
+  ];
+  store.boot({ ...store.db(), orders: [{ id: "prueba", cliente: "Prueba visual", estado: "new", items }] });
   irA("pedidos");
-  click('#main .card[data-pedido="d3"]');
-  const tarjeta = qs("#dstack .dcard");
-  assert.ok(tarjeta, "hay tarjetas de producto");
-  tarjeta.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
-  assert.equal(tarjeta.getAttribute("aria-pressed"), "true");
-  assert.equal(qsa("#dstack .dcard.sel").length, 1);
+  click('#main .card[data-pedido="prueba"]');
+  const [conFoto, sinFoto] = qsa("#dstack .dcard");
+  assert.equal(conFoto.tagName, "BUTTON", "activación por teclado nativa");
+  assert.match(conFoto.getAttribute("aria-label"), /Artículo con imagen.*200/);
+  assert.equal(conFoto.querySelector("img.dthumb").getAttribute("src"), foto);
+  assert.ok(sinFoto.querySelector(".dthumb[aria-hidden=true] svg"));
+  click(sinFoto);
+  click(sinFoto);
+  assert.equal(sinFoto.getAttribute("aria-pressed"), "true");
   assert.equal(qs(".lightbox"), null, "sin foto no hay lightbox");
+  click(conFoto);
+  assert.equal(sinFoto.getAttribute("aria-pressed"), "false");
+  assert.equal(conFoto.getAttribute("aria-pressed"), "true");
+  assert.equal(qs(".lightbox"), null, "el primer toque solo trae al frente");
+  click(conFoto);
+  assert.equal(qs(".lightbox img").getAttribute("src"), foto);
+  assert.equal(d.activeElement, qs(".lbx"));
+  click(".lbx");
+  assert.equal(qs(".lightbox"), null);
+  assert.equal(d.activeElement, conFoto, "devuelve el foco a la carta activa");
   assert.deepEqual(errores, []);
 });
 
@@ -319,77 +338,34 @@ test("agenda: alternador Calendario ↔ Semanas y franja LU…DO con un solo dí
   assert.deepEqual(errores, []);
 });
 
-test("detalle: abanico tipo carta (thumb arriba, tamaño y giro acotado, teclado)", async () => {
+test("detalle: abanico simétrico, con capas por cercanía sin mover las cartas en el DOM", async () => {
   await reiniciar();
+  const items = Array.from({ length: 5 }, (_, i) => ({ nombre: `Artículo ${i + 1}`, precio: 100, qty: 1 }));
+  store.boot({ ...store.db(), orders: [
+    { id: "abanico", cliente: "Prueba abanico", estado: "new", items },
+    { id: "una", cliente: "Prueba una carta", estado: "new", items: items.slice(0, 1) },
+  ] });
   irA("pedidos");
-  /* d3 tiene un solo ítem; d2 tiene dos → usamos d2 para ver el abanico */
-  click('#main .card[data-pedido="d2"]');
+  click('#main .card[data-pedido="abanico"]');
   const cards = qsa("#dstack .dcard");
-  assert.ok(cards.length >= 2, "varias tarjetas en el abanico");
-  for (const c of cards) {
-    /* la plantilla pone el thumb antes que el texto (thumb arriba) */
-    assert.ok(c.firstElementChild.classList.contains("dthumb"), "thumb es el primer hijo");
-    assert.ok(c.querySelector(".dcard-txt"), "texto debajo del thumb");
-    const w = parseFloat(c.style.width);
-    const h = parseFloat(c.style.height);
-    assert.ok(w >= 110 && w <= 150, "ancho tipo carta " + w);
-    assert.ok(h >= 100 && h <= 140, "alto tipo carta " + h);
-    const m = /rotate\((-?[\d.]+)deg\)/.exec(c.style.transform);
-    assert.ok(m, "la carta gira");
-    assert.ok(Math.abs(parseFloat(m[1])) <= 4.001, "giro dentro del tope de 4° (" + m[1] + ")");
+  const valores = key => cards.map(c => c.style.getPropertyValue(key));
+  assert.equal(qs("#dstack").style.getPropertyValue("--huecos"), "4");
+  assert.deepEqual(valores("--lado"), ["-2", "-1", "0", "1", "2"]);
+  assert.deepEqual(valores("--giro"), ["-4deg", "-2deg", "0deg", "2deg", "4deg"]);
+  assert.deepEqual(valores("--nivel").map(Number), [1, 2, 3, 4, 5]);
+  for (const [i, esperados] of [[0, [5, 4, 3, 2, 1]], [2, [3, 4, 5, 4, 3]], [4, [1, 2, 3, 4, 5]]]) {
+    click(cards[i]);
+    assert.deepEqual(valores("--nivel").map(Number), esperados);
+    assert.deepEqual(qsa('#dstack .dcard[aria-pressed="true"]'), [cards[i]]);
+    assert.deepEqual(qsa("#dstack .dcard"), cards);
   }
-  /* un click por teclado selecciona y eleva (translateY negativo) sin perder el foco */
-  const primera = cards[0];
-  primera.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
-  assert.equal(primera.getAttribute("aria-pressed"), "true");
-  const ty = /translate\([^,]+,\s*(-?[\d.]+)px\)/.exec(primera.style.transform);
-  assert.ok(ty && parseFloat(ty[1]) < 0, "seleccionada sube");
-  assert.equal(qs(".lightbox"), null);
-  assert.deepEqual(errores, []);
-});
-
-test("detalle: el abanico tipo carta queda centrado en su sección (claro/oscuro)", async () => {
-  /* helper: bounding box horizontal del conjunto a partir de los transforms inline.
-     jsdom no hace layout real, pero el centroid del abanico se resuelve en JS puro. */
-  const cajaAbanico = () => {
-    const cs = qsa("#dstack .dcard");
-    const anchoCaja = qs("#dstack").clientWidth || 396; // fallback del propio relayout
-    let min = Infinity, max = -Infinity;
-    cs.forEach(c => {
-      const wC = parseFloat(c.style.width);
-      const hC = parseFloat(c.style.height);
-      const tx = /translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/.exec(c.style.transform);
-      const rot = /rotate\((-?[\d.]+)deg\)/.exec(c.style.transform);
-      assert.ok(tx && rot, "carta con translate y rotate");
-      const th = parseFloat(rot[1]) * Math.PI / 180;
-      const cx = parseFloat(tx[1]) + wC / 2;
-      const semi = (Math.abs(wC * Math.cos(th)) + Math.abs(hC * Math.sin(th))) / 2;
-      min = Math.min(min, cx - semi);
-      max = Math.max(max, cx + semi);
-    });
-    return { min, max, anchoCaja };
-  };
-  const assertCentrado = (etiqueta) => {
-    const { min, max, anchoCaja } = cajaAbanico();
-    const izq = min;
-    const der = anchoCaja - max;
-    assert.ok(Math.abs(izq - der) <= 1.5,
-      `${etiqueta}: abanico centrado (márgenes izq ${izq.toFixed(1)} vs der ${der.toFixed(1)})`);
-  };
-
-  for (const tema of ["light", "dark"]) {
-    await reiniciar();
-    store.db().theme = tema;
-    aplicarTema();
-    irA("pedidos");
-    click('#main .card[data-pedido="d2"]');
-    assertCentrado(tema + " (sin seleccionar)");
-    /* seleccionar una carta no debe descentrar el conjunto ni perder el orden */
-    const cs = qsa("#dstack .dcard");
-    cs[0].click();
-    assertCentrado(tema + " (con seleccionada)");
-    assert.equal(cs[0].getAttribute("aria-pressed"), "true", "selección conservada");
-  }
+  click("#hClose");
+  await esperar(220);
+  click('#main .card[data-pedido="una"]');
+  const unica = qs("#dstack .dcard");
+  assert.equal(unica.style.getPropertyValue("--lado"), "0");
+  assert.equal(unica.style.getPropertyValue("--giro"), "0deg");
+  assert.equal(qs("#dstack").style.getPropertyValue("--huecos"), "1", "sin división por cero");
   assert.deepEqual(errores, []);
 });
 
