@@ -131,6 +131,12 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 - **4 capturas** en `capturas/2026-11-19/tema-unificado/`: [claro inicial](capturas/2026-11-19/tema-unificado/01-claro-inicial.png) · [oscuro Ajustes](capturas/2026-11-19/tema-unificado/02-oscuro-ajustes.png) · [oscuro tras reload](capturas/2026-11-19/tema-unificado/03-oscuro-tras-reload.png) · [claro tras reload](capturas/2026-11-19/tema-unificado/04-claro-tras-reload.png).
 - Verificado click→click→reload en ambos sentidos: (a) dark → #themeBtn → light+sol → #tema-btn Ajustes → dark+luna → reload persiste dark; (b) light → #tema-btn → dark → #themeBtn → light → reload persiste light. `documentElement.dataset.theme === ropa_v2_data.theme` en todos los pasos; `ropa_v2_tema` nunca reaparece. Prueba de robustez: con `ropa_v2_tema=dark` residual inyectado y `data.theme=light`, reload respeta `light` (el valor viejo se ignora). 0 errores de consola (1 warning preexistente de meta deprecated). `node --check` OK en los 2 archivos tocados.
 
+## Vistas previas aprobadas sueltas · Dino · 2026-11-19
+
+- Tres capturas que quedaron sin versionar de la integración del 19-nov, con datos demo (Paco, María Fernanda y montos de ejemplo), sin datos de clientas reales ni secretos.
+- **Abanico en la vista previa del detalle**: [abanico-carta-preview-vista-previa.png](capturas/2026-11-19/abanico-carta-preview-vista-previa.png).
+- **Barra con etiquetas siempre visibles**: [390px](capturas/2026-11-19/nav-etiquetas-390.png) · [320px](capturas/2026-11-19/nav-etiquetas-320.png).
+
 ## Barra inferior con nombres de sección siempre visibles · Dino · 2026-11-19
 
 - Propuesta visual de Blas APROBADA por Nico ("quedó bien la barra mostrando los nombres de las secciones"). Base: worktree `.worktrees/nav-etiquetas`, rama `feat/nav-etiquetas-siempre` desde master `148a27b`, commit `c15a8de`. Sin push (pendiente de OK de Nico). [Tarea](apx:tasks/task_56131fad0b1b43c0).
