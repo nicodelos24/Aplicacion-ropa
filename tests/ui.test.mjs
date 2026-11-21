@@ -456,6 +456,31 @@ test("nav auto-ocultable: gesto abajo oculta, toque y cambio de sección muestra
   assert.deepEqual(errores, []);
 });
 
+test("nav auto-ocultable: rueda abajo oculta y rueda arriba vuelve a mostrar (regresión)", async () => {
+  await reiniciar();
+  const nav = qs("#nav");
+  const geo = (y) => {
+    Object.defineProperty(w, "scrollY", { value: y, configurable: true, writable: true });
+    Object.defineProperty(d.documentElement, "clientHeight", { value: 700, configurable: true });
+    Object.defineProperty(d.documentElement, "scrollHeight", { value: 2000, configurable: true });
+  };
+  const rueda = (delta) => {
+    const e = new w.Event("wheel");
+    e.deltaY = delta;
+    e.deltaMode = 0;
+    w.dispatchEvent(e);
+  };
+  const scroll = () => w.dispatchEvent(new w.Event("scroll"));
+
+  geo(0); scroll(); await esperar(20);        // ancla en 0
+  rueda(160); geo(160); scroll(); await esperar(20);
+  assert.equal(nav.classList.contains("oculta"), true, "rueda abajo oculta");
+  /* rueda arriba: el ancla NO debe reanclarse antes de que el scroll decida */
+  rueda(-160); geo(0); scroll(); await esperar(20);
+  assert.equal(nav.classList.contains("oculta"), false, "rueda arriba muestra de nuevo");
+  assert.deepEqual(errores, []);
+});
+
 test("nav auto-ocultable: transición CSS con transform+opacidad y respeto a reduce-motion", () => {
   const css = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/componentes.css"), "utf8");
   const bloque = css.match(/nav\{[\s\S]*?\}/g) || [];

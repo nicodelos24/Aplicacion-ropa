@@ -113,14 +113,17 @@ window.addEventListener("wheel", e => {
   if (e.ctrlKey || e.defaultPrevented || !e.deltaY || capaAbierta()) return;
   const muestra = medirNav();
   const ahora = Date.now();
-  if (Math.abs(muestra.y - navEstado.ultimoY) > 2) {
-    navEstado = medirScroll(navEstado, muestra, false);  // reancla, no decide
-  }
+  /* No reanclar acá: el evento scroll posterior decide con el delta real del
+     gesto. Reanclar aquí dejaría delta=0 y la nav nunca reaparecería al subir. */
   const delta = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? muestra.altoVisible : 1);
   const restante = ahora < navSesion.gestoHasta && Math.sign(navSesion.rueda) === Math.sign(delta) ? navSesion.rueda : 0;
   navSesion.rueda = recorridoRueda(muestra, restante + delta);
-  navSesion.gestoHasta = navSesion.rueda ? ahora + VENTANA_GESTO : 0;
-  if (navSesion.rueda) reiniciarInactividad(ahora);
+  /* La ventana de gesto se arma siempre: el evento `scroll` llega DESPUÉS del
+     `wheel`, y para entonces `rueda` ya puede ser 0 (recorrido consumido). Si
+     la ventana se borrara acá, el scroll se trataría como programático y la
+     nav nunca reaparecería al subir. El borde ya queda descartado arriba. */
+  navSesion.gestoHasta = ahora + VENTANA_GESTO;
+  reiniciarInactividad(ahora);
 }, { passive: true });
 
 /* Táctil: arrastre = gesto; inercia de borde queda descartada por el ancla. */
