@@ -93,7 +93,8 @@ test("crear pedido sin productos se rechaza sin mutar (P1: bloquear sin corrompe
   const antes = store.db();
   const r = store.crearPedido({ cliente: "Alguien", items: [] }, U);
   assert.equal(r.ok, false);
-  assert.equal(store.db(), antes, "estado intacto");
+  /* db() devuelve una vista con fotos demo (copia), así que comparamos contenido. */
+  assert.deepEqual(store.db(), antes, "estado intacto");
 });
 
 test("homónimos: dos productos de mismo nombre, total por snapshot (QA v1 $300)", () => {

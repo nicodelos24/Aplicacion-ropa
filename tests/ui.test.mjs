@@ -487,11 +487,17 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   /* La versión del caché debe haber cambiado respecto del deploy anterior:
      si queda la vieja, el service worker sirve assets stale y no se ven los cambios. */
   assert.doesNotMatch(sw, /ropa-v2-f0f1-r3/, "la versión de caché no es la stale anterior");
-  assert.match(sw, /const CACHE = "ropa-v2-nav-auto-ocultable-r5"/, "versión de caché actualizada");
+  assert.match(sw, /const CACHE = "ropa-v2-[\w-]+"/, "versión de caché con prefijo de proyecto");
+  assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
+  assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.ok(sw.includes("./src/ui/nav-scroll.js"), "el precache incluye la lógica de nav");
   assert.match(sw, /\.\/src\/main\.js/);
   assert.match(sw, /\.\/index\.html/);
   for (const fijo of ["src/estado/store.js", "src/nucleo/pedidos.js", "src/ui/componentes/componentes.css"]) {
     assert.ok(sw.includes("./" + fijo), "el precache incluye " + fijo);
+  }
+  /* Las fotos de muestra deben estar en el precache para verse tras recargar. */
+  for (const foto of ["vestido", "campera", "jean", "bolso", "buzo"]) {
+    assert.ok(sw.includes("./fotos/" + foto + ".jpg"), "el precache incluye la foto " + foto);
   }
 });

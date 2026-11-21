@@ -153,7 +153,7 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 
 ## Nav inferior auto-ocultable · Dino · 2026-11-21
 
-- Rama `feat/nav-auto-ocultable`, worktree temporal aislado, base master `6877204`. Cache del service worker `ropa-v2-nav-auto-ocultable-r5`. Demo local (`?demo=1`), 390×844 CSS, Chrome del proyecto (`kaia_chrome_ropaapp`), sin datos de clientas reales.
+- Rama `feat/nav-auto-ocultable`, worktree temporal aislado, base master `6877204`. Cache del service worker `ropa-v2-nav-fotos-r6` (integrado con la rama de fotos demo). Demo local (`?demo=1`), 390×844 CSS, Chrome del proyecto (`kaia_chrome_ropaapp`), sin datos de clientas reales.
 - **[Nav visible a 390px](capturas/2026-11-21/nav-auto-ocultable-390.png)**: barra inferior con las 7 secciones y etiquetas, estado visible tras toque. Verificado además en vivo con `getComputedStyle`: oculta = `translateY(92px)` + `opacity:0` + `pointer-events:none` + `aria-hidden="true"` en 210ms; visible = `translateY(0)` + `opacity:1`.
 - Comportamiento comprobado en navegador real a 390px: wheel/scroll abajo oculta pasado ~70px y 8px de umbral; scroll arriba y toque muestran; inactividad de 3s scrolleada oculta; abrir `#hoja` fuerza visible y el temporizador no la oculta; `main::after` reserva `nav-h + 30px` fijo (sin salto al ocultar); FAB sigue accesible. `prefers-reduced-motion` sin transición.
 - `npm test` 63/63 y `npm run check` OK (50 archivos). Tarea [task_ec0b56e97d054cd1](apx:tasks/task_ec0b56e97d054cd1).

@@ -98,3 +98,24 @@
 }
 .lightbox .lbx:active{transform:scale(.92)}
 .lightbox .lbx svg{width:20px; height:20px}
+
+/* ---- marca de foto de prueba (solo imágenes de muestra, nunca productos reales) ---- */
+.demo-marca{
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:11px; font-weight:800; letter-spacing:.2px; color:var(--c-yellow-ink);
+  background:var(--c-yellow); border-radius:var(--r-full);
+  padding:4px 9px; box-shadow:var(--sh-1); white-space:nowrap;
+}
+.demo-marca svg{width:12px; height:12px}
+/* etiqueta chica sobre la miniatura/armario de una foto de prueba */
+.demo-marca-foto{
+  position:absolute; left:6px; bottom:6px; z-index:1;
+  font-size:9px; font-weight:800; color:var(--c-yellow-ink);
+  background:color-mix(in srgb,var(--c-yellow) 92%,transparent);
+  border-radius:var(--r-full); padding:2px 6px; letter-spacing:.2px;
+  box-shadow:var(--sh-1); pointer-events:none;
+}
+.lightbox .demo-marca{
+  position:absolute; left:14px; top:calc(18px + var(--safe-t));
+  font-size:12px; padding:6px 12px;
+}

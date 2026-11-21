@@ -6,12 +6,14 @@ import { itemDesdeProducto } from "../nucleo/entidades.js";
 
 export function datosDemo() {
   const di1 = "di1", di2 = "di2", di3 = "di3", di4 = "di4", di5 = "di5";
+  // Fotos ficticias de muestra: se marcan en la UI como "Foto de prueba · Demo".
+  // La superposición en store.js además las muestra en datos viejos guardados.
   const inventory = [
-    { id: di1, name: "Vestido floral", price: 1200, cat: "vestido", photo: null },
-    { id: di2, name: "Camisa blanca", price: 950, cat: "camisa", photo: null },
-    { id: di3, name: "Pantalón negro", price: 1400, cat: "pantalon", photo: null },
-    { id: di4, name: "Abrigo largo", price: 3200, cat: "abrigo", photo: null },
-    { id: di5, name: "Medias lanas", price: 250, cat: "media", photo: null },
+    { id: di1, name: "Vestido floral", price: 1200, cat: "vestido", photo: "./fotos/vestido.jpg" },
+    { id: di2, name: "Camisa blanca", price: 950, cat: "camisa", photo: "./fotos/campera.jpg" },
+    { id: di3, name: "Pantalón negro", price: 1400, cat: "pantalon", photo: "./fotos/jean.jpg" },
+    { id: di4, name: "Abrigo largo", price: 3200, cat: "abrigo", photo: "./fotos/bolso.jpg" },
+    { id: di5, name: "Medias lanas", price: 250, cat: "media", photo: "./fotos/buzo.jpg" },
   ];
   const clients = [
     { id: "dc1", name: "Rosita", tel: "099111222", notas: "" },
