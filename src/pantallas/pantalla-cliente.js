@@ -86,9 +86,9 @@ const HOJA = `
   <button class="btn btn-ghost" id="cli-edit">{{icPencil}} Editar datos del cliente</button>
   {{wa}}
   {{notas}}
-  <div class="sect-titulo">Pendientes ({{nPend}})</div>
+  <div class="sect-titulo">Pendientes de pago ({{nPend}})</div>
   {{filaPend}}
-  <div class="sect-titulo">Hechos ({{nHechos}})</div>
+  <div class="sect-titulo">Pagados ({{nHechos}})</div>
   {{filaHechos}}
   <button class="btn btn-primario" id="cli-new-order">Nuevo pedido para {{primero}}</button>
   <button class="btn btn-ghost" id="cli-cerrar">Cerrar</button>`;

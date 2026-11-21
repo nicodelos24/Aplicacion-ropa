@@ -174,16 +174,33 @@ test("pedidos: los chips filtran por estado y muestran su contador", async () =>
   assert.deepEqual(errores, []);
 });
 
-test("pedidos: búsqueda sin coincidencias muestra el vacío con la consulta", async () => {
+test("pedidos: búsqueda sin coincidencias ofrece Limpiar búsqueda y vuelve a la lista", async () => {
   await reiniciar();
   irA("pedidos");
   qs("#search").value = "zzz";
   qs("#search").dispatchEvent(new w.Event("input", { bubbles: true }));
   assert.match(qs("#main .vacio").textContent, /Sin resultados/);
   assert.match(qs("#main .vacio").textContent, /zzz/);
-  qs("#search").value = "";
-  qs("#search").dispatchEvent(new w.Event("input", { bubbles: true }));
+  assert.match(qs('#main [data-acc="limpiar"]').textContent, /Limpiar búsqueda/);
+  assert.equal(vista.busqueda, "zzz");
+  click('#main [data-acc="limpiar"]');
+  await esperar();
+  assert.equal(qs("#search").value, "", "se limpia el input");
+  assert.equal(vista.busqueda, "", "se limpia el estado de búsqueda");
+  assert.equal(vista.filtro, "all", "vuelve al filtro sin filtrar");
   assert.equal(qsa("#main .card[data-pedido]").length, 5, "vuelve la lista completa");
+  assert.deepEqual(errores, []);
+});
+
+test("contactos: la hoja del cliente nombra Pendientes de pago y Pagados", async () => {
+  await reiniciar();
+  irA("contactos");
+  click('#main .cli[data-id="dc1"]');
+  await esperar();
+  const titulos = qsa("#hoja-in .sect-titulo").map(n => n.textContent);
+  assert.ok(titulos.some(t => /^Pendientes de pago \(\d+\)$/.test(t)), "Pendientes de pago (n)");
+  assert.ok(titulos.some(t => /^Pagados \(\d+\)$/.test(t)), "Pagados (n)");
+  assert.ok(!titulos.some(t => /Hechos|^\s*Pendientes \(/.test(t)), "sin copy viejo");
   assert.deepEqual(errores, []);
 });
 
@@ -228,6 +245,8 @@ test("detalle: cambiar estado pide confirmación, cancelar no muta y aceptar sí
   click('[data-st="paid"]');
   assert.equal(qs("#confirmar").classList.contains("abierta"), true);
   assert.match(qs("#cv-t").textContent, /Cambiar estado/);
+  assert.equal(qs("#cv-yes").textContent, "Marcar como pagado", "CTA aclara el destino Pagado");
+  assert.ok(qs("#cv-yes").classList.contains("neutral"), "confirmación neutral");
   click("#cv-no");
   await esperar();
   assert.equal(store.pedidoPorId("d3").estado, "due", "cancelar no muta");

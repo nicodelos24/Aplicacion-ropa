@@ -99,7 +99,8 @@ export function abrirDetallePedido(id) {
   qsa(".strow .b").forEach(b => b.onclick = async () => {
     if (b.dataset.st === o.estado) return;
     const nk = ESTADOS[b.dataset.st];
-    if (!(await confirmar({ title: `¿Cambiar estado a “${nk.l}”?`, msg: `El pedido de ${o.cliente || "este cliente"} pasa de “${st.l}” a “${nk.l}”.`, ok: "Cambiar estado", danger: false }))) return;
+    const ok = b.dataset.st === "paid" ? "Marcar como pagado" : "Cambiar estado";
+    if (!(await confirmar({ title: `¿Cambiar estado a “${nk.l}”?`, msg: `El pedido de ${o.cliente || "este cliente"} pasa de “${st.l}” a “${nk.l}”.`, ok, danger: false }))) return;
     const r = setEstadoPedido(id, b.dataset.st);
     if (!r.ok) { toast("No se pudo cambiar el estado", "err"); return; }
     /* premio: al pasar a Pagado, celebración breve en vez de un simple toast */

@@ -32,6 +32,13 @@ export function pintarPedidos(main, abrirDetalle) {
   else main.innerHTML = `<div class="stagger">${lista.map(o => cardPedidoHTML(o)).join("")}</div>`;
   cablearCardsPedidos(main, abrirDetalle);
   main.querySelectorAll("[data-acc='nuevo']").forEach(b => b.onclick = () => abrirEditorPedido(null));
+  main.querySelectorAll("[data-acc='limpiar']").forEach(b => b.onclick = () => {
+    vista.busqueda = "";
+    vista.filtro = "all";
+    const search = qs("#search");
+    if (search) search.value = "";
+    emitirVista();
+  });
 }
 
 function pintarChips(cuento) {
@@ -42,7 +49,7 @@ function pintarChips(cuento) {
 }
 
 function vacioHTML(q, filtro) {
-  if (q) return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nada coincide con “${esc(q)}”. Probá con otro nombre o producto.</p></div>`;
+  if (q) return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nada coincide con “${esc(q)}”. Probá con otro nombre o producto.</p><button class="btn btn-primario btn-vacio" data-acc="limpiar">Limpiar búsqueda</button></div>`;
   if (filtro && filtro !== "all") {
     const etiqueta = FILTROS.find(f => f.id === filtro)?.label || filtro;
     return `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.pedidos}</div><b>No hay pedidos con este filtro</b><p>No hay pedidos en “${esc(etiqueta)}”. Probá con otro filtro o registrá uno nuevo.</p><button class="btn btn-primario btn-vacio" data-acc="nuevo">Nuevo pedido</button></div>`;
