@@ -14,6 +14,7 @@ import {
 } from "../nucleo/entidades.js";
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, ordenarPedidos } from "../nucleo/filtros.js";
 import { cargar as cargarLocal, guardar as guardarLocal, borrarTodo, disponible } from "../datos/local.js";
+import { conFotosDemo } from "../datos/fotos-demo.js";
 
 export const ESTADOS_PEDIDO = ESTADOS;
 export const ORDEN = ORDEN_ESTADOS;
@@ -47,20 +48,25 @@ export function boot(datos = null) {
   iniciar(d);
 }
 
-/* ── Lectura (selectores) ── */
-export const db = () => estado;
-export const pedidos = () => ordenarPedidos(estado.orders);
-export const productos = () => estado.inventory;
+/* ── Lectura (selectores) ──
+   Las fotos de muestra se superponen SOLO en la lectura: `estado` (y por lo
+   tanto localStorage/exportar) nunca las ve. Las acciones siguen usando
+   `estado`, así los datos de la clienta no se contaminan. */
+const vistaDemo = () => conFotosDemo(estado);
+export const db = () => vistaDemo();
+export const pedidos = () => ordenarPedidos(vistaDemo().orders);
+export const productos = () => vistaDemo().inventory;
 export const clientes = () => estado.clients;
 export const eventos = () => estado.events;
 export const log = () => estado.log;
 export const conteo = () => conteoFiltros(estado.orders);
 export function pedidosFiltrados(filtro, q) {
-  return buscarPedidos(filtrarPorEstado(ordenarPedidos(estado.orders), filtro), q);
+  return buscarPedidos(filtrarPorEstado(ordenarPedidos(vistaDemo().orders), filtro), q);
 }
+/* el editor debe ver el producto real (sin foto de muestra) para no guardarla como propia */
 export function productoPorId(id) { return estado.inventory.find((p) => p.id === id) || null; }
 export function clientePorId(id) { return estado.clients.find((c) => c.id === id) || null; }
-export function pedidoPorId(id) { return estado.orders.find((p) => p.id === id) || null; }
+export function pedidoPorId(id) { return vistaDemo().orders.find((p) => p.id === id) || null; }
 export function clientePorNombre(nombre) {
   const n = String(nombre || "").trim().toLowerCase();
   if (!n) return null;

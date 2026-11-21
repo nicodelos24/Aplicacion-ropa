@@ -1,5 +1,5 @@
 /* sw.js — Ropa v2: cache-first para estáticos del shell. */
-const CACHE = "ropa-v2-integracion-v2final-r4";
+const CACHE = "ropa-v2-demo-fotos-r5";
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
   "./src/main.js", "./src/main.css",
@@ -7,7 +7,10 @@ const ASSETS = [
   "./src/ui/dom.js", "./src/ui/iconos.js",
   "./src/ui/componentes/componentes.css", "./src/ui/componentes/capas.css",
   "./src/estado/store.js", "./src/estado/vista.js", "./src/datos/demo.js",
-  "./src/datos/local.js", "./src/nucleo/nucleo.js", "./src/nucleo/ids.js",
+  "./src/datos/local.js", "./src/datos/fotos-demo.js",
+  "./fotos/vestido.jpg", "./fotos/campera.jpg", "./fotos/jean.jpg",
+  "./fotos/bolso.jpg", "./fotos/buzo.jpg",
+  "./src/nucleo/nucleo.js", "./src/nucleo/ids.js",
   "./src/nucleo/moneda.js", "./src/nucleo/fechas.js", "./src/nucleo/pedidos.js",
   "./src/nucleo/contacto.js", "./src/nucleo/buscador.js",
 ];

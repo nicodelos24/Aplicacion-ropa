@@ -1,5 +1,6 @@
 // lightbox.js — foto ampliada accesible (Tab queda en el botón, Escape cierra).
 import { ICONO } from "../iconos.js";
+import { esFotoDemo } from "../../datos/fotos-demo.js";
 
 export function abrirLightbox(src) {
   if (!src || document.querySelector(".lightbox")) return;
@@ -9,7 +10,8 @@ export function abrirLightbox(src) {
   ov.setAttribute("role", "dialog");
   ov.setAttribute("aria-modal", "true");
   ov.setAttribute("aria-label", "Foto ampliada");
-  ov.innerHTML = `<button class="lbx" aria-label="Cerrar imagen ampliada">${ICONO.x}</button><img src="${src}" alt="Foto ampliada">`;
+  const marca = esFotoDemo(src) ? `<span class="demo-marca">Foto de prueba · Demo</span>` : "";
+  ov.innerHTML = `${marca}<button class="lbx" aria-label="Cerrar imagen ampliada">${ICONO.x}</button><img src="${src}" alt="Foto ampliada">`;
 
   const fondo = [...document.querySelectorAll(".topbar, main, nav, .fab, .hoja")];
   const inertAntes = fondo.map(el => el.inert);

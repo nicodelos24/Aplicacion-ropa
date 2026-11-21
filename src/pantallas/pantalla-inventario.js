@@ -10,6 +10,7 @@ import { abrirEditorInventario } from "./pantalla-inventario-editor.js";
 import { pintarStats } from "./pantalla-pedidos.js";
 import { categoria } from "../nucleo/catalogo.js";
 import { ICONO, VACIO_SVG, svgCategoria } from "../ui/iconos.js";
+import { esFotoDemo } from "../datos/fotos-demo.js";
 
 export function pintarInventario(main) {
   const d = db();
@@ -23,7 +24,9 @@ export function pintarInventario(main) {
   } else {
     main.innerHTML = `<div class="inv stagger">${lista.map(i => `
       <div class="inv-card" tabindex="0" role="button" aria-label="Ver foto de ${esc(i.name)}" data-id="${i.id}">
-        ${i.photo ? `<img class="inv-foto" src="${esc(i.photo)}" alt="">` : `<div class="inv-ph">${svgCategoria(i.cat)}</div>`}
+        ${i.photo
+          ? `<div class="inv-foto-wrap">${esFotoDemo(i.photo) ? `<span class="demo-marca-foto">DEMO</span>` : ""}<img class="inv-foto" src="${esc(i.photo)}" alt=""></div>`
+          : `<div class="inv-ph">${svgCategoria(i.cat)}</div>`}
         <div class="inv-cuerpo"><h4>${esc(i.name)}</h4><p>${fmt(i.price)}${i.cat ? ` · ${esc(categoria(i.cat).label)}` : ""}</p></div>
         <div class="inv-acciones">
           <button class="e" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ICONO.pencil}</button>

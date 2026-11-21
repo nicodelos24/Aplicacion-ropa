@@ -3,10 +3,11 @@
 import { esc } from "../dom.js";
 import { svgCategoria, ICONO } from "../iconos.js";
 import { total, nombreItem, precioItem, qtyDe } from "../../nucleo/pedidos.js";
+import { esFotoDemo } from "../../datos/fotos-demo.js";
 
 export function miniaturaItem(item) {
   const foto = item.foto ?? item.photo;
-  if (foto) return `<span class="mini"><img src="${esc(foto)}" alt=""></span>`;
+  if (foto) return `<span class="mini ${esFotoDemo(foto) ? "mini-demo" : ""}" title="Foto de prueba · Demo"><img src="${esc(foto)}" alt=""></span>`;
   return `<span class="mini">${svgCategoria(item.categoria)}</span>`;
 }
 
