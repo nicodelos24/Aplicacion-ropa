@@ -91,6 +91,8 @@ function irA(seccion) {
 async function reiniciar() {
   qsa(".lightbox, .celebra").forEach((n) => n.remove());
   qs("#confirmar").classList.remove("abierta");
+  qs("#nav").classList.remove("oculta");
+  qs("#nav").setAttribute("aria-hidden", "false");
   qsa("#main, #hoja, nav, .topbar, .fab").forEach((el) => (el.inert = false));
   d.body.style.overflow = "";
   qs("#hoja").className = "hoja";
@@ -427,6 +429,47 @@ test("tema oscuro: se quita el neon de las tarjetas sin tocar el color ni el mod
   assert.deepEqual(errores, []);
 });
 
+test("nav auto-ocultable: gesto abajo oculta, toque y cambio de sección muestran", async () => {
+  await reiniciar();
+  const nav = qs("#nav");
+  assert.equal(nav.classList.contains("oculta"), false, "arranca visible");
+  /* jsdom no tiene layout: fijamos la geometría del documento a mano */
+  const geo = (y) => {
+    Object.defineProperty(w, "scrollY", { value: y, configurable: true, writable: true });
+    Object.defineProperty(d.documentElement, "clientHeight", { value: 700, configurable: true });
+    Object.defineProperty(d.documentElement, "scrollHeight", { value: 2000, configurable: true });
+  };
+  const scroll = () => w.dispatchEvent(new w.Event("scroll"));
+  const toque = () => w.dispatchEvent(new w.Event("touchstart"));
+
+  geo(100); scroll(); await esperar(20);   // ancla y geometría en y=100
+  toque(); geo(140); scroll(); await esperar(20);  // gesto táctil abajo -> oculta
+  assert.equal(nav.classList.contains("oculta"), true, "gesto abajo oculta");
+  assert.equal(nav.getAttribute("aria-hidden"), "true", "aria-hidden acompaña");
+  /* toque nuevo vuelve a mostrar */
+  toque(); await esperar(20);
+  assert.equal(nav.classList.contains("oculta"), false, "toque muestra");
+  /* cambio de sección también muestra */
+  toque(); geo(300); scroll(); await esperar(20);
+  irA("pedidos"); await esperar(20);
+  assert.equal(nav.classList.contains("oculta"), false, "cambio de sección muestra");
+  assert.deepEqual(errores, []);
+});
+
+test("nav auto-ocultable: transición CSS con transform+opacidad y respeto a reduce-motion", () => {
+  const css = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/componentes.css"), "utf8");
+  const bloque = css.match(/nav\{[\s\S]*?\}/g) || [];
+  const nav = bloque.find((b) => /position:fixed/.test(b)) || "";
+  assert.match(nav, /transform:translateY\(0\)/, "estado visible con transform");
+  assert.match(nav, /opacity:1/, "opacidad visible");
+  assert.match(nav, /transition:transform/, "transición de transform");
+  assert.match(css, /nav\.oculta\{[^}]*transform:translateY\([^}]*opacity:0/, "estado oculto baja y se desvanece");
+  assert.match(css, /@media \(prefers-reduced-motion:reduce\)\{\s*nav\{transition:none\}/, "reduce-motion sin transición");
+  /* el reservado del contenido no depende del estado de la nav */
+  const base = fs.readFileSync(path.join(RAIZ, "src/ui/base.css"), "utf8");
+  assert.match(base, /main::after\{[^}]*height:calc\(var\(--nav-h\) \+ 30px\)/, "reserva fija");
+});
+
 test("PWA: el ícono existe, la app carga como módulo y el service worker cachea el shell", async () => {
   assert.equal(fs.readFileSync(path.join(RAIZ, "favicon.ico")).readUInt32LE(0), 65536);
   assert.match(HTML, /<link rel="icon" href="favicon.ico"/);
@@ -444,7 +487,8 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   /* La versión del caché debe haber cambiado respecto del deploy anterior:
      si queda la vieja, el service worker sirve assets stale y no se ven los cambios. */
   assert.doesNotMatch(sw, /ropa-v2-f0f1-r3/, "la versión de caché no es la stale anterior");
-  assert.match(sw, /const CACHE = "ropa-v2-integracion-v2final-r4"/, "versión de caché actualizada");
+  assert.match(sw, /const CACHE = "ropa-v2-nav-auto-ocultable-r5"/, "versión de caché actualizada");
+  assert.ok(sw.includes("./src/ui/nav-scroll.js"), "el precache incluye la lógica de nav");
   assert.match(sw, /\.\/src\/main\.js/);
   assert.match(sw, /\.\/index\.html/);
   for (const fijo of ["src/estado/store.js", "src/nucleo/pedidos.js", "src/ui/componentes/componentes.css"]) {

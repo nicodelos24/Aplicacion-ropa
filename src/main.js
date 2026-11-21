@@ -18,6 +18,10 @@ import { abrirEditorPedido } from "./pantallas/pantalla-pedido-editor.js";
 import { abrirEditorInventario } from "./pantallas/pantalla-inventario-editor.js";
 import { abrirEditorCliente } from "./pantallas/pantalla-cliente-editor.js";
 import { cerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
+import {
+  estadoInicial, medirScroll, mostrar, ocultarPorInactividad,
+  recorridoRueda, registrarActividad, INACTIVIDAD_MS,
+} from "./ui/nav-scroll.js";
 
 /* arranque: modo demo (?demo=1) o datos locales */
 const DEMO = /[?&]demo=1/.test(location.search);
@@ -35,8 +39,144 @@ const SUBTITULOS = {
 const CON_BUSQUEDA = ["pedidos", "inventario", "contactos"];
 const CON_FAB = ["pedidos", "inventario", "contactos", "agenda"];
 
+/* ---------- nav inferior auto-ocultable ----------
+   Toda la lógica de decisión vive en src/ui/nav-scroll.js (pura, testeada).
+   Acá solo se mide el documento, se marca el gesto del usuario y se aplica
+   la clase en un rAF. Se usan fuentes separadas para no confundir saltos
+   programáticos o inercia de borde con gestos reales. */
+const navEl = qs("#nav");
+let navEstado = estadoInicial();
+let navSesion = { rueda: 0, gestoHasta: 0, ultimoStamp: 0 };
+let navPintado = null;
+let navFrame = 0;
+let navTemporizador = 0;
+const VENTANA_GESTO = 400;
+
+function medirNav() {
+  const d = document.documentElement;
+  return {
+    y: wScrollY(),
+    altoContenido: Math.max(d.scrollHeight, d.clientHeight),
+    altoVisible: d.clientHeight || wInnerHeight(),
+  };
+}
+function wScrollY() { return typeof window !== "undefined" ? window.scrollY || 0 : 0; }
+function wInnerHeight() { return typeof window !== "undefined" ? window.innerHeight || 0 : 0; }
+
+function conGesto(ahora) {
+  return navSesion.arrastrando === true || ahora < navSesion.gestoHasta || navSesion.rueda !== 0;
+}
+function capaAbierta() {
+  return !!(qs("#hoja.abierta") || qs("#confirmar.abierta") || qs(".lightbox"));
+}
+function pintarNav() {
+  navFrame = 0;
+  if (navPintado === navEstado.visible) return;
+  navPintado = navEstado.visible;
+  navEl.classList.toggle("oculta", !navEstado.visible);
+  navEl.setAttribute("aria-hidden", String(!navEstado.visible));
+}
+function programarPintado() {
+  if (!navFrame) navFrame = requestAnimationFrame(pintarNav);
+}
+function reiniciarInactividad(ahora = Date.now()) {
+  navEstado = registrarActividad(navEstado, ahora);
+  clearTimeout(navTemporizador);
+  navTemporizador = setTimeout(() => {
+    if (capaAbierta()) return;
+    navEstado = ocultarPorInactividad(navEstado, Date.now());
+    programarPintado();
+  }, INACTIVIDAD_MS + 30);
+}
+function navMostrar() {
+  navEstado = mostrar(navEstado);
+  navSesion.rueda = 0;
+  navSesion.gestoHasta = 0;
+  reiniciarInactividad();
+  programarPintado();
+}
+function alScrollNav() {
+  const ahora = Date.now();
+  const stamp = wScrollY();
+  if (stamp === navSesion.ultimoStamp) return;   // ruido / doble disparo
+  navSesion.ultimoStamp = stamp;
+  const muestra = medirNav();
+  const gesto = conGesto(ahora) &&
+    navEstado.altoVisible === muestra.altoVisible && navEstado.altoContenido === muestra.altoContenido;
+  navEstado = medirScroll(navEstado, muestra, gesto);
+  if (gesto) reiniciarInactividad(ahora);
+  programarPintado();
+}
+
+/* Rueda: descuenta el recorrido real para no marcar como gesto un borde. */
+window.addEventListener("wheel", e => {
+  if (e.ctrlKey || e.defaultPrevented || !e.deltaY || capaAbierta()) return;
+  const muestra = medirNav();
+  const ahora = Date.now();
+  if (Math.abs(muestra.y - navEstado.ultimoY) > 2) {
+    navEstado = medirScroll(navEstado, muestra, false);  // reancla, no decide
+  }
+  const delta = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? muestra.altoVisible : 1);
+  const restante = ahora < navSesion.gestoHasta && Math.sign(navSesion.rueda) === Math.sign(delta) ? navSesion.rueda : 0;
+  navSesion.rueda = recorridoRueda(muestra, restante + delta);
+  navSesion.gestoHasta = navSesion.rueda ? ahora + VENTANA_GESTO : 0;
+  if (navSesion.rueda) reiniciarInactividad(ahora);
+}, { passive: true });
+
+/* Táctil: arrastre = gesto; inercia de borde queda descartada por el ancla. */
+window.addEventListener("touchstart", e => {
+  if (capaAbierta()) return;
+  navSesion.arrastrando = true;
+  navSesion.rueda = 0;
+  /* El toque SIEMPRE muestra: no armamos la ventana de gesto acá, o el
+     scroll que viene con el mismo toque volvería a ocultar al instante.
+     La ventana se arma en touchmove, cuando hay arrastre real. */
+  navMostrar();
+  navSesion.gestoHasta = 0;
+}, { passive: true });
+window.addEventListener("touchmove", () => {
+  navSesion.gestoHasta = Date.now() + VENTANA_GESTO;
+}, { passive: true });
+const soltarTouch = () => {
+  navSesion.arrastrando = false;
+  navSesion.gestoHasta = Date.now() + VENTANA_GESTO;
+};
+window.addEventListener("touchend", soltarTouch, { passive: true });
+window.addEventListener("touchcancel", soltarTouch, { passive: true });
+
+/* Teclas de scroll también cuentan como gesto. */
+const TECLAS_NAV = new Set(["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "]);
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") return;
+  const objetivo = e.target;
+  if (objetivo && objetivo.closest && objetivo.closest("input, textarea, select, [contenteditable=true]")) return;
+  if (TECLAS_NAV.has(e.key)) navSesion.gestoHasta = Date.now() + VENTANA_GESTO;
+  else navMostrar();
+});
+window.addEventListener("scroll", alScrollNav, { passive: true });
+window.addEventListener("resize", () => {
+  navSesion.rueda = 0;
+  navEstado = medirScroll(navEstado, medirNav(), false);  // reancla sin decidir
+  programarPintado();
+}, { passive: true });
+/* Cualquier interacción (tap en nav, FAB, tema…) vuelve a mostrar. */
+document.addEventListener("pointerdown", e => {
+  if (e.target && e.target.closest && e.target.closest("#nav, #fab, #themeBtn")) navMostrar();
+}, { passive: true });
+/* Abrir una capa siempre deja la nav visible; el temporizador no la oculta. */
+if (typeof MutationObserver !== "undefined") {
+  new MutationObserver(() => {
+    if (capaAbierta()) navMostrar();
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+}
+
+reiniciarInactividad();
+alScrollNav();
+
 function render() {
   const v = vista.seccion;
+  /* cada sección vuelve a arrancar con la nav visible */
+  if (typeof navMostrar === "function") navMostrar();
   qs("#subtitle").textContent = SUBTITULOS[v] || "";
   qsa("#nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
 
