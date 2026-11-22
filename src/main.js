@@ -19,8 +19,8 @@ import { abrirEditorInventario } from "./pantallas/pantalla-inventario-editor.js
 import { abrirEditorCliente } from "./pantallas/pantalla-cliente-editor.js";
 import { cerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
 import {
-  estadoInicial, medirScroll, mostrar, ocultarPorInactividad,
-  recorridoRueda, registrarActividad, INACTIVIDAD_MS,
+  estadoInicial, medirScroll, mostrar, mostrarPorPausa, ocultarPorInactividad,
+  recorridoRueda, registrarActividad, INACTIVIDAD_MS, REAPARICION_MS,
 } from "./ui/nav-scroll.js";
 
 /* arranque: modo demo (?demo=1) o datos locales */
@@ -82,11 +82,23 @@ function programarPintado() {
 function reiniciarInactividad(ahora = Date.now()) {
   navEstado = registrarActividad(navEstado, ahora);
   clearTimeout(navTemporizador);
-  navTemporizador = setTimeout(() => {
-    if (capaAbierta()) return;
-    navEstado = ocultarPorInactividad(navEstado, Date.now());
-    programarPintado();
-  }, INACTIVIDAD_MS + 30);
+  /* Un único temporizador, rearmado en cada gesto: mientras se sigue bajando
+     nunca vence, así la nav no "rebota" a mitad del desplazamiento.
+     Visible → se oculta a los 3 s; oculta → vuelve a los 4,5 s; ya vuelta
+     por pausa → no se reprograma hasta un gesto nuevo (no oscila). */
+  if (navEstado.visible && !navEstado.mostradaPorPausa) {
+    navTemporizador = setTimeout(() => {
+      if (capaAbierta()) return;
+      navEstado = ocultarPorInactividad(navEstado, Date.now());
+      programarPintado();
+    }, INACTIVIDAD_MS + 30);
+  } else if (!navEstado.visible) {
+    navTemporizador = setTimeout(() => {
+      if (capaAbierta()) return;
+      navEstado = mostrarPorPausa(navEstado, Date.now());
+      programarPintado();
+    }, REAPARICION_MS + 30);
+  }
 }
 function navMostrar() {
   navEstado = mostrar(navEstado);

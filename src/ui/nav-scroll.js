@@ -6,6 +6,7 @@ export const UMBRAL = 8;          // px de gesto para cambiar de dirección
 export const ZONA_SUPERIOR = 70;  // cerca del encabezado la nav siempre se ve
 export const TOLERANCIA_BORDE = 2;
 export const INACTIVIDAD_MS = 3000;
+export const REAPARICION_MS = 4500;  // pausa para volver a mostrar la nav oculta
 
 export const estadoInicial = () => ({
   visible: true,
@@ -16,6 +17,8 @@ export const estadoInicial = () => ({
   altoVisible: -1,
   altoContenido: -1,
   vencido: false,
+  mostradaPorPausa: false,
+  ultimaDireccion: 0,   // -1 subiendo, 1 bajando, 0 sin gesto todavía
 });
 
 /** Paso de rueda realmente recorrible (un borde no deja movimiento pendiente). */
@@ -41,11 +44,20 @@ export function medirScroll(estado, { y = 0, altoVisible = 0, altoContenido = 0 
     return { ...base, ancla: yLim, visible: estado.visible, vencido: false };
   }
   const delta = yLim - estado.ancla;
+  /* Inercia de rueda/touch: el animador sigue emitiendo scroll después del
+     gesto, con deltas cada vez más chicos. No revertir la decisión ya tomada
+     mientras sigamos yendo en la misma dirección: es el rebote que se veía
+     al bajar rápido (se ocultaba, volvía, se volvía a ocultar). */
+  if (Math.abs(delta) > UMBRAL &&
+      !(estado.ultimaDireccion < 0 && delta < 0) &&
+      !(estado.ultimaDireccion > 0 && delta > 0)) {
+    base.mostradaPorPausa = false;
+  }
   if (yLim <= TOLERANCIA_BORDE || delta < -UMBRAL) {
-    return { ...base, ancla: yLim, visible: true, vencido: false };
+    return { ...base, ancla: yLim, visible: true, vencido: false, ultimaDireccion: -1 };
   }
   if (yLim > ZONA_SUPERIOR && delta > UMBRAL) {
-    return { ...base, ancla: yLim, visible: false, vencido: false };
+    return { ...base, ancla: yLim, visible: false, vencido: false, ultimaDireccion: 1 };
   }
   // Pasos chicos (trackpad): conservar el ancla y acumular hasta el umbral.
   return { ...base, ancla: estado.ancla, vencido: false };
@@ -53,13 +65,22 @@ export function medirScroll(estado, { y = 0, altoVisible = 0, altoContenido = 0 
 
 /** Al vencer la inactividad solo oculta si hay scroll y no hay capa abierta. */
 export function ocultarPorInactividad(estado, ahora, capaAbierta = false) {
-  if (capaAbierta || !estado.scrolleado || ahora - estado.ultimaActividad < INACTIVIDAD_MS) return estado;
+  if (capaAbierta || estado.mostradaPorPausa || !estado.scrolleado ||
+      ahora - estado.ultimaActividad < INACTIVIDAD_MS) return estado;
   return { ...estado, visible: false, vencido: true, ancla: estado.ultimoY };
+}
+
+/** Tras una pausa, devuelve la nav sin volver a ocultarla hasta un gesto nuevo. */
+export function mostrarPorPausa(estado, ahora, capaAbierta = false) {
+  if (capaAbierta || estado.visible || !estado.scrolleado ||
+      ahora - estado.ultimaActividad < REAPARICION_MS) return estado;
+  return { ...mostrar(estado), mostradaPorPausa: true, ultimaDireccion: 0 };
 }
 
 /** Cualquier interacción del usuario: volver a mostrar y reiniciar el ancla. */
 export function mostrar(estado) {
-  return { ...estado, visible: true, vencido: false, ancla: estado.ultimoY };
+  return { ...estado, visible: true, vencido: false, mostradaPorPausa: true,
+    ultimaDireccion: 0, ancla: estado.ultimoY };
 }
 
 /** Actividad sin gesto de scroll: reinicia el reloj sin cambiar la dirección. */
