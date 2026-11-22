@@ -184,7 +184,14 @@ function render() {
   qsa("#nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
 
   const main = qs("#main");
-  main.classList.remove("vista"); void main.offsetWidth; main.classList.add("vista");
+  /* Reinicia la animación de entrada sin forzar layout: `void offsetWidth`
+     provocaba un reflow sincrónico en cada cambio de sección. Cancelar la
+     animación, quitar la clase y hacer una lectura de ESTILO (no de layout)
+     antes de volver a ponerla logra el mismo reinicio a menor costo. */
+  if (typeof main.getAnimations === "function") main.getAnimations().forEach(a => a.cancel());
+  main.classList.remove("vista");
+  void getComputedStyle(main).animationName;
+  main.classList.add("vista");
 
   qs("#searchrow").style.display = CON_BUSQUEDA.includes(v) ? "flex" : "none";
   qs("#chips").style.display = v === "pedidos" ? "flex" : "none";
