@@ -673,15 +673,17 @@ nav{
 }
 /* oculta al scrollear abajo o tras inactividad; el reservado de main::after no cambia */
 nav.oculta{transform:translateY(calc(100% + 22px + var(--safe-b))); opacity:0; pointer-events:none}
-nav.oculta button{visibility:hidden}
+/* visibility no interpola: el delay iguala la duración del transform para que
+   los íconos sigan visibles al deslizarse; al mostrar vuelve en el mismo frame. */
+nav.oculta button{visibility:hidden; transition:visibility 0s linear var(--t-med), color var(--t-med), transform var(--t-fast) var(--spring), background var(--t-med)}
 @media (prefers-reduced-motion:reduce){
   nav{transition:none}
 }
 nav button{
   flex:1 1 0; min-width:0; min-height:52px; height:54px; border-radius:18px;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-  color:var(--mut); font-size:0; font-weight:700; position:relative;
-  transition:color var(--t-med), transform var(--t-fast) var(--spring), background var(--t-med);
+  color:var(--mut); font-size:0; font-weight:700; position:relative; visibility:visible;
+  transition:visibility 0s, color var(--t-med), transform var(--t-fast) var(--spring), background var(--t-med);
 }
 nav button:active{transform:scale(.92)}
 nav button svg{width:23px; height:23px; stroke-width:1.9; transition:transform var(--t-med) var(--spring)}

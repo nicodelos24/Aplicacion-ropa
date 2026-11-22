@@ -18,7 +18,7 @@
   border:1px solid var(--line); border-bottom:none;
   box-shadow:var(--sh-3), var(--inset-hair);
   padding:10px 18px calc(24px + var(--safe-b));
-  animation:hojaEntra .44s var(--spring) both;
+  animation:hojaEntra 220ms var(--spring) both;
 }
 @keyframes hojaEntra{from{transform:translateY(100%)} to{transform:none}}
 .hoja.arrastrando .hoja-in{animation:none; transition:transform var(--t-fast) linear}

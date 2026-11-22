@@ -53,7 +53,7 @@
   --blur:saturate(1.45) blur(22px);
 
   /* ---- motion ---- */
-  --t-fast:120ms; --t-med:210ms; --t-slow:340ms;
+  --t-fast:120ms; --t-med:210ms; --t-slow:200ms;
   --ease:cubic-bezier(.2,.8,.2,1);
   --ease-out:cubic-bezier(.22,1,.36,1);
   --spring:cubic-bezier(.34,1.42,.5,1);
