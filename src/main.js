@@ -18,6 +18,7 @@ import { abrirEditorPedido } from "./pantallas/pantalla-pedido-editor.js";
 import { abrirEditorInventario } from "./pantallas/pantalla-inventario-editor.js";
 import { abrirEditorCliente } from "./pantallas/pantalla-cliente-editor.js";
 import { cerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
+import { ocultarToast } from "./ui/componentes/toast.js";
 import {
   estadoInicial, medirScroll, mostrar, mostrarPorPausa, ocultarPorInactividad,
   recorridoRueda, registrarActividad, INACTIVIDAD_MS, REAPARICION_MS,
@@ -190,6 +191,8 @@ alScrollNav();
 
 function render() {
   const v = vista.seccion;
+  /* ningún aviso queda flotando sobre el header al cambiar de sección */
+  ocultarToast();
   /* cada sección vuelve a arrancar con la nav visible */
   if (typeof navMostrar === "function") navMostrar();
   qs("#subtitle").textContent = SUBTITULOS[v] || "";

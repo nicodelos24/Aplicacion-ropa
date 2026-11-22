@@ -222,3 +222,38 @@ test("cliente conocido se detecta por nombre al crear pedido", () => {
   const r = store.crearPedido({ cliente: "lucía", items: [{ productoId: "di3" }] }, U);
   assert.equal(r.pedido.clienteId, "dc3", "case-insensitive");
 });
+
+test("editar pedido vincula el clienteId al nombre de una clienta registrada", () => {
+  storeTest();
+  store.boot(datosDemo());
+  /* d2 es de Paco (dc2); se cambia el nombre a Rosita (dc1). */
+  assert.equal(store.pedidoPorId("d2").clienteId, "dc2");
+  const r = store.editarPedido("d2", { cliente: "Rosita" }, U);
+  assert.ok(r.ok);
+  assert.equal(r.pedido.clienteId, "dc1", "se resuelve por nombre al editar");
+  assert.equal(store.pedidoPorId("d2").clienteId, "dc1", "persistido");
+  assert.equal(store.pedidoPorId("d2").cliente, "Rosita");
+  /* aparece en la hoja de Rosita y ya no en la de Paco (núcleo de contacto). */
+  assert.ok(store.pedidos().filter(p => p.clienteId === "dc1").some(p => p.id === "d2"));
+  assert.equal(store.pedidos().filter(p => p.clienteId === "dc2").some(p => p.id === "d2"), false);
+});
+
+test("editar pedido con nombre nuevo deja el vínculo sin clienta (pedido suelto)", () => {
+  storeTest();
+  store.boot(datosDemo());
+  const r = store.editarPedido("d2", { cliente: "Clienta Nueva Sin Registro" }, U);
+  assert.ok(r.ok);
+  assert.equal(r.pedido.clienteId, null, "nombre nuevo no se vincula");
+  assert.equal(store.pedidoPorId("d2").clienteId, null, "persistido sin vínculo");
+  assert.equal(store.clientePorNombre("Clienta Nueva Sin Registro"), null, "no se crea clienta automáticamente");
+});
+
+test("editar pedido resuelve clienteId con mayúsculas/espacios y conserva el id del pedido", () => {
+  storeTest();
+  store.boot(datosDemo());
+  const r = store.editarPedido("d2", { cliente: "  LUCÍA  " }, U);
+  assert.ok(r.ok);
+  assert.equal(r.pedido.clienteId, "dc3", "case-insensitive y sin espacios");
+  assert.equal(r.pedido.id, "d2", "no cambia la identidad del pedido");
+  assert.ok(r.pedido.created, "conserva la fecha de creación");
+});
