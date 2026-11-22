@@ -6,7 +6,7 @@ export const UMBRAL = 8;          // px de gesto para cambiar de dirección
 export const ZONA_SUPERIOR = 70;  // cerca del encabezado la nav siempre se ve
 export const TOLERANCIA_BORDE = 2;
 export const INACTIVIDAD_MS = 3000;
-export const REAPARICION_MS = 4500;  // pausa para volver a mostrar la nav oculta
+export const REAPARICION_MS = 500;   // pausa para volver a mostrar la nav oculta
 
 export const estadoInicial = () => ({
   visible: true,
@@ -48,7 +48,7 @@ export function medirScroll(estado, { y = 0, altoVisible = 0, altoContenido = 0 
      gesto, con deltas cada vez más chicos. No revertir la decisión ya tomada
      mientras sigamos yendo en la misma dirección: es el rebote que se veía
      al bajar rápido (se ocultaba, volvía, se volvía a ocultar). */
-  if (Math.abs(delta) > UMBRAL &&
+  if (estado.visible && Math.abs(delta) > UMBRAL &&
       !(estado.ultimaDireccion < 0 && delta < 0) &&
       !(estado.ultimaDireccion > 0 && delta > 0)) {
     base.mostradaPorPausa = false;
@@ -60,7 +60,7 @@ export function medirScroll(estado, { y = 0, altoVisible = 0, altoContenido = 0 
     return { ...base, ancla: yLim, visible: false, vencido: false, ultimaDireccion: 1 };
   }
   // Pasos chicos (trackpad): conservar el ancla y acumular hasta el umbral.
-  return { ...base, ancla: estado.ancla, vencido: false };
+  return { ...base, ancla: estado.ancla, vencido: false, ultimaDireccion: estado.ultimaDireccion };
 }
 
 /** Al vencer la inactividad solo oculta si hay scroll y no hay capa abierta. */

@@ -1,5 +1,5 @@
 /* sw.js — Ropa v2: cache-first para estáticos del shell. */
-const CACHE = "ropa-v2-nav-pausa-r10";
+const CACHE = "ropa-v2-nav-pausa-r11";
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
   "./src/main.js", "./src/main.css",
