@@ -73,6 +73,15 @@ export function clientePorNombre(nombre) {
   return estado.clients.find((c) => String(c.name).trim().toLowerCase() === n) || null;
 }
 
+/* Alta y edición comparten la regla: el vínculo se resuelve por el nombre final.
+   Si el nombre no coincide con ninguna clienta, queda sin vínculo (pedido suelto):
+   no se crea clienta nueva automáticamente. */
+function vincularCliente(pedido) {
+  const cl = clientePorNombre(pedido.cliente);
+  pedido.clienteId = cl ? cl.id : null;
+  return pedido;
+}
+
 /* ── Mutación privada + persistencia ── */
 function set(mutador, { log: accion, detail, usuario } = {}) {
   const previo = estado;
@@ -106,8 +115,7 @@ export function crearPedido(datos, usuario) {
     return { ...itemDesdeProducto(existente, i.qty), foto: i.foto || existente.photo || null };
   });
   if (!pedido.items.length) return { ok: false, error: "Agrega al menos un producto" };
-  const cl = clientePorNombre(pedido.cliente);
-  if (cl) pedido.clienteId = cl.id;
+  vincularCliente(pedido);
   if (pedido.estado === "due") pedido.estado = cuotasCompletas(pedido) ? "paid" : "due";
   pedido.estado = estadoAlGuardar(pedido);
   const r = set((d) => { d.orders = [...d.orders, pedido]; }, {
@@ -132,6 +140,8 @@ export function editarPedido(id, datos, usuario) {
     ...original, ...datos, items: items.map((i) => normalizarItem(i, estado.inventory)),
     id: original.id, created: original.created,
   };
+  // El vínculo con la clienta se resuelve por el nombre final (fix clienteId).
+  vincularCliente(actualizado);
   actualizado.estado = estadoAlGuardar(actualizado);
   const r = set((d) => { d.orders = d.orders.map((p) => (p.id === id ? actualizado : p)); }, {
     log: "order_edit", detail: `${actualizado.cliente} · ${fmt(total(actualizado))}`, usuario,
