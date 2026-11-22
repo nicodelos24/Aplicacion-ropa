@@ -297,8 +297,17 @@ test("agenda: alternador Calendario ↔ Semanas y franja LU…DO con un solo dí
   assert.equal(qsa("#main .card[data-pedido]").length, 0, "sin selección no se listan tarjetas");
   assert.match(qs("#main .nota-vacia").textContent, /Tocá un día/, "invita a tocar un día");
 
-  /* Tocar un día con pedidos: SOLO sus cards, con encabezado de ese día. */
-  const conPedido = dias.find((x) => x.querySelectorAll(".sem-dots i").length > 0);
+  /* Las fechas demo son relativas a hoy: si hoy es domingo, la franja actual no
+     tiene entregas (todas caen en la semana siguiente). En ese caso navegamos
+     una semana: el ancla queda seleccionada, así que elegimos otro día con
+     puntos para probar el toggle sin depender del día en que corra el test. */
+  let conPedido = dias.find((x) => x.querySelectorAll(".sem-dots i").length > 0);
+  if (!conPedido) {
+    click("#sem-next");
+    await esperar();
+    const ancla = qs("#main .sem-dia.sel");
+    conPedido = qsa("#main .sem-dia").find((x) => x !== ancla && x.querySelectorAll(".sem-dots i").length > 0);
+  }
   assert.ok(conPedido, "algún día tiene puntos de pedido");
   const dsElegido = conPedido.dataset.ds;
   const esperados = store.pedidos().filter((o) => o.fecha === dsElegido).map((o) => o.id).sort();
