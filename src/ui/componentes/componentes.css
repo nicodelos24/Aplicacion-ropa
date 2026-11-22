@@ -281,7 +281,7 @@ fieldset{border:none}
 .cal-dia{min-height:44px}
 .cal-grid .dow{font-size:10px; color:var(--mut); padding:4px 0 6px; font-weight:800; letter-spacing:.6px}
 .cal-dia{
-  aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-width:0; aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   font-size:13px; border-radius:12px; position:relative; cursor:pointer; padding-bottom:5px; font-weight:600;
   transition:transform var(--t-fast) var(--spring), background var(--t-fast), box-shadow var(--t-fast), color var(--t-fast);
 }
