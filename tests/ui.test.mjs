@@ -89,6 +89,9 @@ function irA(seccion) {
 
 /* Reinicio: demo limpia, sin hoja/lightbox/confirmación abiertas, Inicio. */
 async function reiniciar() {
+  /* cerrarHoja() termina 180 ms después: si el test anterior guardó y cerró la
+     hoja, esperar a que el flag interno se limpie para no dejarlo colgante. */
+  if (qs("#hoja").classList.contains("cerrando")) await esperar(200);
   qsa(".lightbox, .celebra").forEach((n) => n.remove());
   qs("#confirmar").classList.remove("abierta");
   qs("#nav").classList.remove("oculta");
