@@ -5,7 +5,7 @@ import { desplazarDias } from "../nucleo/fechas.js";
 import { itemDesdeProducto } from "../nucleo/entidades.js";
 
 export function datosDemo() {
-  const di1 = "di1", di2 = "di2", di3 = "di3", di4 = "di4", di5 = "di5";
+  const di1 = "di1", di2 = "di2", di3 = "di3", di4 = "di4", di5 = "di5", di6 = "di6";
   // Fotos ficticias de muestra: se marcan en la UI como "Foto de prueba · Demo".
   // La superposición en store.js además las muestra en datos viejos guardados.
   const inventory = [
@@ -14,6 +14,7 @@ export function datosDemo() {
     { id: di3, name: "Pantalón negro", price: 1400, cat: "pantalon", photo: "./fotos/jean.jpg" },
     { id: di4, name: "Abrigo largo", price: 3200, cat: "abrigo", photo: "./fotos/bolso.jpg" },
     { id: di5, name: "Medias lanas", price: 250, cat: "media", photo: "./fotos/buzo.jpg" },
+    { id: di6, name: "Corbata", price: 300, cat: "otro", photo: "./fotos/remera.jpg" },
   ];
   const clients = [
     { id: "dc1", name: "Rosita", tel: "099111222", notas: "" },
@@ -31,7 +32,7 @@ export function datosDemo() {
     pedido({
       id: "d2", created: Date.now() - 86400000 * 6, cliente: "Paco", clienteId: "dc2", tel: "098765432",
       estado: "msg", cuotas: 2, cuotasPagadas: 0, notas: "Entregar en el trabajo", fecha: desplazarDias(4),
-      items: [itemDesdeProducto(inventory[1]), itemDesdeProducto({ id: di5, name: "Corbata", price: 300, cat: "otro", photo: null })],
+      items: [itemDesdeProducto(inventory[1]), itemDesdeProducto(inventory[5])],
     }),
     pedido({
       id: "d3", created: Date.now() - 86400000 * 4, cliente: "Lucía", clienteId: "dc3", tel: "099000111",

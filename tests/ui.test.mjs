@@ -133,7 +133,7 @@ test("navegación: las 7 secciones pintan su pantalla y mueven la pestaña activ
   irA("pedidos");
   assert.equal(qsa("#main .card[data-pedido]").length, 5, "5 pedidos demo");
   irA("inventario");
-  assert.equal(qsa("#main .inv-card").length, 5, "5 productos demo");
+  assert.equal(qsa("#main .inv-card").length, 6, "6 productos demo");
   assert.deepEqual(errores, []);
 });
 
@@ -527,8 +527,8 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.match(sw, /const CACHE = "ropa-v2-[\w-]+"/, "versión de caché con prefijo de proyecto");
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
-  assert.match(sw, /const CACHE = "ropa-v2-nav-2000ms-toast-r17"/, "el caché se refresca al bajar la reaparición de la nav a 2 s");
-  assert.doesNotMatch(sw, /ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15|ropa-v2-nav-2500ms-toast-r16/, "la versión de caché no queda en la de publicaciones anteriores");
+  assert.match(sw, /const CACHE = "ropa-v2-paco-corbata-r18"/, "el caché se refresca con el fix de datos demo del pedido de Paco");
+  assert.doesNotMatch(sw, /ropa-v2-nav-2000ms-toast-r17|ropa-v2-nav-2500ms-toast-r16|ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15/, "la versión de caché no queda en la de publicaciones anteriores");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
   assert.ok(sw.includes("./src/ui/nav-scroll.js"), "el precache incluye la lógica de nav");
   assert.match(sw, /\.\/src\/main\.js/);
@@ -540,6 +540,27 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   for (const foto of ["vestido", "campera", "jean", "bolso", "buzo"]) {
     assert.ok(sw.includes("./fotos/" + foto + ".jpg"), "el precache incluye la foto " + foto);
   }
+});
+
+test("editor: pedido de Paco abre con Camisa blanca + Corbata ($1,250) y no Medias lanas (regresión)", async () => {
+  await reiniciar();
+  irA("pedidos");
+  // d2 = Paco, Camisa blanca ($950) + Corbata ($300) → $1,250
+  click('#main .card[data-pedido="d2"]');
+  await esperar();
+  assert.match(qs("#hoja-in").textContent, /\$1,250/, "detalle muestra $1,250");
+  click("#hEdit");
+  await esperar();
+  assert.match(qs("#hoja-in").textContent, /Editar pedido/);
+  assert.equal(qs("#ftotal").textContent, "$1,250", "el editor conserva el total del pedido de Paco");
+  const picksOn = qsa("#mode-inv .pick.on h5").map((n) => n.textContent.trim());
+  assert.deepEqual(picksOn, ["Camisa blanca", "Corbata"], "los productos seleccionados son Camisa blanca y Corbata");
+  assert.ok(!picksOn.includes("Medias lanas"), "NO aparece Medias lanas");
+  // los snapshots por productoId son correctos (Corbata $300, no $250 de Medias)
+  const pedido = store.pedidoPorId("d2");
+  assert.deepEqual(pedido.items.map((i) => i.productoId), ["di2", "di6"]);
+  assert.deepEqual(pedido.items.map((i) => i.precio), [950, 300]);
+  assert.deepEqual(errores, []);
 });
 
 test("editor: pedido de Rosita abre con 2× Medias lanas y Total $500, y guardar no lo baja (regresión)", async () => {

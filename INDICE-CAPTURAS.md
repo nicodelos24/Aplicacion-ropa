@@ -208,6 +208,15 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 - **2 capturas de Flor** en `capturas/2026-11-22/`: [Editor de Rosita con Cantidad 2](capturas/2026-11-22/flor-importe-editor-rosita-editor-qty2.png) · [Guardado: Rosita conserva $500](capturas/2026-11-22/flor-importe-editor-rosita-guardado-500.png). Datos demo, sin clientas reales. Reemplazan al par `flor-importe-editor-antes/despues.png`, que mostraba Lucía/$1,400 y era engañoso.
 - Verificado en pantalla por Flor en la revisión final: el editor abre con Cantidad 2 y Total $500, guardar conserva $500 y la tarjeta sigue legible a 320 px. `npm test` 75/75 y `npm run check` OK (53 archivos), incluidas dos pruebas de regresión nuevas en `tests/store.test.mjs` y `tests/ui.test.mjs`. Chrome del proyecto soltado por Flor.
 
+## Pedido de Paco: editor muestra Corbata, no Medias lanas · Dino · 2026-11-22
+
+- Rama `fix/paco-corbata-demo`, worktree `.worktrees/paco-corbata-demo`, base `origin/master` `6ae89eb` (rebaseado; integra el fix de nav a 2 s). Caché del service worker `ropa-v2-paco-corbata-r18`. Hallazgo NEW de la ronda «romper y pulir» de Flor, captura de origen `capturas/2026-11-22/qa-editor-paco-productos-incorrectos.png`; tarea `task_6e880409d7e74577`.
+- **Causa**: en `demo.js` el ítem Corbata del pedido `d2` de Paco usaba `id: di5`, que en el inventario demo es «Medias lanas». El editor reconstruye la selección por `productoId`, así que mostraba Camisa blanca + Medias lanas ($1,200) en vez de Camisa blanca + Corbata ($1,250). Sin tocar las reglas del store ni del editor.
+- **Fix (solo datos demo)**: Corbata tiene id propio `di6` y entra al inventario demo con nombre/precio/categoría (`otro`) y foto de muestra ficticia (`fotos/remera.jpg`, ya existente); el pedido `d2` referencia `inventory[5]`. Se sumó `di6` a `fotos-demo.js` para la marca «Foto de prueba · Demo». Sin datos reales.
+- Verificado en demo local (`?demo=1`, Chrome del proyecto, tras limpiar el service worker stale): editor de Paco muestra **Camisa blanca $950 + Corbata $300 = Total $1,250**, sin Medias lanas. El detalle del pedido sigue mostrando $1,250 y «Camisa blanca · Corbata». 0 errores de consola.
+- **1 captura** (demo local, 390 css): [Editor de Paco con Camisa blanca + Corbata $1,250](capturas/2026-11-22/qa-editor-paco-productos-corregidos.png).
+- Pruebas: regresión nueva en `tests/ui.test.mjs` (abre el editor de `d2`, verifica productos, ids y precios); `npm test` 82/82 y `npm run check` OK (53 archivos).
+
 ## Barra inferior: reaparición a 2,5 s · Amber · 2026-11-22 · revisión visual aprobada por Nico
 
 - Pedido de Nico 22-nov vía Nova: la barra auto-ocultable debe reaparecer a los 2–3 s en vez de a los 0,5 s actuales. Valor elegido: **2500 ms** (`REAPARICION_MS` en `src/ui/nav-scroll.js`). Rama `fix/nav-reaparicion-2500ms` desde `origin/master` `2db834e`, integrada por merge con el fix del toast y el vínculo clienteId ya publicados. Caché del service worker `ropa-v2-nav-2500ms-toast-r16` (r15 ya estaba publicada por el fix del toast). Sin tocar base de datos, datos reales ni fotos.

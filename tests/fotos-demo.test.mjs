@@ -18,7 +18,7 @@ function localStorageSim() {
   };
 }
 
-test("demo.js asigna foto a los 5 productos (di1..di5) y el snapshot la copia a los pedidos", () => {
+test("demo.js asigna foto a los 6 productos (di1..di6) y el snapshot la copia a los pedidos", () => {
   const datos = datosDemo();
   for (const p of datos.inventory) {
     assert.ok(p.photo && p.photo.startsWith("./fotos/"), p.id + " tiene foto de muestra");
