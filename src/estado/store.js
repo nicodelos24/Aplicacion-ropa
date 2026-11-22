@@ -10,7 +10,7 @@ import {
 import { CATEGORIAS_IDS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import {
   itemDesdeProducto, itemAMano, pedidoNuevo, pedidoDesdeDatos, productoNuevo, clienteNuevo,
-  eventoNuevo, entradaLog, LOG_MAX,
+  eventoNuevo, entradaLog, LOG_MAX, normalizarItem,
 } from "../nucleo/entidades.js";
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, ordenarPedidos } from "../nucleo/filtros.js";
 import { cargar as cargarLocal, guardar as guardarLocal, borrarTodo, disponible } from "../datos/local.js";
@@ -125,7 +125,13 @@ function clienteProductoPorNombre(nombre) {
 export function editarPedido(id, datos, usuario) {
   const original = pedidoPorId(id);
   if (!original) return { ok: false, error: "Pedido inexistente" };
-  const actualizado = { ...original, ...datos, id: original.id, created: original.created };
+  // Red de seguridad: si el llamador no mandó ítems, se conservan los originales;
+  // si los mandó, se normaliza cada uno para no perder su cantidad (qty >= 1).
+  const items = Array.isArray(datos.items) && datos.items.length ? datos.items : original.items;
+  const actualizado = {
+    ...original, ...datos, items: items.map((i) => normalizarItem(i, estado.inventory)),
+    id: original.id, created: original.created,
+  };
   actualizado.estado = estadoAlGuardar(actualizado);
   const r = set((d) => { d.orders = d.orders.map((p) => (p.id === id ? actualizado : p)); }, {
     log: "order_edit", detail: `${actualizado.cliente} · ${fmt(total(actualizado))}`, usuario,

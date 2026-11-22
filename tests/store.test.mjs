@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as store from "../src/estado/store.js";
 import { datosDemo } from "../src/datos/demo.js";
+import { total } from "../src/nucleo/pedidos.js";
 
 /** Store en memoria (sin localStorage): base limpia por test. */
 function storeTest() {
@@ -95,6 +96,40 @@ test("crear pedido sin productos se rechaza sin mutar (P1: bloquear sin corrompe
   assert.equal(r.ok, false);
   /* db() devuelve una vista con fotos demo (copia), así que comparamos contenido. */
   assert.deepEqual(store.db(), antes, "estado intacto");
+});
+
+test("editar pedido con qty=2 conserva cantidad y total $500 (regresión medias lanas)", () => {
+  storeTest();
+  store.boot(datosDemo());
+  const antes = store.pedidoPorId("d4");
+  // d4 = Rosita, 2× Medias lanas ($250 c/u) → $500
+  assert.equal(antes.items.length, 1);
+  assert.equal(antes.items[0].qty, 2);
+  assert.equal(total(antes), 500);
+
+  // el editor guarda un cambio de estado mandando los mismos ítems con su qty
+  const r = store.editarPedido("d4", {
+    cliente: "Rosita", estado: "new", cuotas: 2, cuotasPagadas: 0,
+    items: antes.items.map((i) => ({ ...i })),
+  }, U);
+  assert.ok(r.ok);
+  const despues = store.pedidoPorId("d4");
+  assert.equal(despues.items.length, 1, "sigue siendo una tarjeta");
+  assert.equal(despues.items[0].qty, 2, "conserva la cantidad ×2");
+  assert.equal(despues.items[0].precio, 250, "conserva el precio unitario");
+  assert.equal(despues.estado, "new", "aplica el cambio pedido");
+  // total calculado con qty sigue siendo $500 (250 × 2)
+  assert.equal(total(despues), 500, "el total NO baja a $250");
+});
+
+test("editar pedido sin mandar items no borra las cantidades (red de seguridad)", () => {
+  storeTest();
+  store.boot(datosDemo());
+  const r = store.editarPedido("d4", { estado: "new", cuotas: 2, cuotasPagadas: 0 }, U);
+  assert.ok(r.ok);
+  const despues = store.pedidoPorId("d4");
+  assert.equal(despues.items[0].qty, 2, "conserva qty aunque el llamador omita items");
+  assert.equal(total(despues), 500);
 });
 
 test("homónimos: dos productos de mismo nombre, total por snapshot (QA v1 $300)", () => {

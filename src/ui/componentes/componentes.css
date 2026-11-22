@@ -194,6 +194,18 @@ fieldset{border:none}
 .pick .thumb.ph svg{width:22px; height:22px}
 .pick h5{font-size:12px; line-height:1.3; font-weight:650; overflow-wrap:anywhere}
 .pick p{font-size:11.5px; color:var(--acc-text); margin-top:3px; font-weight:800; font-variant-numeric:tabular-nums}
+/* stepper de cantidad dentro de la tarjeta seleccionada del editor */
+.pick .qtystep{
+  position:absolute; left:6px; top:6px; z-index:2; display:inline-flex; align-items:center;
+  border-radius:var(--r-full); background:var(--acc); color:var(--acc-ink);
+  box-shadow:var(--sh-acc); overflow:hidden; height:24px;
+}
+.pick .qtystep button{
+  border:0; background:transparent; color:inherit; font-weight:800; line-height:1;
+  width:22px; height:24px; padding:0; font-size:15px; cursor:pointer;
+}
+.pick .qtystep button:active{background:color-mix(in srgb,var(--acc-ink) 18%,transparent)}
+.pick .qtystep b{min-width:15px; text-align:center; font-size:12px; font-variant-numeric:tabular-nums}
 
 /* ==================== FAB ==================== */
 .fab{

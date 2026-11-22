@@ -524,7 +524,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.match(sw, /const CACHE = "ropa-v2-[\w-]+"/, "versión de caché con prefijo de proyecto");
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
-  assert.match(sw, /const CACHE = "ropa-v2-calendario-r1[23]"/, "el caché se refresca con el fix del calendario");
+  assert.match(sw, /const CACHE = "ropa-v2-pedido-cantidad-r14"/, "el caché se refresca con el fix de cantidad del editor");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
   assert.ok(sw.includes("./src/ui/nav-scroll.js"), "el precache incluye la lógica de nav");
   assert.match(sw, /\.\/src\/main\.js/);
@@ -536,4 +536,31 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   for (const foto of ["vestido", "campera", "jean", "bolso", "buzo"]) {
     assert.ok(sw.includes("./fotos/" + foto + ".jpg"), "el precache incluye la foto " + foto);
   }
+});
+
+test("editor: pedido de Rosita abre con 2× Medias lanas y Total $500, y guardar no lo baja (regresión)", async () => {
+  await reiniciar();
+  irA("pedidos");
+  // d4 = Rosita, 2× Medias lanas ($250 c/u) → $500
+  click('#main .card[data-pedido="d4"]');
+  await esperar();
+  assert.match(qs("#hoja-in").textContent, /\$500/, "detalle muestra $500");
+  click("#hEdit");
+  await esperar();
+  // el editor reconstruye la cantidad desde orig.items
+  assert.match(qs("#hoja-in").textContent, /Editar pedido/);
+  assert.equal(qs("#ftotal").textContent, "$500", "el editor NO baja el total a $250");
+  const stepper = qs("#mode-inv .qtystep b");
+  assert.ok(stepper, "la tarjeta seleccionada muestra el stepper de cantidad");
+  assert.equal(stepper.textContent.trim(), "2", "muestra la cantidad ×2");
+  const pickOn = qsa("#mode-inv .pick.on");
+  assert.equal(pickOn.length, 1, "una sola tarjeta de producto, con cantidad 2");
+  // guardar solo el estado: el pedido conserva cantidad y total
+  click("#saveBtn");
+  await esperar();
+  const despues = store.pedidoPorId("d4");
+  assert.equal(despues.items.length, 1);
+  assert.equal(despues.items[0].qty, 2, "qty conservado tras guardar");
+  assert.equal(despues.items[0].precio, 250);
+  assert.deepEqual(errores, []);
 });

@@ -4,7 +4,7 @@
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, parseMoneda, esPrecioValido } from "../nucleo/moneda.js";
-import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, estadoAlGuardar } from "../nucleo/pedidos.js";
+import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, estadoAlGuardar, qtyDe, subtotalItem } from "../nucleo/pedidos.js";
 import { maskTel } from "../nucleo/contacto.js";
 import { CATEGORIAS } from "../nucleo/catalogo.js";
 import {
@@ -27,18 +27,35 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     clienteId: presetCliente ? presetCliente.id : null,
     estado: "new", items: [], cuotas: CUOTAS_MIN, cuotasPagadas: 0, notas: "", fecha: presetDate || "",
   };
+  // Cantidad inicial por producto del inventario, desde el snapshot del pedido.
+  // Un mismo producto puede aparecer en más de un ítem: se suman sus cantidades
+  // (p. ej. 2× Medias lanas = qty 2) para que editar no pierda ni el total ni la cantidad.
+  const qtyInicial = new Map();
+  (orig?.items || []).forEach(i => {
+    if (!i.productoId) return;
+    qtyInicial.set(i.productoId, (qtyInicial.get(i.productoId) || 0) + qtyDe(i));
+  });
   // selección actual: ids del inventario ya en el pedido (edición) o del preset
-  const selInicial = new Set((orig?.items || []).map(i => i.productoId).filter(Boolean));
-
+  const selInicial = new Set(qtyInicial.keys());
+  const cantidades = new Map(qtyInicial); // copia de trabajo: el usuario puede cambiar la cantidad al editar
+  const totalInicial = (orig?.items || []).reduce((s, i) => s + subtotalItem(i), 0);
   const invHTML = sel => {
     const items = inv.slice(0, 60);
     if (!items.length) return `<p class="nota-vacia">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
-    return `<div class="pick-grid stagger">` + items.map(i => `
-      <button class="pick ${sel.has(i.id) ? "on" : ""}" data-iid="${i.id}" aria-pressed="${sel.has(i.id)}">
+    return `<div class="pick-grid stagger">` + items.map(i => {
+      const n = cantidades.get(i.id) || 1;
+      return `
+      <div class="pick ${sel.has(i.id) ? "on" : ""}" data-iid="${i.id}" role="button" tabindex="0" aria-pressed="${sel.has(i.id)}">
         <span class="pickcheck">${ICONO.checkSolo}</span>
+        ${sel.has(i.id) ? `<span class="qtystep" data-qty="${i.id}">
+          <button type="button" class="qtyminus" aria-label="Restar ${esc(i.name)}">−</button>
+          <b aria-label="Cantidad ${n}">${n}</b>
+          <button type="button" class="qtyplus" aria-label="Sumar ${esc(i.name)}">+</button>
+        </span>` : ""}
         ${i.photo ? `<img class="thumb" src="${esc(i.photo)}" alt="">` : `<div class="thumb ph">${svgCategoria(i.cat)}</div>`}
         <h5 class="contenedor-texto">${esc(i.name)}</h5><p>${fmt(i.price)}</p>
-      </button>`).join("") + `</div>`;
+      </div>`;
+    }).join("") + `</div>`;
   };
 
   abrirHoja(`<div class="agarre"></div><h2>${esNuevo ? (presetCliente ? `Nuevo pedido · ${esc(presetCliente.name)}` : "Nuevo pedido") : "Editar pedido"}</h2>
@@ -57,7 +74,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       <div id="plist"></div>
       <button class="addp" id="addp">Agregar producto</button>
     </div>
-    <div class="totalbar"><span>Total</span><b id="ftotal" class="monto">${fmt(orig ? orig.items.reduce((s, i) => s + (Number(i.precio ?? i.price) || 0) * (Number(i.qty) || 1), 0) : 0)}</b></div>
+    <div class="totalbar"><span>Total</span><b id="ftotal" class="monto">${fmt(totalInicial)}</b></div>
     <label class="campo campo-est"><span class="campo-label">Estado</span>
       <div class="seg" id="seg-est" role="group" aria-label="Elegir estado">
         ${ORDEN_ESTADOS.map(k => `<button data-k="${k}" class="${base.estado === k ? "on " + ({ paid: "s-green", msg: "s-orange", due: "s-blue" }[k] || "") : ""}" aria-pressed="${base.estado === k}">${ESTADOS[k].l}</button>`).join("")}
@@ -76,16 +93,39 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
 
   const calc = () => {
     let t = 0;
-    picked.forEach(iid => { const p = productos().find(x => x.id === iid); if (p) t += (Number(p.price) || 0); });
-    t += manuales.reduce((s, i) => s + (Number(parseMoneda(i.precio)) || 0), 0);
+    picked.forEach(iid => {
+      const p = productos().find(x => x.id === iid);
+      if (p) t += (Number(p.price) || 0) * (cantidades.get(iid) || 1);
+    });
+    t += manuales.reduce((s, i) => s + (Number(parseMoneda(i.precio)) || 0) * (Number(i.qty) || 1), 0);
     qs("#ftotal").textContent = fmt(t);
   };
 
   const drawInv = () => {
     qs("#mode-inv").innerHTML = invHTML(picked);
-    qsa("#mode-inv button").forEach(b => b.onclick = () => {
-      if (picked.has(b.dataset.iid)) picked.delete(b.dataset.iid);
-      else picked.add(b.dataset.iid);
+    qsa("#mode-inv .pick").forEach(b => b.onclick = (e) => {
+      // los botones del stepper se manejan aparte: no cambian la selección
+      if (e.target.closest(".qtystep")) return;
+      const iid = b.dataset.iid;
+      if (picked.has(iid)) { picked.delete(iid); cantidades.delete(iid); }
+      else { picked.add(iid); cantidades.set(iid, 1); }
+      drawInv(); calc();
+    });
+    qsa("#mode-inv .pick").forEach(b => b.onkeydown = (e) => {
+      if ((e.key === "Enter" || e.key === " ") && !e.target.closest(".qtystep")) { e.preventDefault(); b.click(); }
+    });
+    qsa("#mode-inv .qtyplus").forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      const iid = b.closest(".qtystep").dataset.qty;
+      cantidades.set(iid, Math.min((cantidades.get(iid) || 1) + 1, 99));
+      drawInv(); calc();
+    });
+    qsa("#mode-inv .qtyminus").forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      const iid = b.closest(".qtystep").dataset.qty;
+      const n = (cantidades.get(iid) || 1) - 1;
+      if (n < 1) { picked.delete(iid); cantidades.delete(iid); }
+      else cantidades.set(iid, n);
       drawInv(); calc();
     });
   };
@@ -166,7 +206,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       }
     }
     const items = [];
-    picked.forEach(iid => { const p = productos().find(x => x.id === iid); if (p) items.push({ productoId: p.id, nombre: p.name, precio: Number(p.price) || 0, foto: p.photo, categoria: p.cat, qty: 1 }); });
+    picked.forEach(iid => { const p = productos().find(x => x.id === iid); if (p) items.push({ productoId: p.id, nombre: p.name, precio: Number(p.price) || 0, foto: p.photo, categoria: p.cat, qty: cantidades.get(iid) || 1 }); });
     const manualesLimpios = manuales.filter(i => i.nombre.trim());
     manualesLimpios.forEach(i => items.push({ productoId: null, nombre: i.nombre.trim(), precio: parseMoneda(i.precio) ?? 0, foto: i.foto, categoria: "otro", qty: 1 }));
     if (!items.length) { toast("Agregá al menos un producto", "warn"); return; }
