@@ -6,7 +6,7 @@ export const UMBRAL = 8;          // px de gesto para cambiar de dirección
 export const ZONA_SUPERIOR = 70;  // cerca del encabezado la nav siempre se ve
 export const TOLERANCIA_BORDE = 2;
 export const INACTIVIDAD_MS = 3000;
-export const REAPARICION_MS = 500;   // pausa para volver a mostrar la nav oculta
+export const REAPARICION_MS = 2500;  // pausa para volver a mostrar la nav oculta
 
 export const estadoInicial = () => ({
   visible: true,

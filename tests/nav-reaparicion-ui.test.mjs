@@ -64,14 +64,14 @@ const rueda = (delta) => {
   w.dispatchEvent(e);
 };
 
-test("barra oculta al bajar, vuelve sola tras ~0,5 s y se queda quieta", async () => {
+test("barra oculta al bajar, vuelve sola tras ~2,5 s y se queda quieta", async () => {
   store.boot(datosDemo());
   await anclar();
   rueda(200); geo(200); scroll(); await esperar(20);
   assert.equal(oculta(), true, "bajar oculta");
-  await esperar(300);
-  assert.equal(oculta(), true, "a los 0,3 s sigue oculta");
-  await esperar(350);
+  await esperar(1500);
+  assert.equal(oculta(), true, "a los 1,5 s sigue oculta");
+  await esperar(1200);
   assert.equal(oculta(), false, "vuelve tras la pausa");
   await esperar(1200);
   assert.equal(oculta(), false, "no vuelve a ocultarse sin un gesto nuevo");
@@ -82,7 +82,7 @@ test("un gesto nuevo reanuda el ocultamiento; bajar seguido no rebota", async ()
   store.boot(datosDemo());
   await anclar();
   rueda(200); geo(200); scroll(); await esperar(20);
-  await esperar(900);
+  await esperar(2700);
   assert.equal(oculta(), false, "ya reapareció por pausa");
   /* Varios eventos de rueda hacia abajo seguidos: la nav baja y no vuelve
      a aparecer hasta que haya una pausa real. */
@@ -95,7 +95,7 @@ test("un gesto nuevo reanuda el ocultamiento; bajar seguido no rebota", async ()
   assert.deepEqual(errores, []);
 });
 
-test("las 7 secciones ocultan y reaparecen igual con la pausa corta", async () => {
+test("las 7 secciones ocultan y reaparecen igual con la pausa de 2,5 s", async () => {
   const secciones = ["inicio", "agenda", "pedidos", "inventario", "contactos", "historial", "ajustes"];
   store.boot(datosDemo());
   for (const sec of secciones) {
@@ -103,8 +103,8 @@ test("las 7 secciones ocultan y reaparecen igual con la pausa corta", async () =
     await anclar();
     rueda(200); geo(200); scroll(); await esperar(30);
     assert.equal(oculta(), true, sec + " oculta al bajar");
-    await esperar(650);
-    assert.equal(oculta(), false, sec + " vuelve tras ~0,5 s");
+    await esperar(2700);
+    assert.equal(oculta(), false, sec + " vuelve tras ~2,5 s");
     await esperar(900);
     assert.equal(oculta(), false, sec + " no oscila");
   }

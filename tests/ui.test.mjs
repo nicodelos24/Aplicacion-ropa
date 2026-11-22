@@ -524,7 +524,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.match(sw, /const CACHE = "ropa-v2-[\w-]+"/, "versión de caché con prefijo de proyecto");
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
-  assert.match(sw, /const CACHE = "ropa-v2-pedido-cantidad-r14"/, "el caché se refresca con el fix de cantidad del editor");
+  assert.match(sw, /const CACHE = "ropa-v2-nav-reaparicion-2500ms-r15"/, "el caché se refresca con el cambio de reaparición de la nav");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
   assert.ok(sw.includes("./src/ui/nav-scroll.js"), "el precache incluye la lógica de nav");
   assert.match(sw, /\.\/src\/main\.js/);
