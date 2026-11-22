@@ -1,6 +1,7 @@
 // hoja.js — hoja inferior con agarre, cierre por gesto (drag hacia abajo) y Escape.
 import { qs } from "../dom.js";
 import { espacioToast } from "../dom.js";
+import { ocultarToast } from "./toast.js";
 
 const hoja = () => qs("#hoja");
 const hojaIn = () => qs("#hoja-in");
@@ -34,6 +35,7 @@ export function cerrarHoja() {
   const h = hoja();
   if (!h.classList.contains("abierta") || cerrando) return;
   cerrando = true;
+  ocultarToast();
   h.classList.add("cerrando");
   setTimeout(() => {
     h.className = "hoja";

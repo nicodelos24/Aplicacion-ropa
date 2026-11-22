@@ -524,7 +524,8 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.match(sw, /const CACHE = "ropa-v2-[\w-]+"/, "versión de caché con prefijo de proyecto");
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
-  assert.match(sw, /const CACHE = "ropa-v2-pedido-cantidad-r14"/, "el caché se refresca con el fix de cantidad del editor");
+  assert.match(sw, /const CACHE = "ropa-v2-toast-r15"/, "el caché se refresca con el fix del toast tras el fix de cantidad");
+  assert.doesNotMatch(sw, /ropa-v2-pedido-cantidad-r14/, "la versión de caché no queda en la del fix de cantidad");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
   assert.ok(sw.includes("./src/ui/nav-scroll.js"), "el precache incluye la lógica de nav");
   assert.match(sw, /\.\/src\/main\.js/);
@@ -562,5 +563,48 @@ test("editor: pedido de Rosita abre con 2× Medias lanas y Total $500, y guardar
   assert.equal(despues.items.length, 1);
   assert.equal(despues.items[0].qty, 2, "qty conservado tras guardar");
   assert.equal(despues.items[0].precio, 250);
+  assert.deepEqual(errores, []);
+});
+
+/* ---- regresión: aviso de error no queda flotando sobre el header ---- */
+function dispararErrorSinProductos() {
+  irA("pedidos");
+  click('#fab');
+  qs("#f-cliente").value = "Cliente de prueba";
+  click("#saveBtn");
+  assert.match(qs("#toast").textContent, /Agregá al menos un producto/, "aparece el aviso de error");
+  assert.equal(qs("#toast").classList.contains("mostrar"), true, "aviso visible");
+}
+
+test("toast: cerrar la hoja quita el aviso y cancela el temporizador", async () => {
+  await reiniciar();
+  dispararErrorSinProductos();
+  click("#cancelar");
+  await esperar(240);
+  assert.equal(qs("#toast").classList.contains("mostrar"), false, "aviso oculto al cerrar la hoja");
+  await esperar(4300);
+  assert.equal(qs("#toast").classList.contains("mostrar"), false, "no reaparece al vencer el timer viejo");
+  assert.deepEqual(errores, []);
+});
+
+test("toast: cambiar de sección quita el aviso y deja el header libre", async () => {
+  await reiniciar();
+  dispararErrorSinProductos();
+  click("#cancelar");
+  await esperar(240);
+  /* aviso nuevo sobre una sección sin hoja, luego cambiar de sección */
+  irA("inventario");
+  assert.equal(qs("#toast").classList.contains("mostrar"), false, "sin aviso en Inventario");
+  assert.equal(document.body.style.getPropertyValue("--toast-space"), "0px", "sin espacio reservado para toast");
+  await esperar(4300);
+  assert.equal(qs("#toast").classList.contains("mostrar"), false, "no reaparece al vencer el timer viejo");
+  assert.deepEqual(errores, []);
+});
+
+test("toast: sigue apareciendo y autocerrando con el único temporizador", async () => {
+  await reiniciar();
+  dispararErrorSinProductos();
+  await esperar(4400);
+  assert.equal(qs("#toast").classList.contains("mostrar"), false, "el aviso se cierra solo");
   assert.deepEqual(errores, []);
 });
