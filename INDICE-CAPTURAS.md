@@ -269,3 +269,18 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 - **0 hallazgos reales** en la cobertura pedida; 3 falsos positivos descartados (demo viejo persistido en `localStorage` con Corbata `di5`/Medias lanas/$1,200; `REAPARICION_MS` 500 local vs 2000 servido — master local 5 commits detrás de origin; chips de `#chips` con `overflow-x:auto` a 320 que no desbordaron el documento). Consola 0 errores (1 warning preexistente de meta `apple-mobile-web-app-capable` deprecated). `npm test` 81/81 y `npm run check` OK (53 archivos).
 - **10 capturas** (demo fresco, scale css): [Inicio claro 390](capturas/2026-11-22/flor-ronda-inicio-claro-390.png) · [Pedidos claro 390](capturas/2026-11-22/flor-ronda-pedidos-claro-390.png) · [detalle Paco claro 390](capturas/2026-11-22/flor-ronda-paco-detalle-claro-390.png) · [editor Paco claro 390](capturas/2026-11-22/flor-ronda-editor-paco-claro-390.png) · [editor cantidad 2 claro 390](capturas/2026-11-22/flor-ronda-editor-cantidad2-claro-390.png) · [editor nombre Rosita claro 390](capturas/2026-11-22/flor-ronda-editor-cliente-rosita-claro-390.png) · [Contactos claro 390](capturas/2026-11-22/flor-ronda-contactos-claro-390.png) · [Pedidos claro 320](capturas/2026-11-22/flor-ronda-pedidos-claro-320.png) · [Pedidos claro 1280](capturas/2026-11-22/flor-ronda-pedidos-claro-1280.png) · [Pedidos oscuro 1280](capturas/2026-11-22/flor-ronda-pedidos-oscuro-1280.png).
 - Verificado en vivo: Paco $1,250 con Camisa blanca $950 + Corbata $300 (sin Medias lanas), guardar sin cambios no altera el total; Rosita $500 con contador «− 2 +» queda `qty:2`/total 500 al guardar; editar nombre a Rosita vincula `clienteId:"dc1"` y aparece en su ficha de Contactos; nav se oculta al scrollear y reaparece a ~2 s de pausa en Inicio, Pedidos, Inventario y Contactos sin tapar encabezados; sin desbordes de documento ni textos cortados a 320/390/1280, claro y oscuro. Chrome devuelto suelto en `about:blank` al terminar.
+
+## Ronda de QA «romper y pulir» — 22-nov-2026 (demo pública, versión ya publicada)
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Historial | 1280 | claro | [flor-ronda2-historial-1280-claro.png](capturas/2026-11-22/flor-ronda2-historial-1280-claro.png) |
+| Historial | 320 | oscuro | [flor-ronda2-historial-320-oscuro.png](capturas/2026-11-22/flor-ronda2-historial-320-oscuro.png) |
+| Ajustes | 1280 | oscuro | [flor-ronda2-ajustes-1280-oscuro.png](capturas/2026-11-22/flor-ronda2-ajustes-1280-oscuro.png) |
+| Ajustes | 320 | claro | [flor-ronda2-ajustes-320-claro.png](capturas/2026-11-22/flor-ronda2-ajustes-320-claro.png) |
+| Agenda (filtro por día) | 1280 | oscuro | [flor-ronda2-agenda-filtro-dia-1280-oscuro.png](capturas/2026-11-22/flor-ronda2-agenda-filtro-dia-1280-oscuro.png) |
+| Agenda (vista Semanas) | 320 | claro | [flor-ronda2-agenda-semanas-320-claro.png](capturas/2026-11-22/flor-ronda2-agenda-semanas-320-claro.png) |
+| Pedido sin productos (mensaje de validación) | 320 | claro | [flor-ronda2-pedido-sin-productos-mensaje.png](capturas/2026-11-22/flor-ronda2-pedido-sin-productos-mensaje.png) |
+| Agenda (HALLAZGO: el botón «+» tapa el final del texto «Tocá un día para ver sus entregas») | 320 | claro | [flor-ronda2-agenda-texto-tapado-320-claro.png](capturas/2026-11-22/flor-ronda2-agenda-texto-tapado-320-claro.png) |
+
+El hallazgo señalado está registrado como tarea de prioridad baja; el resto de la ronda no mostró fallos. La cobertura anterior del día (editor de pedidos, vínculo de cliente, aviso del encabezado, barra y pantallas Inicio/Pedidos/Contactos/Inventario) ya está documentada en este índice y no se repitió.
