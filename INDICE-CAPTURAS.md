@@ -468,3 +468,16 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 |---|---|---|---|
 | Selector del pedido por sección en el vivo (r28) | 390 | oscuro | [dino-pedido-vivo-390-dark.png](capturas/2026-11-23/dino-pedido-vivo-390-dark.png) |
 | El mismo selector en el vivo, tema claro | 390 | claro | [dino-pedido-vivo-390-light.png](capturas/2026-11-23/dino-pedido-vivo-390-light.png) |
+
+## Ropa v2 · Sin negro+naranja en carteles (pedido de Nico) · 2026-11-23
+
+- A pedido de Nico se evacúa el par negro+naranja de la interfaz, sobre todo en modo oscuro. El naranja queda **sólo** en el estado «Mensaje enviado» (excepción explícita): badge, chip, borde de tarjeta, punto de calendario/agenda e ícono de reloj siguen igual.
+- Lo que se cambió: el ícono y el botón de aceptar de **todos los carteles de confirmación** (confirmar, cancelar, salir sin guardar, eliminar, restaurar) pasan de naranja a **rojo**; el ícono de los toasts de error/aviso, el contador «sin guardar» de cuotas y los íconos de edición del historial también dejan el naranja. El botón «Cancelar» y las confirmaciones neutrales no se tocan.
+- Verificado en navegador real (Chromium 393×740, tema oscuro y claro): los tres carteles afectados no muestran ningún naranja; ícono y botón de acción en rojo. `npm test` 167/167 y `npm run check` OK. Generación del service worker subida a r30.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Cartel «Restaurar datos de demo» | 390 | oscuro | [paleta-cartel-restaurar-390-oscuro.png](capturas/2026-11-23/paleta-cartel-restaurar-390-oscuro.png) |
+| Cartel «Eliminar este pedido» | 390 | oscuro | [paleta-cartel-eliminar-pedido-390-oscuro.png](capturas/2026-11-23/paleta-cartel-eliminar-pedido-390-oscuro.png) |
+| Cartel «Salir sin guardar el pedido» | 390 | oscuro | [paleta-cartel-salir-sin-guardar-390-oscuro.png](capturas/2026-11-23/paleta-cartel-salir-sin-guardar-390-oscuro.png) |
+| Cartel «Restaurar datos de demo», para comparar | 390 | claro | [paleta-cartel-restaurar-390-claro.png](capturas/2026-11-23/paleta-cartel-restaurar-390-claro.png) |

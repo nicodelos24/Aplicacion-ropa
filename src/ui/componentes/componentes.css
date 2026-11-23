@@ -273,9 +273,9 @@ fieldset{border:none}
 }
 .ev .ev-ico svg{width:17px; height:17px; stroke-width:1.9}
 .ev .ev-ico.t-yellow{color:var(--c-yellow)}
-.ev .ev-ico.t-orange{color:var(--c-orange)}
 .ev .ev-ico.t-blue{color:var(--c-blue)}
 .ev .ev-ico.t-green{color:var(--c-green)}
+.ev .ev-ico.t-violet{color:var(--ppeople)}
 .ev .ev-ico.t-red{color:var(--c-red)}
 .ev .ev-ico.t-neutral{color:var(--mut)}
 .ev h4{font-size:var(--fz-md); font-weight:700; overflow-wrap:anywhere; letter-spacing:-.1px}
@@ -439,7 +439,7 @@ fieldset{border:none}
 .inv-acciones button:active{transform:scale(.86)}
 .inv-acciones button svg{width:17px; height:17px}
 .inv-acciones button.e svg{color:#a9c2ff}
-.inv-acciones button.d svg{color:#ffab8f}
+.inv-acciones button.d svg{color:var(--c-red)}
 html[data-theme="light"] .inv-acciones button{background:rgba(255,255,255,.9); color:#17171f; border-color:rgba(20,20,40,.18)}
 html[data-theme="light"] .inv-acciones button.e svg{color:#2f59d0}
 html[data-theme="light"] .inv-acciones button.d svg{color:#c22a44}
@@ -539,8 +539,8 @@ html[data-theme="light"] .cli-wa.none{color:#4d5168}
 .cuotas-mid{color:var(--mut); font-size:12.5px; text-align:center; line-height:1.35}
 .cuotas-mid b{display:block; white-space:nowrap; color:var(--txt); font-variant-numeric:tabular-nums; font-size:15px; font-weight:800}
 /* cuotas sin guardar: el contador avisa en pantalla y aparecen Guardar / Descartar */
-.cuotas-ctrl.sin-guardar .cuotas-mid b{color:var(--c-orange-text)}
-.cuotas-pend{display:inline-block; margin-top:2px; font-size:11px; font-weight:800; letter-spacing:.02em; text-transform:uppercase; color:var(--c-orange-text)}
+.cuotas-ctrl.sin-guardar .cuotas-mid b{color:var(--c-red)}
+.cuotas-pend{display:inline-block; margin-top:2px; font-size:11px; font-weight:800; letter-spacing:.02em; text-transform:uppercase; color:var(--c-red)}
 .cuotas-acciones{margin-top:10px; display:grid; grid-template-columns:1fr; gap:8px}
 .cuotas-acciones .btn{width:100%}
 .wa-btn{

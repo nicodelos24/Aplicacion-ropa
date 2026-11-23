@@ -29,6 +29,9 @@
   --c-blue:#6f90ff;   --c-blue-ink:#081a5e;   --c-blue-text:#b4c3ff;
   --c-yellow:#ffd75e; --c-yellow-ink:#3a2d00; --c-yellow-text:#ffe8a3;
   --c-red:#ff6382;
+  /* peligro/aviso de interfaz: rojo en vez de naranja sobre fondos oscuros.
+     El naranja queda reservado al estado «Mensaje enviado». */
+  --c-danger:#d81e47; --c-danger-ink:#ffffff;
 
   /* acentos de métrica */
   --pcash:#4fe4c4; --pcheck:#5fe6a0; --pclock:#ffca73; --pcal:#8ab7ff; --ptag:#f79bd0; --ppeople:#bba3ff;
@@ -84,6 +87,7 @@ html[data-theme="light"]{
   --c-blue:#3f63d8;   --c-blue-ink:#ffffff;   --c-blue-text:#25409f;
   --c-yellow:#c79500; --c-yellow-ink:#3a2d00; --c-yellow-text:#6f5800;
   --c-red:#d42a4f;
+  --c-danger:#c31538; --c-danger-ink:#ffffff;
   --pcash:#0a9384; --pcheck:#12914f; --pclock:#a86a1a; --pcal:#3f63d8; --ptag:#bf4c8b; --ppeople:#6d4bc4;
   --sh-1:0 1px 2px rgba(24,30,52,.05), 0 3px 12px rgba(24,30,52,.07);
   --sh-2:0 2px 6px rgba(24,30,52,.06), 0 14px 32px rgba(24,30,52,.09);
