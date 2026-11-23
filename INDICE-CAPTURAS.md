@@ -441,3 +441,20 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | Inventario del vivo tras el arreglo, cajones por sección | 390 | oscuro | [dino-sw-r27-inventario-390-oscuro.png](capturas/2026-11-23/dino-sw-r27-inventario-390-oscuro.png) |
 | El mismo inventario en claro | 390 | claro | [dino-sw-r27-inventario-390-claro.png](capturas/2026-11-23/dino-sw-r27-inventario-390-claro.png) |
 | Inventario a 320 px sin desborde | 320 | claro | [dino-sw-r27-inventario-320-claro.png](capturas/2026-11-23/dino-sw-r27-inventario-320-claro.png) |
+
+## Ropa v2 · Pedido con filas compactas por sección (decisión Y) · Dino · 2026-11-23
+
+- El armado del pedido deja la grilla de tarjetas y pasa a **filas compactas de 52 px agrupadas por sección** (maqueta Y de Blas con los ajustes de Olga), para no perder el hilo del pedido mientras se elige. Cada cabecera de sección es plegable y lleva el badge **elegidos/total** (se tiñe cuando la sección tiene algo elegido); arriba, un buscador filtra dentro de las secciones.
+- Buscar **nunca deselecciona**: lo elegido que no coincide con la búsqueda se mantiene a la vista con su check, y si nada coincide el vacío dice la búsqueda y tiene «Quitar búsqueda» sin perder lo marcado. Lo elegido va primero dentro de su sección (después lo más usado y lo último cargado) y plegar una sección no toca la selección ni el total; el contador del pie dice «N productos elegidos».
+- Medido en Chromium 390 px (y 320/1280): filas de 52 px, check de 22 px con objetivo táctil de la fila entera, 0 px de desborde horizontal y 0 errores de consola. `npm test` 161/161 y `npm run check` OK (61 archivos).
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Selector del pedido agrupado por sección con badge y elegidos marcados | 390 | oscuro | [dino-pedido-filas-390-dark.png](capturas/2026-11-23/dino-pedido-filas-390-dark.png) |
+| El mismo selector en tema claro | 390 | claro | [dino-pedido-filas-390-light.png](capturas/2026-11-23/dino-pedido-filas-390-light.png) |
+| Buscando: filtra dentro de las secciones y mantiene lo elegido | 390 | oscuro | [dino-pedido-filas-buscar-390-dark.png](capturas/2026-11-23/dino-pedido-filas-buscar-390-dark.png) |
+| Buscando en claro | 390 | claro | [dino-pedido-filas-buscar-390-light.png](capturas/2026-11-23/dino-pedido-filas-buscar-390-light.png) |
+| Búsqueda sin coincidencias: vacío con salida y los elegidos a la vista | 390 | oscuro | [dino-pedido-filas-vacio-390-dark.png](capturas/2026-11-23/dino-pedido-filas-vacio-390-dark.png) |
+| El mismo vacío en claro | 390 | claro | [dino-pedido-filas-vacio-390-light.png](capturas/2026-11-23/dino-pedido-filas-vacio-390-light.png) |
+| Una prenda más elegida y una sección plegada: badge 1/2 y «3 productos elegidos» | 390 | oscuro | [dino-pedido-filas-elegido-390-dark.png](capturas/2026-11-23/dino-pedido-filas-elegido-390-dark.png) |
+| Lo mismo en claro | 390 | claro | [dino-pedido-filas-elegido-390-light.png](capturas/2026-11-23/dino-pedido-filas-elegido-390-light.png) |
