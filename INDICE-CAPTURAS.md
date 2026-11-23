@@ -580,6 +580,7 @@ Sobre el **sitio vivo publicado** https://nicodelos24.github.io/Aplicacion-ropa/
 | Pedidos: chips Todos / Pagado / Mensaje enviado / En cuotas / Nuevo con sus tonos y conteos | 390 | oscuro | [qa-flor-r33-pedidos-filtros-tonos-390-oscuro.png](capturas/2026-11-23/qa-flor-r33-pedidos-filtros-tonos-390-oscuro.png) |
 | Editor de prenda: botón «Galería» (`capture=environment` en «Tomar foto») actualiza la vista previa al elegir archivo | 390 | oscuro | [qa-flor-r33-producto-galeria-390-oscuro.png](capturas/2026-11-23/qa-flor-r33-producto-galeria-390-oscuro.png) |
 | Editor de pedido «Escribir a mano»: «Agregar foto al producto» acepta el archivo y muestra «Foto lista: se guarda al confirmar» | 390 | oscuro | [qa-flor-r33-pedido-foto-manual-390-oscuro.png](capturas/2026-11-23/qa-flor-r33-pedido-foto-manual-390-oscuro.png) |
+| Detalle del pedido: «Editar este artículo» (barra o visor de la foto) abre la hoja con tipo, nombre, precio y el subtotal al día mientras se escribe; guardar vuelve al pedido ya actualizado | 390 | oscuro | [dino-editar-articulo-hoja.png](capturas/2026-11-23/dino-editar-articulo-hoja.png) |
 
 ### Detalle de lo probado
 
