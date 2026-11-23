@@ -481,3 +481,14 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | Cartel «Eliminar este pedido» | 390 | oscuro | [paleta-cartel-eliminar-pedido-390-oscuro.png](capturas/2026-11-23/paleta-cartel-eliminar-pedido-390-oscuro.png) |
 | Cartel «Salir sin guardar el pedido» | 390 | oscuro | [paleta-cartel-salir-sin-guardar-390-oscuro.png](capturas/2026-11-23/paleta-cartel-salir-sin-guardar-390-oscuro.png) |
 | Cartel «Restaurar datos de demo», para comparar | 390 | claro | [paleta-cartel-restaurar-390-claro.png](capturas/2026-11-23/paleta-cartel-restaurar-390-claro.png) |
+
+## Ropa v2 · «Quitar filtros» limpia también la búsqueda · 2026-11-23
+
+- Hallazgo bajo de la revisión visual de Olga: con texto en el buscador del inventario, «Quitar filtros» restablecía categoría y orden pero dejaba la búsqueda puesta (pantalla en «Sin resultados» hasta borrar el campo a mano).
+- Ahora el botón también limpia `vista.busqueda` y vacía el input `#search` (mismo patrón que «Limpiar búsqueda» de pedidos). El copy del vacío ya era coherente y no cambió.
+- Verificado en navegador real sobre la app local (`?demo=1`): «zzz» + filtro Medias ⇒ «Quitar filtros» ⇒ 6 prendas en 3 cajones, buscador vacío, chip «Todas» activo, orden «Los últimos», 0 errores de consola. `npm test` 168/168 y `npm run check` OK. Generación del service worker a r31.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Vacío «Sin resultados» con «zzz» y filtro Medias | 390 | oscuro | [dino-quitar-filtros-antes-390-oscuro.png](capturas/2026-11-23/dino-quitar-filtros-antes-390-oscuro.png) |
+| Después de «Quitar filtros»: inventario completo y buscador vacío | 390 | oscuro | [dino-quitar-filtros-despues-390-oscuro.png](capturas/2026-11-23/dino-quitar-filtros-despues-390-oscuro.png) |

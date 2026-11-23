@@ -987,7 +987,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r30"/, "el caché sube a r30 con el cambio de paleta sin negro+naranja");
+  assert.match(sw, /const VERSION = "r31"/, "el caché sube a r31 con «Quitar filtros» que limpia la búsqueda");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -1576,10 +1576,32 @@ test("filtros: sin coincidencias el vacío explica y «Quitar filtros» vuelve a
   click(limpiar);
   assert.equal(qs("#inv-orden").value, "alta", "el orden vuelve al de siempre");
   assert.equal(qs('#main .chip-cat[data-inv-cat="todas"]').classList.contains("on"), true);
-  qs("#search").value = "";
+  assert.equal(qs("#search").value, "", "el buscador también se vacía solo");
+  assert.equal(vista.busqueda, "", "y el estado de búsqueda queda limpio");
+  await esperar();
+  assert.equal(qsa("#main .inv-card").length, 6, "vuelven las seis prendas sin borrar nada a mano");
+  assert.deepEqual(errores, []);
+});
+
+test("filtros: con búsqueda y orden puestos, «Quitar filtros» deja el inventario completo", async () => {
+  await reiniciar();
+  irA("inventario");
+  qs("#inv-orden").value = "az";
+  qs("#inv-orden").dispatchEvent(new w.Event("change"));
+  qs("#search").value = "zzz";
   qs("#search").dispatchEvent(new w.Event("input"));
   await esperar();
-  assert.equal(qsa("#main .inv-card").length, 6, "vuelven las seis prendas");
+  assert.match(qs("#main").textContent, /Sin resultados/);
+  assert.match(qs("#main").textContent, /zzz/);
+  const limpiar = qs('[data-acc="limpiar-filtros"]');
+  assert.ok(limpiar, "hay atajo para quitar los filtros");
+  click(limpiar);
+  await esperar();
+  assert.equal(qs("#search").value, "", "el campo de búsqueda queda vacío");
+  assert.equal(vista.busqueda, "");
+  assert.equal(qs("#inv-orden").value, "alta", "el orden vuelve al de siempre");
+  assert.equal(qsa("#main .inv-card").length, 6, "se ve el inventario entero");
+  assert.equal(qsa("#main .vacio").length, 0, "ya no queda el vacío de «Sin resultados»");
   assert.deepEqual(errores, []);
 });
 

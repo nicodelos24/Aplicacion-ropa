@@ -3,7 +3,7 @@
 // selector de orden (más usados, A–Z, precio), vista alterna lista compacta con
 // foto mini y precio, grilla 3× de siempre, editar/eliminar, lightbox y la hoja
 // "Secciones". Los filtros son de pantalla: no cambian ningún dato.
-import { esc, qsa } from "../ui/dom.js";
+import { esc, qs, qsa } from "../ui/dom.js";
 import { fmt } from "../nucleo/nucleo.js";
 import { db, productos, pedidos, eliminarProducto, secciones } from "../estado/store.js";
 import { vista, emitirVista } from "../estado/vista.js";
@@ -210,8 +210,12 @@ function cablearBarra(main) {
     emitirVista();
   };
   main.querySelectorAll("[data-acc='limpiar-filtros']").forEach(b => b.onclick = () => {
+    /* deja el inventario entero a la vista: categoría, orden y buscador */
     vista.invCategoria = "todas";
     vista.invOrden = ORDEN_DEFECTO;
+    vista.busqueda = "";
+    const buscador = qs("#search");
+    if (buscador) buscador.value = "";
     emitirVista();
   });
 }
