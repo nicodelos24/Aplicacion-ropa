@@ -21,7 +21,7 @@ export function pintarContactos(main) {
       ? `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nadie coincide con “${esc(vista.busqueda)}”. Probá con otro nombre o teléfono.</p></div>`
       : `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.contactos}</div><b>Aún no hay clientes</b><p>Se guardan automáticamente al registrar un pedido.<br>También podés agregarlos desde acá.</p><button class="btn btn-primario btn-vacio" data-acc="nuevo">Nuevo cliente</button></div>`;
   } else {
-    main.innerHTML = `<div class="stagger">${lista.map(c => {
+    main.innerHTML = `<div class="stagger pantalla-grilla grilla-cli">${lista.map(c => {
       const r = resumenCliente(pedidos(), c.id);
       const dots = r.pedidos.slice(0, 8).map(o => `<span class="cdot d-${estadoDe(o).c}" title="${estadoDe(o).l}"></span>`).join("");
       return `<div class="cli" data-id="${c.id}" role="button" tabindex="0" aria-label="Ver ${esc(c.name)}">

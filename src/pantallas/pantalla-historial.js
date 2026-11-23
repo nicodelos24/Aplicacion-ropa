@@ -16,7 +16,7 @@ export function pintarHistorial(main) {
   main.innerHTML = `
     <div class="chips chips-hist">${chips.map(([k, l]) =>
       `<button class="chip chip-neutral ${vista.logFiltro === k ? "on" : ""}" data-k="${esc(k)}" aria-pressed="${vista.logFiltro === k}">${esc(l)}</button>`).join("")}</div>
-    ${lista.length ? `<div class="stagger">${lista.map(e => {
+    ${lista.length ? `<div class="stagger pantalla-grilla grilla-ev">${lista.map(e => {
       const dd = new Date(e.ts || 0);
       const ok = dd.getTime() > 0;
       const hh = ok ? String(dd.getHours()).padStart(2, "0") + ":" + String(dd.getMinutes()).padStart(2, "0") : "";

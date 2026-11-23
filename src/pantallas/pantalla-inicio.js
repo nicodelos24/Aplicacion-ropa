@@ -41,7 +41,7 @@ export function pintarInicio(main, abrirDetalle) {
 
   const bloquePendientes = pendientes.length ? `
     <div class="sect-titulo anim-entra">Pendientes de cobro</div>
-    <div class="stagger">${pendientes.slice(0, 3).map(o => cardPedidoHTML(o)).join("")}
+    <div class="stagger grilla-cards">${pendientes.slice(0, 3).map(o => cardPedidoHTML(o)).join("")}
       <button class="hlink" data-go="pedidos">Ver todos los pedidos ${ICONO.chevDerChico}</button>
     </div>` : "";
 
