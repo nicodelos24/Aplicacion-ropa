@@ -29,7 +29,7 @@ export function pintarPedidos(main, abrirDetalle) {
   pintarChips(conteo());
 
   if (!lista.length) main.innerHTML = vacioHTML(vista.busqueda, vista.filtro);
-  else main.innerHTML = `<div class="stagger">${lista.map(o => cardPedidoHTML(o)).join("")}</div>`;
+  else main.innerHTML = `<div class="stagger pantalla-grilla grilla-cards">${lista.map(o => cardPedidoHTML(o)).join("")}</div>`;
   cablearCardsPedidos(main, abrirDetalle);
   main.querySelectorAll("[data-acc='nuevo']").forEach(b => b.onclick = () => abrirEditorPedido(null));
 }
