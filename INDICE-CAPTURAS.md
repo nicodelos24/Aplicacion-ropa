@@ -415,3 +415,16 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | Lista a 320 px: sin desborde, precio y acciones sin pisarse | 320 | oscuro | [inventario-vista-lista-320-oscuro.png](capturas/2026-11-23/inventario-vista-lista-320-oscuro.png) |
 | Filtro «Vestido» puesto: un solo cajón y «1 producto en Vestido» | 390 | claro | [inventario-filtro-vestido-lista-390-claro.png](capturas/2026-11-23/inventario-filtro-vestido-lista-390-claro.png) |
 | Búsqueda que no coincide con el filtro: vacío con «Quitar filtros» | 420 | oscuro | [inventario-filtros-vacio-420-oscuro.png](capturas/2026-11-23/inventario-filtros-vacio-420-oscuro.png) |
+
+#### Verificación del vivo · secciones · 2026-11-23
+
+- Publicado en master (`8e3784e`; los commits de secciones son `f8430f4`, `3280427` y `567ce5d`). Chrome del proyecto sobre https://nicodelos24.github.io/Aplicacion-ropa/?demo=1: `sw.js` sirve `ropa-v2-nav-1500ms-r26` y `/src/ui/componentes/secciones.css` responde 200.
+- Primer ingreso con el service worker viejo: al abrir «Inventario» la consola tiró `The requested module '../estado/store.js' does not provide an export named 'secciones'` y la pantalla quedó en Inicio (el SW r25 seguía sirviendo `store.js` previo a `f8430f4`). Con el registro y la caché viejos descartados, la app del vivo carga sin errores y muestra los tres cajones con su contador.
+- Medido en el vivo a 390 px: cajones «Dama · verano/2», «Hombre · básicos/2», «Sin sección/2», chips de categoría con contador. A 320 px (viewport útil 305 px) documento 305 px, sin desborde; 27 controles medidos (cajones, acciones, botón de secciones, tarjetas, chips) todos ≥44 px de alto. Caret con `transform: matrix(0, -1, 1, 0, 0, 0)` al abrir y `aria-expanded` acompañando; cajón nuevo vacío con el copy «Todavía no hay prendas acá. Editá una prenda y elegí esta sección.». Hoja «Tus secciones» con las cuatro filas y su contador (Interior/0 incluida). Filtro «Vestido» dejó un cajón de dos prendas. 0 errores de consola con la caché al día.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Inventario del vivo con cajones por sección y cajón nuevo vacío | 390 | oscuro | [dino-secciones-vivo-390-oscuro.png](capturas/2026-11-23/dino-secciones-vivo-390-oscuro.png) |
+| Hoja «Tus secciones» en el vivo, con contadores | 390 | claro | [dino-secciones-vivo-hoja-390-claro.png](capturas/2026-11-23/dino-secciones-vivo-hoja-390-claro.png) |
+| Los mismos cajones a 320 px, sin desborde | 320 | oscuro | [dino-secciones-vivo-320-oscuro.png](capturas/2026-11-23/dino-secciones-vivo-320-oscuro.png) |
+- QA de Flor sobre la rama (`8e3784e`): [inventario 390 claro](capturas/2026-11-23/flor-secciones-inventario-390-claro.png) · [390 oscuro](capturas/2026-11-23/flor-secciones-inventario-390-oscuro.png) · [320 oscuro](capturas/2026-11-23/flor-secciones-inventario-320-oscuro.png) · [vista lista 320](capturas/2026-11-23/flor-secciones-vista-lista-320-oscuro.png) · [hoja de secciones](capturas/2026-11-23/flor-secciones-hoja-390-oscuro.png).
