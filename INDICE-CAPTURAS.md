@@ -400,3 +400,18 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | El mismo inventario en tema oscuro | 390 | oscuro | [secciones-inventario-390-oscuro.png](capturas/2026-11-23/secciones-inventario-390-oscuro.png) |
 | Hoja «Tus secciones» con renombrar y borrar por fila | 390 | oscuro | [secciones-hoja-390-oscuro.png](capturas/2026-11-23/secciones-hoja-390-oscuro.png) |
 | Cajón recién creado y vacío, con el copy de estado vacío | 390 | oscuro | [secciones-vacia-390-oscuro.png](capturas/2026-11-23/secciones-vacia-390-oscuro.png) |
+
+## Ropa v2 · Inventario con buscador, filtros y orden (decisión 1) · Dino · 2026-11-23
+
+- Buscador del inventario con **chips de categoría y contador**, **selector de orden** (Los últimos, Más usados, Nombre A–Z, Precio menor a mayor y mayor a menor) y **vista alterna lista/grilla** (variante 3 de las maquetas: foto mini, nombre, sección, «N pedidos» y precio). El orden actúa dentro de cada cajón de sección; «más usados» cuenta unidades de todos los pedidos.
+- Con un filtro puesto los cajones vacíos se ocultan; sin coincidencias el vacío dice la búsqueda y el filtro y ofrece «Quitar filtros». Los filtros son de pantalla: no tocan datos ni el inventario guardado.
+- Medido en el Chrome del proyecto: sin desborde (documento 405 px sobre 420 y 305 px sobre 320), filas de 56-57 px, controles de 44 px, 0 errores de consola. `npm test` 147/147 y `npm run check` OK.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Inventario con chips de categoría y selector de orden (grilla de siempre) | 390 | claro | [inventario-filtros-grilla-390-claro.png](capturas/2026-11-23/inventario-filtros-grilla-390-claro.png) |
+| Vista alterna lista: foto mini, sección, pedidos y precio | 390 | claro | [inventario-vista-lista-390-claro.png](capturas/2026-11-23/inventario-vista-lista-390-claro.png) |
+| La misma lista en oscuro, con el selector de orden y el botón «Grilla» | 420 | oscuro | [inventario-vista-lista-420-oscuro-2.png](capturas/2026-11-23/inventario-vista-lista-420-oscuro-2.png) |
+| Lista a 320 px: sin desborde, precio y acciones sin pisarse | 320 | oscuro | [inventario-vista-lista-320-oscuro.png](capturas/2026-11-23/inventario-vista-lista-320-oscuro.png) |
+| Filtro «Vestido» puesto: un solo cajón y «1 producto en Vestido» | 390 | claro | [inventario-filtro-vestido-lista-390-claro.png](capturas/2026-11-23/inventario-filtro-vestido-lista-390-claro.png) |
+| Búsqueda que no coincide con el filtro: vacío con «Quitar filtros» | 420 | oscuro | [inventario-filtros-vacio-420-oscuro.png](capturas/2026-11-23/inventario-filtros-vacio-420-oscuro.png) |
