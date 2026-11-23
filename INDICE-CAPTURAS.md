@@ -284,3 +284,5 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 | Agenda (HALLAZGO: el botón «+» tapa el final del texto «Tocá un día para ver sus entregas») | 320 | claro | [flor-ronda2-agenda-texto-tapado-320-claro.png](capturas/2026-11-22/flor-ronda2-agenda-texto-tapado-320-claro.png) |
 
 El hallazgo señalado está registrado como tarea de prioridad baja; el resto de la ronda no mostró fallos. La cobertura anterior del día (editor de pedidos, vínculo de cliente, aviso del encabezado, barra y pantallas Inicio/Pedidos/Contactos/Inventario) ya está documentada en este índice y no se repitió.
+
+Cierre del hallazgo del «+» (22-nov, sitio público ya publicado, 320×720): [Agenda claro, texto completo y FAB separado](capturas/2026-11-22/fix-agenda-320-vivo-claro.png) · [Agenda oscuro, lo mismo](capturas/2026-11-22/fix-agenda-320-vivo-oscuro.png). Medición en vivo: texto x=34..209, «+» x=229..287 (20 px de separación, sin solape) en claro y oscuro; el «+» abre «Nuevo pedido». Fix: `componentes.css` reserva la columna del FAB en `@media (max-width:360px)`.
