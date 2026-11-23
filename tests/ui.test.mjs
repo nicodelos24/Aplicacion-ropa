@@ -1476,7 +1476,7 @@ test("filtros: el buscador del inventario dice «Buscar prenda» y los blancos t
   const css = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/filtros.css"), "utf8");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.ok(cssMain.includes("filtros.css"), "la hoja de filtros entra en main.css");
-  for (const regla of [".invtools-orden{", ".invtools-vista{", ".inv-fila{"]) {
+  for (const regla of [".invtools-orden{", ".invtools-vista{", ".inv-fila{", ".inv-fila .inv-acciones button{"]) {
     const bloque = new RegExp(regla.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^}]*)").exec(css);
     assert.ok(bloque, "existe la regla " + regla);
     const alto = /(?:min-)?height:(\d+)px/.exec(bloque[1]);
