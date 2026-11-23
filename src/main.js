@@ -85,7 +85,7 @@ function reiniciarInactividad(ahora = Date.now()) {
   clearTimeout(navTemporizador);
   /* Un único temporizador, rearmado en cada gesto: mientras se sigue bajando
      nunca vence, así la nav no "rebota" a mitad del desplazamiento.
-     Visible → se oculta a los 3 s; oculta → vuelve a los 90 s; ya vuelta
+     Visible → se oculta a los 3 s; oculta → vuelve a los 1,5 s; ya vuelta
      por pausa → no se reprograma hasta un gesto nuevo (no oscila). */
   if (navEstado.visible && !navEstado.mostradaPorPausa) {
     navTemporizador = setTimeout(() => {

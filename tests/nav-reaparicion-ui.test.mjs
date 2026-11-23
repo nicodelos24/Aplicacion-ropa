@@ -1,7 +1,7 @@
 // tests/nav-reaparicion-ui.test.mjs — la app real en jsdom: la barra oculta
 // reaparece sola tras una pausa, sin oscilar y sin "rebotar" al bajar.
-// El reloj es virtual: la pausa ahora dura 90 s, así que los tests avanzan
-// el tiempo al instante en vez de esperar ministros reales.
+// El reloj es virtual: los tests avanzan el tiempo al instante en vez de
+// esperar segundos reales.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -11,7 +11,7 @@ import * as store from "../src/estado/store.js";
 import { datosDemo } from "../src/datos/demo.js";
 import { REAPARICION_MS } from "../src/ui/nav-scroll.js";
 
-assert.equal(REAPARICION_MS, 90000, "la pausa de reaparición es de 90 s");
+assert.equal(REAPARICION_MS, 1500, "la pausa de reaparición es de 1,5 s");
 
 /* --- reloj virtual -------------------------------------------------------
    Reemplaza Date.now y setTimeout/clearTimeout globales (los que usa main.js)
@@ -34,7 +34,7 @@ globalThis.setInterval = (fn, ms = 0, ...args) => {
 };
 globalThis.clearInterval = (id) => { timers.delete(id); };
 /* Los frames también van por el reloj virtual: si no, jsdom encadena frames
-   reales y avanzar 90 s tardaría 90 s de verdad. */
+   reales y cada pausa tardaría su tiempo real en la prueba. */
 globalThis.requestAnimationFrame = (fn) => {
   const id = proximoId++;
   timers.set(id, { fn, args: [ahoraVirtual], vence: ahoraVirtual + 16, intervalo: null });
@@ -120,15 +120,15 @@ const rueda = (delta) => {
   w.dispatchEvent(e);
 };
 
-test("barra oculta al bajar, vuelve sola tras ~90 s y se queda quieta", async () => {
+test("barra oculta al bajar, vuelve sola tras ~1,5 s y se queda quieta", async () => {
   store.boot(datosDemo());
   await anclar();
   rueda(200); geo(200); scroll(); await esperar(20);
   assert.equal(oculta(), true, "bajar oculta");
-  await esperar(REAPARICION_MS - 1000);
+  await esperar(REAPARICION_MS - 500);
   assert.equal(oculta(), true, "antes de la pausa sigue oculta");
-  await esperar(1200);
-  assert.equal(oculta(), false, "vuelve tras la pausa de 90 s");
+  await esperar(600);
+  assert.equal(oculta(), false, "vuelve tras la pausa de 1,5 s");
   await esperar(5000);
   assert.equal(oculta(), false, "no vuelve a ocultarse sin un gesto nuevo");
   assert.deepEqual(errores, []);
@@ -151,7 +151,7 @@ test("un gesto nuevo reanuda el ocultamiento; bajar seguido no rebota", async ()
   assert.deepEqual(errores, []);
 });
 
-test("las 7 secciones ocultan y reaparecen igual con la pausa de 90 s", async () => {
+test("las 7 secciones ocultan y reaparecen igual con la pausa de 1,5 s", async () => {
   const secciones = ["inicio", "agenda", "pedidos", "inventario", "contactos", "historial", "ajustes"];
   store.boot(datosDemo());
   for (const sec of secciones) {
@@ -160,7 +160,7 @@ test("las 7 secciones ocultan y reaparecen igual con la pausa de 90 s", async ()
     rueda(200); geo(200); scroll(); await esperar(30);
     assert.equal(oculta(), true, sec + " oculta al bajar");
     await esperar(REAPARICION_MS + 500);
-    assert.equal(oculta(), false, sec + " vuelve tras ~90 s");
+    assert.equal(oculta(), false, sec + " vuelve tras ~1,5 s");
     await esperar(1000);
     assert.equal(oculta(), false, sec + " no oscila");
   }
