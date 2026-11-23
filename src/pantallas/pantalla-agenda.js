@@ -51,11 +51,16 @@ export function pintarAgenda(main, abrirDetalle) {
     const celdas = celdasMes(vista.calAnio, vista.calMes);
     const hayHoy = vista.diaSel && !!(porFecha[vista.diaSel] || []).length;
     const totalOtras = Object.keys(porFecha).filter(x => x !== vista.diaSel).length;
+    /* El plegable mantiene SIEMPRE el mismo nodo (abierto o cerrado): el panel
+       se despliega con una transición de altura real (grid 0fr→1fr), no
+       apareciendo de golpe por un innerHTML. El botón solo alterna clases. */
     const plegableHTML = `
-      <button class="addp addp-tight" id="fold-otras">
-        ${ICONO.chevAbajo} ${vista.verPasadas ? "Ocultar otras entregas" : `Ver otras entregas (${totalOtras})`}
-      </button>
-      ${vista.verPasadas ? listaHTML() : ""}`;
+      <div class="fold-otras ${vista.verPasadas ? "abierto" : ""}">
+        <button class="addp addp-tight" id="fold-otras" aria-expanded="${vista.verPasadas}">
+          ${ICONO.chevAbajo} <span>${vista.verPasadas ? "Ocultar otras entregas" : `Ver otras entregas (${totalOtras})`}</span>
+        </button>
+        <div class="fold-panel"><div class="fold-inner">${listaHTML()}</div></div>
+      </div>`;
 
     return `
       <div class="cal">
@@ -69,8 +74,10 @@ export function pintarAgenda(main, abrirDetalle) {
         <p class="ayuda">Tocá un día para ver sus entregas</p>
       </div>
       ${vista.diaSel ? `
-        <div class="sect-titulo">${ICONO.cal} ${fdate(vista.diaSel)}</div>
-        ${filaDia(vista.diaSel) || `<p class="nota-vacia">Nada agendado este día.</p>`}` : ""}
+        <div class="agenda-dia">
+          <div class="sect-titulo">${ICONO.cal} ${fdate(vista.diaSel)}</div>
+          ${filaDia(vista.diaSel) || `<p class="nota-vacia">Nada agendado este día.</p>`}
+        </div>` : ""}
       ${hayHoy ? plegableHTML : listaHTML()}
       ${vista.diaSel ? `<button class="addp addp-dia" id="add-order-day">Nuevo pedido con entrega este día</button>` : ""}`;
   };
@@ -101,10 +108,10 @@ export function pintarAgenda(main, abrirDetalle) {
        a tocar un día. Así el resaltado de la franja y las cards siempre coinciden.
        Nota: sin hora de entrega en el modelo, se omite ese dato en vez de inventarlo;
        cliente/producto/monto/estado salen de la card real reutilizada. */
-    const grouping = sel
+    const grouping = `<div class="agenda-dia">${sel
       ? `<div class="sect-titulo">${ICONO.cal} ${fdate(sel)}</div>
          ${filaDia(sel) || `<p class="nota-vacia">Nada agendado este día.</p>`}`
-      : `<p class="nota-vacia">Tocá un día de la franja para ver sus pedidos.</p>`;
+      : `<p class="nota-vacia">Tocá un día de la franja para ver sus pedidos.</p>`}</div>`;
 
     return `
       <div class="semana">
@@ -133,7 +140,18 @@ export function pintarAgenda(main, abrirDetalle) {
       el.onclick = () => { vista.diaSel = vista.diaSel === el.dataset.ds ? null : el.dataset.ds; vista.verPasadas = false; emitirVista(); };
       el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); } };
     });
-    if (qs("#fold-otras")) qs("#fold-otras").onclick = () => { vista.verPasadas = !vista.verPasadas; emitirVista(); };
+    const foldBtn = qs("#fold-otras");
+    if (foldBtn) foldBtn.onclick = () => {
+      vista.verPasadas = !vista.verPasadas;
+      /* Toggle local: no repintamos #main, así la transición de altura del
+         panel se ve completa y no se relanza la animación de la sección. */
+      const wrap = foldBtn.closest(".fold-otras");
+      wrap.classList.toggle("abierto", vista.verPasadas);
+      foldBtn.setAttribute("aria-expanded", String(vista.verPasadas));
+      const n = Object.keys(porFecha).filter(x => x !== vista.diaSel).length;
+      foldBtn.querySelector("span").textContent = vista.verPasadas
+        ? "Ocultar otras entregas" : `Ver otras entregas (${n})`;
+    };
     if (qs("#add-order-day")) qs("#add-order-day").onclick = () => abrirEditorPedido(null, null, vista.diaSel);
   } else {
     const ancla = vista.diaSel || lunesDe(t);
