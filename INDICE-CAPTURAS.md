@@ -492,3 +492,28 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 |---|---|---|---|
 | Vacío «Sin resultados» con «zzz» y filtro Medias | 390 | oscuro | [dino-quitar-filtros-antes-390-oscuro.png](capturas/2026-11-23/dino-quitar-filtros-antes-390-oscuro.png) |
 | Después de «Quitar filtros»: inventario completo y buscador vacío | 390 | oscuro | [dino-quitar-filtros-despues-390-oscuro.png](capturas/2026-11-23/dino-quitar-filtros-despues-390-oscuro.png) |
+
+## Ropa v2 · revisión visual del inventario en vivo (Olga) · 2026-11-23
+
+- Revisión visual del inventario con filtros, orden y vista lista (decisión 1) sobre el **vivo publicado** (`https://nicodelos24.github.io/Aplicacion-ropa/?demo=1`), a 320, 390, 420 y 1280 px en tema claro y oscuro: barra de filtros y chips con contador, selector de orden, grilla, lista compacta y vacío de búsqueda con «Quitar filtros».
+- **0 hallazgos bloqueantes.** El único hallazgo, de severidad baja, fue que «Quitar filtros» no limpiaba el texto del buscador; ya está **corregido y publicado en r31** (sección inmediatamente anterior de este índice).
+- Notas menores no bloqueantes: los nombres de sección largos se truncan con elipsis en pantallas angostas («Dama…» a 320 px) y la fila de chips se desliza en horizontal (`.chips` con `overflow-x:auto`), que es el comportamiento previsto del componente compartido.
+- Las 14 capturas son de la demo (`?demo=1`) con datos de demostración («Vestido floral», «Pantalón negro», «Camisa blanca», «Abrigo largo», badge DEMO): **sin datos de clientas, sin teléfonos, sin correos y sin claves**. Estaban en local sin versionar; entran en este mismo cambio.
+- **Aviso: en 7 de los 14 archivos lo que se ve no coincide con lo que dice el nombre** (comprobado sobre los píxeles y el texto de cada imagen). Cuatro capturaron el **cartel de confirmación «¿Eliminar la sección “Hombre - básicos”?»** en vez de la pantalla que sugiere el nombre (`inv-1280-claro-grilla`, `inv-420-claro-grilla`, `inv-320-oscuro-secciones`, `inv-320-oscuro-pick-seccion`; las dos últimas son casi idénticas entre sí). Tres de las que dicen 390 px son en realidad de **320×780** (`inv-390-claro-vacio-filtro`, `inv-390-oscuro-chip-activo`, `inv-390-oscuro-vacio-filtro`). Se archivan tal cual, con la escena real en la tabla. Queda **sin registro la hoja «Tus secciones» en reposo y el inventario a 1280 px**: si hace falta esa evidencia hay que volver a capturarla.
+
+| Escena real (según la imagen) | Ancho real | Tema | Archivo |
+|---|---|---|---|
+| Cartel «¿Eliminar la sección “Hombre - básicos”?» — *el nombre dice grilla claro* | 1280 | oscuro | [inv-1280-claro-grilla.png](capturas/2026-11-23/revision-olga/inv-1280-claro-grilla.png) |
+| Grilla con chips de categoría y contador, filtro en «Vestido» (1 producto) | 320 | claro | [inv-320-claro-grilla.png](capturas/2026-11-23/revision-olga/inv-320-claro-grilla.png) |
+| Vista lista compacta, 6 productos con foto mini, sección y precio | 320 | claro | [inv-320-claro-lista.png](capturas/2026-11-23/revision-olga/inv-320-claro-lista.png) |
+| Grilla en oscuro, filtro en «Vestido» (1 producto) | 320 | oscuro | [inv-320-oscuro-grilla.png](capturas/2026-11-23/revision-olga/inv-320-oscuro-grilla.png) |
+| Cartel «¿Eliminar la sección “Hombre - básicos”?» — *el nombre dice secciones* | 320 | oscuro | [inv-320-oscuro-secciones.png](capturas/2026-11-23/revision-olga/inv-320-oscuro-secciones.png) |
+| El mismo cartel, casi idéntico al anterior — *el nombre dice pick-seccion* | 320 | oscuro | [inv-320-oscuro-pick-seccion.png](capturas/2026-11-23/revision-olga/inv-320-oscuro-pick-seccion.png) |
+| Vacío «Sin resultados» con «zzz» + filtro Vestido y «Quitar filtros» | 320 | claro | [inv-390-claro-vacio-filtro.png](capturas/2026-11-23/revision-olga/inv-390-claro-vacio-filtro.png) |
+| Chip «Vestido» activo sobre la grilla, contador y resultado filtrado | 320 | oscuro | [inv-390-oscuro-chip-activo.png](capturas/2026-11-23/revision-olga/inv-390-oscuro-chip-activo.png) |
+| Grilla por secciones (6 productos) con el control para pasar a lista | 390 | oscuro | [inv-390-oscuro-grilla.png](capturas/2026-11-23/revision-olga/inv-390-oscuro-grilla.png) |
+| Vista lista con sección y precio por fila, control para volver a grilla | 390 | oscuro | [inv-390-oscuro-lista.png](capturas/2026-11-23/revision-olga/inv-390-oscuro-lista.png) |
+| Vacío «Sin resultados» con «zzz» + filtro Vestido | 320 | oscuro | [inv-390-oscuro-vacio-filtro.png](capturas/2026-11-23/revision-olga/inv-390-oscuro-vacio-filtro.png) |
+| Cartel «¿Eliminar la sección “Hombre - básicos”?» — *el nombre dice grilla claro* | 420 | oscuro | [inv-420-claro-grilla.png](capturas/2026-11-23/revision-olga/inv-420-claro-grilla.png) |
+| Vacío «Sin resultados» con «zzz» + filtro Vestido y «Quitar filtros» | 420 | claro | [inv-420-claro-vacio-filtro.png](capturas/2026-11-23/revision-olga/inv-420-claro-vacio-filtro.png) |
+| El mismo vacío en oscuro | 420 | oscuro | [inv-420-oscuro-vacio-filtro.png](capturas/2026-11-23/revision-olga/inv-420-oscuro-vacio-filtro.png) |
