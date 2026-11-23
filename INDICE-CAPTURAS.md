@@ -15,7 +15,7 @@ Este archivo es el índice único para capturas de Nico, Alba, Bianca y Orion/QA
 Nueva auditoría local terminada; no publicada. **[Informe UX36](Revision-Bianca-UX36.md)** · **[QA independiente de Orion](QA-Orion-UX35-cd851c7.md)** · [tarea](apx:tasks/task_4ed4698f7ca54723). Datos demo y foto sintética, no datos de clientas reales.
 
 - **[Lámina resumen UX36](capturas/2026-11-14/ux36-bianca/bianca-ux36-resumen.png)**: error decimal sin mensaje, detalle largo desbordado y mismo pedido antes/después de borrar producto con foto de catálogo.
-- [Carpeta UX36](capturas/2026-11-14/ux36-bianca/): **27 matrices fuente =162 combinaciones** de escena/ancho/tema, **8 capturas individuales**; los162 recortes PNG y las6 láminas JPG son derivados, no pruebas adicionales. Viewports320×568/393×740/1280×800, claro/oscuro; interacción independiente393×740.
+- Carpeta `capturas/2026-11-14/ux36-bianca/` (se nombra sin enlace: un directorio no se sirve como página en Pages y devolvía 404): **27 matrices fuente =162 combinaciones** de escena/ancho/tema, **8 capturas individuales**; los162 recortes PNG y las6 láminas JPG son derivados, no pruebas adicionales. Viewports320×568/393×740/1280×800, claro/oscuro; interacción independiente393×740.
 - Matrices `home/agenda/orders/inventory/clients/history/settings` (cada nombre seguido de `-matriz.png`); formularios `newproduct/newcontact/neworder/neworder-bottom/editorder/detail`; vacíos `empty-*`; adversos `longdetail/longproduct-detail/photo-row/sixdetail/stateconfirm/agenda-selected/search90/search-none`.
 - Individuales: `keyboard-background.png`, `decimal-sin-mensaje.png`, `invalido-cero.png`, `foto-quitar-editor.png`, `foto-catalogo-antes.png`, `foto-catalogo-despues.png`, `cliente-hechos.png`, `lightbox.png`. Snapshot `keyboard-listas.yml`. Todas en la carpeta UX36.
 - No usar imágenes UX35 de0bc1a40 como evidencia de cd851c7. La suite23/23 no cierra los casos negativos de dinero; informe/recibo de Alba explican qué pasa y qué sigue abierto.
@@ -75,7 +75,7 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 - [Informe completo](Revision-Bianca-UX35.md) · [QA funcional independiente de Orion](QA-Orion-UX35.md).
 - [Lámina de hallazgos](capturas/2026-11-14/extensa-bianca/bianca-ux35-resumen.png).
 - Matrices visuales: [320](capturas/2026-11-14/extensa-bianca/coverage-320.jpg) · [393](capturas/2026-11-14/extensa-bianca/coverage-393.jpg) · [1280](capturas/2026-11-14/extensa-bianca/coverage-1280.jpg).
-- [Carpeta con 153 PNG y mosaicos](capturas/2026-11-14/extensa-bianca/): `<vista>-<tema>-<ancho>` = base; `sheet-*` = hojas, top/bottom; `empty-*` = vacíos; `long-*` = estrés; cámaras y hallazgos con nombres descriptivos. Incluye un PNG de fixture sintético, no sólo screenshots.
+- Carpeta `capturas/2026-11-14/extensa-bianca/` (se nombra sin enlace, ídem: un directorio devolvía 404) con 153 PNG y mosaicos: `<vista>-<tema>-<ancho>` = base; `sheet-*` = hojas, top/bottom; `empty-*` = vacíos; `long-*` = estrés; cámaras y hallazgos con nombres descriptivos. Incluye un PNG de fixture sintético, no sólo screenshots.
 - Base local `0bc1a40`, publicación aún v33. NO OK por 9 hallazgos recién detectados; 4 datos/fotos confirmados por Orion y heredados. Cámara corregida OK. No teléfono/nube/lector completo. Sin código ni publicación.
 
 ## Ropa v2 · F0+F1 · Blas + Olga · 2026-11-18
@@ -281,8 +281,16 @@ Este índice centraliza el material desde su adopción y enlaza evidencia histó
 | Agenda (filtro por día) | 1280 | oscuro | [flor-ronda2-agenda-filtro-dia-1280-oscuro.png](capturas/2026-11-22/flor-ronda2-agenda-filtro-dia-1280-oscuro.png) |
 | Agenda (vista Semanas) | 320 | claro | [flor-ronda2-agenda-semanas-320-claro.png](capturas/2026-11-22/flor-ronda2-agenda-semanas-320-claro.png) |
 | Pedido sin productos (mensaje de validación) | 320 | claro | [flor-ronda2-pedido-sin-productos-mensaje.png](capturas/2026-11-22/flor-ronda2-pedido-sin-productos-mensaje.png) |
-| Agenda (HALLAZGO: el botón «+» tapa el final del texto «Tocá un día para ver sus entregas») | 320 | claro | [flor-ronda2-agenda-texto-tapado-320-claro.png](capturas/2026-11-22/flor-ronda2-agenda-texto-tapado-320-claro.png) |
+| Agenda (hallazgo del «+», ya corregido: ver cierre abajo) | 320 | claro | [flor-ronda2-agenda-texto-tapado-320-claro.png](capturas/2026-11-22/flor-ronda2-agenda-texto-tapado-320-claro.png) |
 
-El hallazgo señalado está registrado como tarea de prioridad baja; el resto de la ronda no mostró fallos. La cobertura anterior del día (editor de pedidos, vínculo de cliente, aviso del encabezado, barra y pantallas Inicio/Pedidos/Contactos/Inventario) ya está documentada en este índice y no se repitió.
+El hallazgo del «+» de esta ronda **ya está cerrado**: se corrigió en `3f68a17` y se verificó sobre el sitio publicado (`0ad6bb7`, capturas `fix-agenda-320-vivo-*.png` en el cierre de abajo); la tarea quedó cerrada y no hay nada pendiente de esta ronda. La imagen se conserva como evidencia histórica del estado anterior. El resto de la ronda no mostró fallos. La cobertura anterior del día (editor de pedidos, vínculo de cliente, aviso del encabezado, barra y pantallas Inicio/Pedidos/Contactos/Inventario) ya está documentada en este índice y no se repitió.
 
 Cierre del hallazgo del «+» (22-nov, sitio público ya publicado, 320×720): [Agenda claro, texto completo y FAB separado](capturas/2026-11-22/fix-agenda-320-vivo-claro.png) · [Agenda oscuro, lo mismo](capturas/2026-11-22/fix-agenda-320-vivo-oscuro.png). Medición en vivo: texto x=34..209, «+» x=229..287 (20 px de separación, sin solape) en claro y oscuro; el «+» abre «Nuevo pedido». Fix: `componentes.css` reserva la columna del FAB en `@media (max-width:360px)`.
+
+## Rectificación de enlaces del índice · Dino · 2026-11-22
+
+- Auditoría con `curl` + caché-buster sobre los 131 enlaces de este índice publicado: **110 respondían 200 y 21 daban 404**. No hubo secciones duplicadas ni se borró evidencia: solo se corrigió a dónde apunta cada enlace.
+- **19 capturas del 2026-11-20 subidas en este mismo cambio** (`capturas/2026-11-20/qa-flor/` 7 y `capturas/2026-11-20/revision-olga/` 12): existían en local pero nunca se habían versionado, así que sus enlaces en las secciones de Flor y Olga daban 404 en Pages. Sin cambios de código; datos demo, sin clientas reales.
+- **2 enlaces a carpetas** (`capturas/2026-11-14/ux36-bianca/` y `extensa-bianca/`) se dejaron como ruta en texto: un directorio no se sirve como página en Pages. Los archivos concretos de esas carpetas siguen enlazados y responden 200.
+- Las **10 capturas `flor-ronda-*`** de la ronda sobre `9e45b49` se verificaron con caché-buster: **200 image/png con tamaño real** y están versionadas desde `5f91fb0`. No se subió nada por ellas; la duda de que faltaran era un falso positivo.
+- Ronda2: el «+» ya estaba corregido en `3f68a17`, publicado y verificado (`0ad6bb7`). El cierre de su sección se reescribió para decir que está cerrado y remitir a las capturas `fix-agenda-320-vivo-*.png`; la imagen del hallazgo queda como evidencia histórica.
