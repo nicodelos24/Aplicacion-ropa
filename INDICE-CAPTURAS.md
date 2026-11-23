@@ -367,3 +367,15 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 ### Verificación del vivo · 2026-11-23
 
 - Publicado en master (`6419213`). Verificado en vivo sobre https://nicodelos24.github.io/Aplicacion-ropa/?demo=1: `sw.js` sirve `ropa-v2-nav-1500ms-r23`, `main.css` pide `motion.css?v=3`, y en la agenda real el switch a Semanas devuelve `agendaCambia`, las flechas de semana y de mes dan `agendaCambia` con `data-dir="prox"`, el chip de Pedidos y el de Historial dan `chipOn`, y `#main` sigue con una sola animación. 0 errores de consola.
+
+### Recorte del desborde del deslizo a 320 px · 2026-11-23
+
+- QA de Flor: durante `agendaCambia` con `data-dir="prox"` a 320 px el `scrollWidth` del documento subía de 305 a 316 px mientras corría el deslizo (y volvía solo al terminar). Arreglo en `src/ui/base.css`: `#main{overflow-x:clip}` — recorta el pico sin crear contexto de scroll (`hidden`) ni tocar márgenes, `agendaCambia` ni `.vista`. Caché de la PWA a `ropa-v2-nav-1500ms-r24` y `base.css?v=3`.
+- Medido en el Chrome del proyecto a 320 px (viewport útil 305 px, tema oscuro y claro), con la animación congelada a mitad del deslizo (`agendaCambia` en `translateX(30px)`): sin el clip el documento da 316 px; con el clip se queda en 305 px. Barrido de 5 px durante 320 ms en cuatro cambios de mes y tres de semana: pico 305 px, sin un píxel de desborde. Las siete pantallas en reposo siguen en 305 px, el `topbar` sigue pegado arriba y la hoja de detalle se abre sin desborde.
+- `npm test` 109/109 (108 + el nuevo del clip) y `npm run check` OK.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Deslizo de mes congelado a mitad, sin desborde (medidor en pantalla) | 320 | oscuro | [dino-agenda-320-clip-deslizo-pausado.png](capturas/2026-11-23/dino-agenda-320-clip-deslizo-pausado.png) |
+| Deslizo de semana congelado a mitad, sin desborde | 320 | oscuro | [dino-agenda-320-clip-semana-pausada.png](capturas/2026-11-23/dino-agenda-320-clip-semana-pausada.png) |
+| Deslizo de mes congelado a mitad, tema claro | 320 | claro | [dino-agenda-320-clip-deslizo-claro.png](capturas/2026-11-23/dino-agenda-320-clip-deslizo-claro.png) |

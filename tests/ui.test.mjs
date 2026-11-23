@@ -872,9 +872,10 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r\d+"/, "el caché se refresca al bajar la reaparición de la nav a 1,5 s");
-  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r23"/, "el caché se refresca al animar el recambio de la agenda y los chips");
-  assert.doesNotMatch(sw, /-r21"|-r22"/, "la versión de caché no queda en las anteriores");
+  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r24"/, "el caché se refresca al recortar el desborde del deslizo de la agenda");
+  assert.doesNotMatch(sw, /-r21"|-r22"|-r23"/, "la versión de caché no queda en las anteriores");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
+  assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
   assert.match(cssMain, /componentes\.css\?v=3/, "los estilos nuevos de las cuotas entran con versión propia");
   assert.match(cssMain, /motion\.css\?v=3/, "las animaciones nuevas de la agenda entran con versión propia");
   assert.doesNotMatch(sw, /ropa-v2-nav-90s-r19|ropa-v2-paco-corbata-r18|ropa-v2-nav-2000ms-toast-r17|ropa-v2-nav-2500ms-toast-r16|ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15/, "la versión de caché no queda en la de publicaciones anteriores");
@@ -1103,6 +1104,20 @@ test("animaciones: agenda y chips usan solo transform/opacity, 150-320 ms y resp
   assert.match(comp, /@media \(prefers-reduced-motion:reduce\)\{\s*\.chip\.on,\.chip\.on::before\{animation:none\}/,
     "reduce-motion apaga el chip animado");
   assert.match(comp, /\.chip\.on\{[^}]*background:var\(--grad-acc\)/, "el chip activo conserva su relleno");
+});
+
+test("agenda: el deslizo de mes/semana no desborda a 320 px (main recorta con clip, no hidden)", () => {
+  const base = fs.readFileSync(path.join(RAIZ, "src/ui/base.css"), "utf8");
+  const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
+  /* Medido en el Chrome del proyecto a 320 px: durante agendaCambia con
+     data-dir="prox" la grilla asoma ~11 px fuera del viewport y el
+     scrollWidth del documento subía de 305 a 316. El clip en #main lo corta
+     sin crear contexto de scroll ni tocar animaciones ni márgenes. */
+  assert.match(base, /main\{[^}]*overflow-x:clip/, "el bloque de #main recorta el desborde horizontal");
+  const bloqueMain = /main\{([^}]*)\}/.exec(base);
+  assert.ok(bloqueMain, "existe el bloque base de main");
+  assert.doesNotMatch(bloqueMain[1], /overflow(-x)?:hidden/, "clip, no hidden: sin contexto de scroll ni corte de focos");
+  assert.match(cssMain, /base\.css\?v=3/, "el recorte entra con versión propia del CSS");
 });
 
 test("animaciones: los chips de Pedidos e Historial se animan al filtrar y no se quedan apagados", async () => {

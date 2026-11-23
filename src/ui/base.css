@@ -46,6 +46,12 @@ main{
   padding:18px 16px 0;
   max-width:560px; margin:0 auto;
   min-height:calc(100dvh - var(--nav-h));
+  /* Recambio de la agenda (agendaCambia desliza ±30 px): sin esto, a 320 px el
+     deslizo empuja unos píxeles el scrollWidth del documento mientras corre y la
+     barra horizontal parpadea. `clip` recorta ese pico sin crear contexto de
+     scroll (no `hidden`: no se puede scrollear ni corta focos) y sin cambiar
+     márgenes ni orden; en reposo no hay nada que recortar. */
+  overflow-x:clip;
 }
 main::after{content:"";display:block;height:calc(var(--nav-h) + 30px)}
 
