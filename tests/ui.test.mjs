@@ -352,6 +352,46 @@ test("agenda: alternador Calendario ↔ Semanas y franja LU…DO con un solo dí
   assert.deepEqual(errores, []);
 });
 
+test("agenda: cambiar de fecha NO relanza la animación de entrada del almanaque", async () => {
+  await reiniciar();
+  irA("agenda");
+  /* El calendario no trae su propia animación de entrada: al repintarse por
+     un toque de fecha, el nodo nuevo no debe "abrirse" como la primera vez. */
+  assert.ok(qs("#main .cal"), "calendario presente");
+  assert.equal(qs("#main .cal").classList.contains("anim-entra"), false,
+    "el almanaque no se reanima al cambiar de fecha");
+  /* Tocar un día repinta dentro de la misma sección: #main conserva la clase
+     de entrada (no se reinicia) y sigue siendo la misma sección. */
+  const main = qs("#main");
+  assert.ok(main.classList.contains("vista"), "contenedor mantiene su animación de sección");
+  const dia = qsa("#main .cal-dia[data-ds]").find((x) => x.querySelector(".dots i"));
+  assert.ok(dia, "hay un día con entregas para tocar");
+  click(dia);
+  assert.equal(vista.seccion, "agenda", "sigue en agenda");
+  assert.ok(qs("#main .cal"), "calendario sigue presente tras tocar la fecha");
+  assert.equal(qs("#main .cal").classList.contains("anim-entra"), false,
+    "sigue sin animación de entrada después del toque");
+  assert.ok(main.classList.contains("vista"), "no se relanzó la animación del contenedor");
+  assert.deepEqual(errores, []);
+});
+
+test("agenda: la vista Semanas muestra indicadores de color en los días con entregas", async () => {
+  await reiniciar();
+  irA("agenda");
+  click('#main .agenda-switch-b[data-modo="semanas"]');
+  /* Buscar una semana con datos (las fechas demo son relativas a hoy). */
+  let puntos = qsa("#main .sem-dots i");
+  if (!puntos.length) { click("#sem-next"); await esperar(); puntos = qsa("#main .sem-dots i"); }
+  assert.ok(puntos.length > 0, "la franja tiene puntos indicadores");
+  assert.ok(puntos.every((p) => /d-(yellow|orange|blue|green|red|neutral)/.test(p.className)),
+    "cada punto tiene un color asignado (antes eran invisibles)");
+  const diasCon = qsa("#main .sem-dia.tiene");
+  assert.ok(diasCon.length >= 1, "los días con entregas se marcan con la clase 'tiene'");
+  assert.ok(diasCon.every((x) => x.querySelector(".sem-dots i")),
+    "todo día marcado 'tiene' muestra su indicador");
+  assert.deepEqual(errores, []);
+});
+
 test("detalle: abanico simétrico, con capas por cercanía sin mover las cartas en el DOM", async () => {
   await reiniciar();
   const items = Array.from({ length: 5 }, (_, i) => ({ nombre: `Artículo ${i + 1}`, precio: 100, qty: 1 }));

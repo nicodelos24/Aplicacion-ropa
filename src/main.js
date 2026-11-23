@@ -189,8 +189,15 @@ if (typeof MutationObserver !== "undefined") {
 reiniciarInactividad();
 alScrollNav();
 
+let seccionPintada = null;
 function render() {
   const v = vista.seccion;
+  /* La animación de entrada del contenido solo corre al CAMBIAR de sección.
+     Un repintado de la misma sección (tocar una fecha del calendario, pasar
+     de mes, filtrar…) NO debe relanzarla: antes se reiniciaba en cada render
+     y el almanaque parecía abrirse de nuevo cada vez. */
+  const cambioSeccion = seccionPintada !== v;
+  seccionPintada = v;
   /* ningún aviso queda flotando sobre el header al cambiar de sección */
   ocultarToast();
   /* cada sección vuelve a arrancar con la nav visible */
@@ -199,14 +206,14 @@ function render() {
   qsa("#nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
 
   const main = qs("#main");
-  /* Reinicia la animación de entrada sin forzar layout: `void offsetWidth`
-     provocaba un reflow sincrónico en cada cambio de sección. Cancelar la
-     animación, quitar la clase y hacer una lectura de ESTILO (no de layout)
-     antes de volver a ponerla logra el mismo reinicio a menor costo. */
-  if (typeof main.getAnimations === "function") main.getAnimations().forEach(a => a.cancel());
-  main.classList.remove("vista");
-  void getComputedStyle(main).animationName;
-  main.classList.add("vista");
+  /* Solo al cambiar de sección: si el contenido se repinta dentro de la misma
+     sección, conservar la clase evita que se repita la animación de entrada. */
+  if (cambioSeccion) {
+    if (typeof main.getAnimations === "function") main.getAnimations().forEach(a => a.cancel());
+    main.classList.remove("vista");
+    void getComputedStyle(main).animationName;
+    main.classList.add("vista");
+  }
 
   qs("#searchrow").style.display = CON_BUSQUEDA.includes(v) ? "flex" : "none";
   qs("#chips").style.display = v === "pedidos" ? "flex" : "none";

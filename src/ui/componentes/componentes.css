@@ -358,9 +358,21 @@ fieldset{border:none}
 }
 .sem-dow{font-size:10px; font-weight:800; letter-spacing:.6px; opacity:.85}
 .sem-num{font-size:18px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums}
-.sem-dots{display:flex; gap:2.5px; height:5px; align-items:center; justify-content:center}
-.sem-dots i{width:4px; height:4px; border-radius:50%; display:block}
-.sem-dia.sel .sem-dots i{outline:1px solid rgba(0,0,0,.22)}
+.sem-dots{display:flex; gap:3px; height:9px; align-items:center; justify-content:center}
+.sem-dots i{
+  width:7px; height:7px; border-radius:50%; display:block;
+  box-shadow:0 0 0 1.5px var(--card2);
+}
+/* Indicador de días con contenido: los puntos de la franja deben verse
+   igual de claros que los del calendario (antes no tenían color asignado). */
+.sem-dots i.d-yellow{background:var(--c-yellow)}
+.sem-dots i.d-orange{background:var(--c-orange)}
+.sem-dots i.d-blue{background:var(--c-blue)}
+.sem-dots i.d-green{background:var(--c-green)}
+.sem-dots i.d-red{background:var(--c-red)}
+.sem-dots i.d-neutral{background:var(--mut)}
+.sem-dia.tiene{background:var(--card3)}
+.sem-dia.sel .sem-dots i{box-shadow:0 0 0 1.5px rgba(0,0,0,.28)}
 
 /* Agrupación por día con eje vertical, inspirada en la referencia (estructura, no estilo). */
 .sem-grupo{margin-top:16px}

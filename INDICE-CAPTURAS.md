@@ -294,3 +294,15 @@ Cierre del hallazgo del «+» (22-nov, sitio público ya publicado, 320×720): [
 - **2 enlaces a carpetas** (`capturas/2026-11-14/ux36-bianca/` y `extensa-bianca/`) se dejaron como ruta en texto: un directorio no se sirve como página en Pages. Los archivos concretos de esas carpetas siguen enlazados y responden 200.
 - Las **10 capturas `flor-ronda-*`** de la ronda sobre `9e45b49` se verificaron con caché-buster: **200 image/png con tamaño real** y están versionadas desde `5f91fb0`. No se subió nada por ellas; la duda de que faltaran era un falso positivo.
 - Ronda2: el «+» ya estaba corregido en `3f68a17`, publicado y verificado (`0ad6bb7`). El cierre de su sección se reescribió para decir que está cerrado y remitir a las capturas `fix-agenda-320-vivo-*.png`; la imagen del hallazgo queda como evidencia histórica.
+
+## Ajuste visual Agenda (22-nov-2026) — pendiente del visto de Nico, NO publicado
+
+Pedido de Nico por video: (1) tocar una fecha del calendario no debe repetir la animación de entrada del almanaque; (2) la vista Semanas debe mostrar un indicador claro de qué días tienen contenido. Capturas sobre la rama `fix/agenda-anim-y-indicadores` (demo local, sin tocar la barra a 1,5 s ni datos reales):
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Vista Semanas con indicadores de color | 390 | oscuro | [agenda-semanas-indicadores-oscuro.png](capturas/2026-11-22/agenda-semanas-indicadores-oscuro.png) |
+| Calendario al tocar fechas, sin reanimación | 390 | oscuro | [agenda-calendario-sin-reanimacion-oscuro.png](capturas/2026-11-22/agenda-calendario-sin-reanimacion-oscuro.png) |
+| Video corto: tocar 3 fechas seguidas sin que el almanaque se abra de nuevo | 390 | oscuro | [agenda-tocar-fechas-sin-reanimacion.mp4](capturas/2026-11-22/agenda-tocar-fechas-sin-reanimacion.mp4) |
+
+Los puntos de la franja ahora tienen color asignado (antes no tenían regla CSS y eran invisibles) y los días con entregas llevan fondo sutil. Tests 84/84 y `npm run check` OK. **Sin publicar**: falta el visto de Nico.

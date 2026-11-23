@@ -58,7 +58,7 @@ export function pintarAgenda(main, abrirDetalle) {
       ${vista.verPasadas ? listaHTML() : ""}`;
 
     return `
-      <div class="cal anim-entra">
+      <div class="cal">
         <div class="cal-cab">
           <button id="cal-prev" aria-label="Mes anterior">${ICONO.chevIzq}</button>
           <b id="cal-titulo">${MESES[vista.calMes]} ${vista.calAnio}</b>
@@ -87,7 +87,7 @@ export function pintarAgenda(main, abrirDetalle) {
 
     const franja = dias.map(x => {
       const n = (porFecha[x.ds] || []).length;
-      return `<button class="sem-dia ${x.esHoy ? "hoy" : ""} ${x.ds === sel ? "sel" : ""}"
+      return `<button class="sem-dia ${x.esHoy ? "hoy" : ""} ${x.ds === sel ? "sel" : ""} ${n ? "tiene" : ""}"
         data-ds="${x.ds}" aria-pressed="${x.ds === sel}"
         aria-label="${x.dow} ${x.dia} de ${MESES[x.mes]}, ${n} entregas">
         <span class="sem-dow">${x.dow}</span>
@@ -107,7 +107,7 @@ export function pintarAgenda(main, abrirDetalle) {
       : `<p class="nota-vacia">Tocá un día de la franja para ver sus pedidos.</p>`;
 
     return `
-      <div class="semana anim-entra">
+      <div class="semana">
         <div class="sem-cab">
           <button id="sem-prev" aria-label="Semana anterior">${ICONO.chevIzq}</button>
           <b id="sem-titulo">${fdateShort(lunes)} – ${fdateShort(domingo)}</b>
