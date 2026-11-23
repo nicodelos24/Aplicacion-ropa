@@ -349,3 +349,17 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 - Hallazgo de Flor: `abrirHoja()` limpiaba la guardia, así que al reabrir el detalle o cancelar el aviso de cambio de estado, las cuotas pendientes se perdían sin preguntar. Arreglado en `f235805`: la guardia solo la limpia el cierre forzado o el cierre ya confirmado, con dos tests nuevos (`npm test` 103/103).
 - Caché de la PWA a `ropa-v2-nav-1500ms-r22` y `componentes.css?v=3` (`21ec0a1`), para que las clientas no queden con los estilos viejos.
 - Publicado en master (`21ec0a1`). Verificado en vivo sobre https://nicodelos24.github.io/Aplicacion-ropa/?demo=1: `sw.js` sirve `r22` y `main.css` pide `componentes.css?v=3`; en el detalle de Lucía `+` deja «Pagó 2 de 3 sin guardar» sin tocar `ropa_v2_data` (sigue 1), cancelar el aviso de «Mensaje enviado» conserva el pendiente, y cerrar por X pregunta «¿Salir sin guardar las cuotas?»; salir sin guardar deja el pedido en 1 de 3. 0 errores de consola.
+
+## Ropa v2 · animación de la agenda y los chips · Dino · 2026-11-23
+
+- Base: master `21ec0a1` (ya con el ancho de escritorio, el pliegue de otras entregas y el guardado con confirmación), rama `fix/agenda-anim-vistas`, vivo local `127.0.0.1:4193/index.html?demo=1` (Chrome del proyecto, viewport 390 y 320, tema oscuro). Demo, sin datos de clientas. Tarea `apx:tasks/task_88cf235b2ebc48cc`.
+- Qué se animó: el switch Calendario ↔ Semanas entra con crossfade + deslizo corto (200 ms); las flechas de mes y de semana reescriben solo la grilla / la franja y esa pieza entra deslizando desde el lado de la flecha (220 ms, ±30 px); el chip activo de Pedidos e Historial entra con el tono del stagger de las tarjetas (220 ms) y su punto se enciende. Todo con `transform`/`opacity`, `prefers-reduced-motion` respetado y el mismo lenguaje `--t-fast/med/slow`/`--ease-out` de `motion.css`.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Vista Semanas ya asentada (referencia) | 390 | oscuro | [agenda-anim-semanas-390.png](capturas/2026-11-23/agenda-anim-semanas-390.png) |
+| Cambio de semana a mitad del deslizo | 390 | oscuro | [agenda-anim-semana-cambio-medio-390.png](capturas/2026-11-23/agenda-anim-semana-cambio-medio-390.png) |
+| Calendario tras cambiar de mes, sin desborde a 320 | 320 | oscuro | [agenda-anim-calendario-320.png](capturas/2026-11-23/agenda-anim-calendario-320.png) |
+| Chip «Pagados» activo tras filtrar | 320 | oscuro | [agenda-anim-chips-320.png](capturas/2026-11-23/agenda-anim-chips-320.png) |
+
+- Medido en el navegador: `chipOn` 0,22 s y `agendaCambia` 0,2 s / 0,22 s activos (no `none`), `#main` conserva una sola animación (`.vista`, no se relanza), 30 cambios de mes seguidos en 384 ms y sin desborde horizontal a 320 px. Tests 108/108 y `npm run check` OK (sobre master `21ec0a1`, ya con el guardado con confirmación, sin pisarlo). Publicado en master con visto de Nico.

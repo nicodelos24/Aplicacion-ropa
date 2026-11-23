@@ -36,6 +36,9 @@ export function pintarPedidos(main, abrirDetalle) {
 
 function pintarChips(cuento) {
   const cont = qs("#chips");
+  /* El chip activo ya se marca con .on; la transición del estado la anima
+     motion.css (chipOn / chipDot), en el mismo tono que el stagger de las
+     tarjetas. Acá solo queda el cableado. */
   cont.innerHTML = FILTROS.map(f =>
     `<button class="chip chip-${f.tono} ${vista.filtro === f.id ? "on" : ""}" data-k="${f.id}" aria-pressed="${vista.filtro === f.id}">${f.label} <span class="n">(${cuento[f.id]})</span></button>`).join("");
   qsa(".chip", cont).forEach(ch => ch.onclick = () => { vista.filtro = ch.dataset.k; emitirVista(); });

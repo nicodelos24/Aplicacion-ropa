@@ -30,4 +30,6 @@ export function pintarHistorial(main) {
     : `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.historial}</div><b>Sin movimientos todavía</b><p>Cada pedido, producto o cambio<br>quedará registrado aquí con su autor.</p></div>`}`;
 
   qsa(".chip", main).forEach(c => c.onclick = () => { vista.logFiltro = c.dataset.k; emitirVista(); });
+  /* El estado activo (.on) se anima desde motion.css (chipOn/chipDot), igual
+     que los chips de Pedidos: no hace falta nada más acá. */
 }

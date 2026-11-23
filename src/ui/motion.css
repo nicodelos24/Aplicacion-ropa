@@ -44,7 +44,31 @@
 @media (prefers-reduced-motion:reduce){
   .fold-otras .fold-panel,.fold-otras #fold-otras svg{transition:none}
   .agenda-dia{animation:none}
+  .agenda-anim{animation:none; will-change:auto}
 }
+
+/* ---- agenda: los cinco controles que repintan sin avisar ----
+   Antes cada toque en Calendario/Semanas, en las flechas de mes o de semana
+   reemplazaba #main.innerHTML de golpe: el contenido nuevo aparecía seco. Acá
+   el recambio entra con un keyframe corto (220 ms) que usa SOLO opacity y
+   transform (translateX = dirección), así lo resuelve el compositor y no hay
+   reflow que frene la app. El nodo que se repinta es el que se anima, nunca
+   #main: su .vista no se relanza (tocar una fecha es repintar, no navegar).
+   El bloque del día (.agenda-dia) conserva su diaCambia al elegir fecha. */
+@keyframes agendaCambia{
+  from{opacity:0; transform:translateX(var(--ag-x,0))}
+  to{opacity:1; transform:none}
+}
+.agenda-anim{animation:agendaCambia 220ms var(--ease-out) both; will-change:opacity, transform}
+.agenda-anim[data-dir="prox"]{--ag-x:30px}
+.agenda-anim[data-dir="prev"]{--ag-x:-30px}
+/* Cambio de vista (calendario ↔ semanas): mismo movimiento, más corto, porque
+   las dos vistas son pantallas distintas y el deslizo es solo un acento. */
+.agenda-anim[data-dir="vista"]{--ag-x:0; animation-duration:200ms}
+
+/* ---- chips de filtro (Pedidos e Historial) ----
+   El chip activo (.chip.on) entra con chipOn/chipDot, declarados en
+   componentes.css junto a la regla del chip. */
 
 /* ---- tap físico uniforme ---- */
 .tocable{transition:transform var(--t-fast) var(--ease-out)}

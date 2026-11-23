@@ -104,6 +104,11 @@ async function reiniciar() {
   vista.filtro = "all";
   vista.busqueda = "";
   vista.diaSel = null;
+  /* La agenda y el historial guardan su propio filtro/modo en vista: sin
+     reiniciarlos, un test heredaría la vista que dejó el anterior. */
+  vista.agendaModo = "calendario";
+  vista.verPasadas = false;
+  vista.logFiltro = "all";
   qs("#search").value = "";
   /* Fuente única del tema: db().theme dentro de ropa_v2_data. */
   store.boot({ ...datosDemo(), theme: "dark" });
@@ -867,9 +872,11 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r\d+"/, "el caché se refresca al bajar la reaparición de la nav a 1,5 s");
-  assert.doesNotMatch(sw, /-r21"/, "el caché se refresca al cambiar el guardado con confirmación");
+  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r23"/, "el caché se refresca al animar el recambio de la agenda y los chips");
+  assert.doesNotMatch(sw, /-r21"|-r22"/, "la versión de caché no queda en las anteriores");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /componentes\.css\?v=3/, "los estilos nuevos de las cuotas entran con versión propia");
+  assert.match(cssMain, /motion\.css\?v=3/, "las animaciones nuevas de la agenda entran con versión propia");
   assert.doesNotMatch(sw, /ropa-v2-nav-90s-r19|ropa-v2-paco-corbata-r18|ropa-v2-nav-2000ms-toast-r17|ropa-v2-nav-2500ms-toast-r16|ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15/, "la versión de caché no queda en la de publicaciones anteriores");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
   assert.ok(sw.includes("./src/ui/nav-scroll.js"), "el precache incluye la lógica de nav");
@@ -975,5 +982,142 @@ test("toast: sigue apareciendo y autocerrando con el único temporizador", async
   dispararErrorSinProductos();
   await esperar(4400);
   assert.equal(qs("#toast").classList.contains("mostrar"), false, "el aviso se cierra solo");
+  assert.deepEqual(errores, []);
+});
+
+/* ---------- Agenda: los tres recambios que antes aparecían de golpe ---------- */
+test("agenda: el switch Calendario ↔ Semanas anima solo la vista que entra, no #main", async () => {
+  await reiniciar();
+  irA("agenda");
+  const main = qs("#main");
+  assert.equal(main.dataset.agendaModo, "calendario", "la sección recuerda la vista pintada");
+
+  /* Semanas: la vista que entra trae el keyframe corto con dirección de vista. */
+  click('#main .agenda-switch-b[data-modo="semanas"]');
+  const semana = qs("#main .semana");
+  assert.ok(semana, "vista Semanas montada");
+  assert.ok(semana.classList.contains("agenda-anim"), "la vista que entra se anima");
+  assert.equal(semana.dataset.dir, "vista", "deslizo de cambio de vista, no de dirección de semana");
+  assert.equal(qs("#main .cal"), null, "la otra vista se va: es un recambio, no dos capas encimadas");
+  assert.ok(main.classList.contains("vista"), "#main conserva su animación de sección sin relanzarla");
+
+  /* Y de vuelta: ahora se anima el almanaque. */
+  click('#main .agenda-switch-b[data-modo="calendario"]');
+  const cal = qs("#main .cal");
+  assert.ok(cal.classList.contains("agenda-anim"), "el almanaque entra animado");
+  assert.equal(cal.dataset.dir, "vista");
+
+  /* Tocar la vista que ya está activa no repinta ni anima de nuevo. */
+  click('#main .agenda-switch-b[data-modo="calendario"]');
+  assert.equal(qs("#main .cal"), cal, "tocar la vista activa no rehace el almanaque");
+  assert.deepEqual(errores, []);
+});
+
+test("agenda: las flechas de mes animan la grilla con dirección y sin rehacer #main", async () => {
+  await reiniciar();
+  irA("agenda");
+  const cal = qs("#main .cal");
+  const grid = qs("#main .cal-grid");
+  const titulo = qs("#cal-titulo").textContent;
+
+  click("#cal-next");
+  assert.equal(qs("#main .cal-grid"), grid, "la grilla es el mismo nodo: se reescribe en el sitio");
+  assert.equal(qs("#main .cal"), cal, "#main no se rehízo al cambiar de mes");
+  assert.ok(grid.classList.contains("agenda-anim"), "la grilla nueva entra animada");
+  assert.equal(grid.dataset.dir, "prox", "mes siguiente desliza desde la derecha");
+  assert.notEqual(qs("#cal-titulo").textContent, titulo, "el título del mes acompaña");
+
+  click("#cal-prev");
+  assert.equal(qs("#main .cal-grid"), grid, "sigue el mismo nodo de grilla");
+  assert.equal(grid.dataset.dir, "prev", "mes anterior desliza desde la izquierda");
+
+  /* Los días siguen operativos después del recambio en el sitio. */
+  click(qsa("#main .cal-dia[data-ds]")[3]);
+  assert.equal(vista.seccion, "agenda", "sigue en agenda");
+  assert.equal(qsa("#main .cal-dia.sel").length, 1, "el día elegido se pinta tras cambiar de mes");
+  assert.deepEqual(errores, []);
+});
+
+test("agenda: las flechas de semana animan la franja con dirección y la dejan operativa", async () => {
+  await reiniciar();
+  irA("agenda");
+  click('#main .agenda-switch-b[data-modo="semanas"]');
+  const franja = qs("#main .sem-franja");
+  const titulo = qs("#sem-titulo").textContent;
+
+  click("#sem-next");
+  assert.equal(qs("#main .sem-franja"), franja, "la franja es el mismo nodo: se reescribe en el sitio");
+  assert.ok(franja.classList.contains("agenda-anim"), "la semana nueva entra animada");
+  assert.equal(franja.dataset.dir, "prox", "semana siguiente desliza desde la derecha");
+  assert.notEqual(qs("#sem-titulo").textContent, titulo, "el rango de la semana acompaña");
+  assert.equal(qsa("#main .sem-dia").length, 7, "siete días tras el cambio");
+
+  click("#sem-prev");
+  assert.equal(qs("#main .sem-franja"), franja, "sigue el mismo nodo de franja");
+  assert.equal(franja.dataset.dir, "prev", "semana anterior desliza desde la izquierda");
+
+  /* La franja recableada responde: tocar un día muestra el bloque y las cards. */
+  const con = qsa("#main .sem-dia").find((x) => x.querySelectorAll(".sem-dots i").length);
+  if (con) {
+    click(con);
+    assert.equal(qsa("#main .sem-dia.sel").length, 1, "día elegido tras cambiar de semana");
+    const ds = con.dataset.ds;
+    const esperados = store.pedidos().filter((o) => o.fecha === ds).map((o) => o.id).sort();
+    assert.deepEqual(qsa("#main .card[data-pedido]").map((c) => c.dataset.pedido).sort(), esperados,
+      "las tarjetas del día siguen vivas tras el recambio");
+  }
+  assert.deepEqual(errores, []);
+});
+
+test("animaciones: agenda y chips usan solo transform/opacity, 150-320 ms y respetan reduce-motion", () => {
+  const motion = fs.readFileSync(path.join(RAIZ, "src/ui/motion.css"), "utf8");
+  const comp = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/componentes.css"), "utf8");
+
+  /* Agenda: keyframe de recambio, corto y compuesto. */
+  const kf = /@keyframes agendaCambia\{([\s\S]*?)\n\}/.exec(motion);
+  assert.ok(kf, "existe el keyframe del recambio de agenda");
+  assert.match(kf[1], /opacity/, "anima opacidad");
+  assert.match(kf[1], /translateX/, "anima traslado");
+  assert.doesNotMatch(kf[1], /height|width|margin|padding|top:|left:/, "nada que fuerce reflow");
+  const uso = /\.agenda-anim\{animation:agendaCambia (\d+)ms/.exec(motion);
+  assert.ok(uso, "el recambio declara su duración");
+  const ms = Number(uso[1]);
+  assert.ok(ms >= 150 && ms <= 320, "duración dentro de 150-320 ms (" + ms + ")");
+  assert.match(motion, /\.agenda-anim\[data-dir="prox"\]\{--ag-x:30px\}/, "dirección adelante");
+  assert.match(motion, /\.agenda-anim\[data-dir="prev"\]\{--ag-x:-30px\}/, "dirección atrás");
+  assert.match(motion, /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*?\.agenda-anim\{animation:none/,
+    "reduce-motion apaga el recambio");
+  /* La animación no esconde el contenido: entra, no queda apagada. */
+  assert.match(motion, /\.agenda-anim\{animation:agendaCambia 220ms[^}]*both/, "queda en su estado final");
+
+  /* Chips: el estado activo entra con el tono de las tarjetas. */
+  const kfChip = /@keyframes chipOn\{([\s\S]*?)\n\}/.exec(comp);
+  assert.ok(kfChip, "existe el keyframe del chip activo");
+  assert.match(kfChip[1], /opacity/, "anima opacidad");
+  assert.match(kfChip[1], /translateY\(2px\) scale\(\.96\)/, "sube y escala como el stagger");
+  assert.doesNotMatch(kfChip[1], /height|margin|padding/, "sin reflow");
+  const usoChip = /\.chip\.on\{animation:chipOn (\d+)ms/.exec(comp);
+  assert.ok(usoChip, "el chip activo declara su duración");
+  const msChip = Number(usoChip[1]);
+  assert.ok(msChip >= 150 && msChip <= 320, "duración dentro de 150-320 ms (" + msChip + ")");
+  assert.match(comp, /@media \(prefers-reduced-motion:reduce\)\{\s*\.chip\.on,\.chip\.on::before\{animation:none\}/,
+    "reduce-motion apaga el chip animado");
+  assert.match(comp, /\.chip\.on\{[^}]*background:var\(--grad-acc\)/, "el chip activo conserva su relleno");
+});
+
+test("animaciones: los chips de Pedidos e Historial se animan al filtrar y no se quedan apagados", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#chips .chip[data-k="paid"]');
+  const chip = qs('#chips .chip[data-k="paid"]');
+  assert.ok(chip.classList.contains("on"), "el chip elegido queda activo");
+  assert.equal(chip.getAttribute("aria-pressed"), "true", "aria-pressed acompaña");
+  assert.doesNotMatch(chip.getAttribute("style") || "", /opacity|transform/, "sin estilos inline que pisen la animación");
+  irA("historial");
+  const ch = qsa("#main .chip");
+  if (ch.length) {
+    click(ch[ch.length - 1]);
+    assert.equal(qsa("#main .chip.on").length, 1, "un solo autor activo en Historial");
+  }
   assert.deepEqual(errores, []);
 });

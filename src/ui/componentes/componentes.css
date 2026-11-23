@@ -99,6 +99,22 @@ html:not([data-theme="light"]) .borde-green{box-shadow:var(--sh-1), var(--inset-
 .chip .n{opacity:.7; font-variant-numeric:tabular-nums; font-weight:700}
 .chip.on{background:var(--grad-acc); border-color:transparent; color:var(--acc-ink); box-shadow:var(--sh-acc)}
 .chip.on::before{background:var(--acc-ink); animation:none; transform:scale(.9)}
+/* El estado activo entra, no aparece: mismo tono que el stagger de las tarjetas
+   (sube 2 px, escala .96 → 1, 220 ms) y el punto del chip se enciende. Solo
+   transform/opacity: lo resuelve el compositor, el filtro no se frena. */
+@keyframes chipOn{
+  from{transform:translateY(2px) scale(.96); opacity:.72}
+  to{transform:none; opacity:1}
+}
+.chip.on{animation:chipOn 220ms var(--ease-out) both}
+@keyframes chipDot{
+  from{transform:scale(.3); opacity:.2}
+  to{transform:scale(.9); opacity:1}
+}
+.chip.on::before{animation:chipDot 240ms var(--ease-out) both}
+@media (prefers-reduced-motion:reduce){
+  .chip.on,.chip.on::before{animation:none}
+}
 .chip:active{transform:scale(.93)}
 @keyframes latido{
   0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 45%,transparent)}
