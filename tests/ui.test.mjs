@@ -392,6 +392,54 @@ test("agenda: la vista Semanas muestra indicadores de color en los días con ent
   assert.deepEqual(errores, []);
 });
 
+test("agenda: «Ver otras entregas» pliega con transición de altura sin repintar la sección", async () => {
+  await reiniciar();
+  vista.calMes = new Date().getMonth(); vista.calAnio = new Date().getFullYear();
+  vista.agendaModo = "calendario";
+  irA("agenda");
+  /* El fold aparece cuando hay un día con entregas seleccionado (como en el video). */
+  const dia = qsa("#main .cal-dia[data-ds]").find((x) => x.querySelector(".dots i"));
+  assert.ok(dia, "hay día con entregas para seleccionar");
+  click(dia);
+  const fold = qs("#main .fold-otras");
+  assert.ok(fold, "el plegable existe con nodo persistente");
+  assert.equal(fold.classList.contains("abierto"), false, "empieza cerrado");
+  const panel = qs("#main .fold-panel");
+  assert.ok(panel, "el panel con transición de altura está en el DOM (aunque esté cerrado)");
+  /* El CSS define la transición real (grid 0fr→1fr), no una aparición seca. */
+  const css = fs.readFileSync(path.join(RAIZ, "src/ui/motion.css"), "utf8");
+  assert.match(css, /\.fold-otras \.fold-panel[\s\S]*transition:grid-template-rows/,
+    "el panel anima su altura con grid-template-rows");
+  const btn = qs("#fold-otras");
+  click(btn);
+  assert.ok(qs("#main .fold-otras").classList.contains("abierto"), "el toggle abre el panel");
+  assert.equal(btn.getAttribute("aria-expanded"), "true", "aria-expanded acompaña");
+  assert.match(btn.textContent, /Ocultar otras entregas/, "el texto cambia a Ocultar");
+  /* No se relanza la animación de entrada de la sección (mismo nodo #main). */
+  assert.ok(qs("#main").classList.contains("vista"), "la sección mantiene su animación, no se reinicia");
+  click(btn);
+  assert.equal(qs("#main .fold-otras").classList.contains("abierto"), false, "segundo toque cierra");
+  assert.deepEqual(errores, []);
+});
+
+test("agenda: el contenido del día lleva animación corta al tocar una fecha", async () => {
+  await reiniciar();
+  vista.calMes = new Date().getMonth(); vista.calAnio = new Date().getFullYear();
+  vista.agendaModo = "calendario";
+  irA("agenda");
+  const dia = qsa("#main .cal-dia[data-ds]").find((x) => x.querySelector(".dots i"));
+  assert.ok(dia, "hay día con entregas");
+  click(dia);
+  const detalle = qs("#main .agenda-dia");
+  assert.ok(detalle, "el detalle del día existe y es el nodo animado");
+  const css = fs.readFileSync(path.join(RAIZ, "src/ui/motion.css"), "utf8");
+  assert.match(css, /@keyframes diaCambia/, "existe el keyframe del cambio de día");
+  assert.match(css, /\.agenda-dia\{animation:diaCambia 190ms/, "la animación es corta (190 ms, no lenta)");
+  /* La animación es local al día: #main no relanza .vista. */
+  assert.ok(qs("#main").classList.contains("vista"), "no se relanza la animación de sección");
+  assert.deepEqual(errores, []);
+});
+
 test("detalle: abanico simétrico, con capas por cercanía sin mover las cartas en el DOM", async () => {
   await reiniciar();
   const items = Array.from({ length: 5 }, (_, i) => ({ nombre: `Artículo ${i + 1}`, precio: 100, qty: 1 }));

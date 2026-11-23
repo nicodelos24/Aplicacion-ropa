@@ -21,6 +21,31 @@
 .vista{animation:vistaEntra var(--t-slow) var(--ease-out) both}
 @keyframes vistaEntra{from{opacity:0; transform:translateY(9px)} to{opacity:1; transform:none}}
 
+/* ---- agenda: plegable «Ver otras entregas» con altura animada ----
+   grid 0fr→1fr anima la altura real sin height:auto (no se puede transicionar).
+   El nodo SIEMPRE existe; solo cambia la clase. 200 ms, mismo tiempo que la
+   transición de sección: se siente suave sin arrastrar. ---- */
+.fold-otras .fold-panel{
+  display:grid; grid-template-rows:0fr;
+  transition:grid-template-rows var(--t-med) var(--ease-out), opacity var(--t-med) var(--ease-out);
+  opacity:0;
+}
+.fold-otras.abierto .fold-panel{grid-template-rows:1fr; opacity:1}
+.fold-otras .fold-inner{overflow:hidden; min-height:0}
+.fold-otras #fold-otras svg{transition:transform var(--t-med) var(--ease-out)}
+.fold-otras.abierto #fold-otras svg{transform:rotate(180deg)}
+
+/* ---- agenda: contenido del día al tocar una fecha (calendario o semana) ----
+   opacity + translateY: solo compuesto, sin reflow. Corto (190 ms) para que
+   el cambio se vea pero no frene. No se aplica a #main, así no se relanza .vista. ---- */
+@keyframes diaCambia{from{opacity:0; transform:translateY(7px)} to{opacity:1; transform:none}}
+.agenda-dia{animation:diaCambia 190ms var(--ease-out) both}
+
+@media (prefers-reduced-motion:reduce){
+  .fold-otras .fold-panel,.fold-otras #fold-otras svg{transition:none}
+  .agenda-dia{animation:none}
+}
+
 /* ---- tap físico uniforme ---- */
 .tocable{transition:transform var(--t-fast) var(--ease-out)}
 .tocable:active{transform:scale(.96)}
