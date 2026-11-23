@@ -458,3 +458,13 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | El mismo vacío en claro | 390 | claro | [dino-pedido-filas-vacio-390-light.png](capturas/2026-11-23/dino-pedido-filas-vacio-390-light.png) |
 | Una prenda más elegida y una sección plegada: badge 1/2 y «3 productos elegidos» | 390 | oscuro | [dino-pedido-filas-elegido-390-dark.png](capturas/2026-11-23/dino-pedido-filas-elegido-390-dark.png) |
 | Lo mismo en claro | 390 | claro | [dino-pedido-filas-elegido-390-light.png](capturas/2026-11-23/dino-pedido-filas-elegido-390-light.png) |
+
+#### Verificación del vivo · selector del pedido por sección (r28) · 2026-11-23
+
+- Publicado en master (`1bdca3a`) y servido por Pages: `sw.js` ya responde `const VERSION = "r28"` con `picker.css` y `pedido-picker.js` en el precache.
+- Chrome con registro limpio sobre `https://nicodelos24.github.io/Aplicacion-ropa/?demo=1`: el pedido de Paco abre con **3 secciones** (Dama · verano 2, Hombre · básicos 1/2, Sin sección 1/2), **6 filas de 52 px**, Camisa blanca y Corbata marcadas, total $1,250 y «2 productos elegidos»; `caches` queda solo en `ropa-v2-nav-1500ms-r28`, 0 px de desborde horizontal y 0 errores de consola en claro y oscuro.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Selector del pedido por sección en el vivo (r28) | 390 | oscuro | [dino-pedido-vivo-390-dark.png](capturas/2026-11-23/dino-pedido-vivo-390-dark.png) |
+| El mismo selector en el vivo, tema claro | 390 | claro | [dino-pedido-vivo-390-light.png](capturas/2026-11-23/dino-pedido-vivo-390-light.png) |
