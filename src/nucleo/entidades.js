@@ -90,13 +90,15 @@ export function pedidoDesdeDatos(datos, inventario = []) {
   return base;
 }
 
-export function productoNuevo({ name, price = 0, cat = CATEGORIA_DEFECTO, photo = null } = {}) {
+/** Producto del inventario. `seccionId` es la sección propia de la clienta (o null). */
+export function productoNuevo({ name, price = 0, cat = CATEGORIA_DEFECTO, photo = null, seccionId = null } = {}) {
   return {
     id: uid("i"),
     name: name || "",
     price: Number(price) || 0,
     cat: cat || CATEGORIA_DEFECTO,
     photo: photo || null,
+    seccionId: seccionId || null,
   };
 }
 

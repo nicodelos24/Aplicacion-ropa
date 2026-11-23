@@ -20,7 +20,7 @@ function localStorageSim({ quota } = {}) {
 }
 
 const SIN_DATOS = {
-  orders: [], inventory: [], clients: [], events: [], log: [],
+  orders: [], inventory: [], clients: [], events: [], log: [], secciones: [],
   users: [], usuarioId: "u1", prefijo: "+598", theme: "dark",
 };
 
@@ -47,7 +47,7 @@ test("carga y guarda redondo en localStorage real (simulado)", async () => {
 });
 
 test("degradación: sin espacio para fotos reintenta sin fotos (avisa)", async () => {
-  const limpiar = conLS(localStorageSim({ quota: 3001 }));
+  const limpiar = conLS(localStorageSim({ quota: 4000 }));
   const { guardar, cargar } = await import("../src/datos/local.js");
   const demo = datosDemo();
   demo.inventory[0].photo = "data:image/jpeg;base64," + "A".repeat(3000);

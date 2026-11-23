@@ -9,12 +9,17 @@ export function datosDemo() {
   // Fotos ficticias de muestra: se marcan en la UI como "Foto de prueba · Demo".
   // La superposición en store.js además las muestra en datos viejos guardados.
   const inventory = [
-    { id: di1, name: "Vestido floral", price: 1200, cat: "vestido", photo: "./fotos/vestido.jpg" },
-    { id: di2, name: "Camisa blanca", price: 950, cat: "camisa", photo: "./fotos/campera.jpg" },
-    { id: di3, name: "Pantalón negro", price: 1400, cat: "pantalon", photo: "./fotos/jean.jpg" },
-    { id: di4, name: "Abrigo largo", price: 3200, cat: "abrigo", photo: "./fotos/bolso.jpg" },
-    { id: di5, name: "Medias lanas", price: 250, cat: "media", photo: "./fotos/buzo.jpg" },
-    { id: di6, name: "Corbata", price: 300, cat: "otro", photo: "./fotos/remera.jpg" },
+    { id: di1, name: "Vestido floral", price: 1200, cat: "vestido", photo: "./fotos/vestido.jpg", seccionId: "ds1" },
+    { id: di2, name: "Camisa blanca", price: 950, cat: "camisa", photo: "./fotos/campera.jpg", seccionId: "ds2" },
+    { id: di3, name: "Pantalón negro", price: 1400, cat: "pantalon", photo: "./fotos/jean.jpg", seccionId: "ds1" },
+    { id: di4, name: "Abrigo largo", price: 3200, cat: "abrigo", photo: "./fotos/bolso.jpg", seccionId: "ds2" },
+    { id: di5, name: "Medias lanas", price: 250, cat: "media", photo: "./fotos/buzo.jpg", seccionId: null },
+    { id: di6, name: "Corbata", price: 300, cat: "otro", photo: "./fotos/remera.jpg", seccionId: null },
+  ];
+  /* secciones de la clienta (decisión B): dos creadas + los dos sueltos en "Sin sección" */
+  const secciones = [
+    { id: "ds1", nombre: "Dama · verano" },
+    { id: "ds2", nombre: "Hombre · básicos" },
   ];
   const clients = [
     { id: "dc1", name: "Rosita", tel: "099111222", notas: "" },
@@ -60,6 +65,7 @@ export function datosDemo() {
   return {
     orders,
     inventory,
+    secciones,
     clients,
     events: [],
     log,

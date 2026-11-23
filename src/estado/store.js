@@ -15,6 +15,7 @@ import {
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, ordenarPedidos } from "../nucleo/filtros.js";
 import { cargar as cargarLocal, guardar as guardarLocal, borrarTodo, disponible } from "../datos/local.js";
 import { conFotosDemo } from "../datos/fotos-demo.js";
+import { validarNombreSeccion, seccionNueva, esSeccion, contarEnSeccion } from "../nucleo/secciones.js";
 
 export const ESTADOS_PEDIDO = ESTADOS;
 export const ORDEN = ORDEN_ESTADOS;
@@ -58,6 +59,7 @@ export const pedidos = () => ordenarPedidos(vistaDemo().orders);
 export const productos = () => vistaDemo().inventory;
 export const clientes = () => estado.clients;
 export const eventos = () => estado.events;
+export const secciones = () => estado.secciones || [];
 export const log = () => estado.log;
 export const conteo = () => conteoFiltros(estado.orders);
 export function pedidosFiltrados(filtro, q) {
@@ -65,6 +67,7 @@ export function pedidosFiltrados(filtro, q) {
 }
 /* el editor debe ver el producto real (sin foto de muestra) para no guardarla como propia */
 export function productoPorId(id) { return estado.inventory.find((p) => p.id === id) || null; }
+export function seccionPorId(id) { return (estado.secciones || []).find((s) => s.id === id) || null; }
 export function clientePorId(id) { return estado.clients.find((c) => c.id === id) || null; }
 export function pedidoPorId(id) { return vistaDemo().orders.find((p) => p.id === id) || null; }
 export function clientePorNombre(nombre) {
@@ -195,7 +198,8 @@ export function crearProducto(datos, usuario) {
   const precio = parseMoneda(datos.price);
   if (precio === null) return { ok: false, error: "Precio inválido" };
   const cat = CATEGORIAS_IDS.includes(datos.cat) ? datos.cat : CATEGORIA_DEFECTO;
-  const p = productoNuevo({ ...datos, price: precio, cat });
+  const seccionId = esSeccion(datos.seccionId, secciones()) ? datos.seccionId || null : null;
+  const p = productoNuevo({ ...datos, price: precio, cat, seccionId });
   const r = set((d) => { d.inventory = [...d.inventory, p]; }, { log: "inv_new", detail: `${p.name} · ${fmt(p.price)}`, usuario });
   return { ok: true, producto: p, persistencia: r };
 }
@@ -208,6 +212,9 @@ export function editarProducto(id, datos, usuario) {
   if (precio === null) return { ok: false, error: "Precio inválido" };
   const cat = CATEGORIAS_IDS.includes(datos.cat) ? datos.cat : CATEGORIA_DEFECTO;
   const q = { ...p, name: String(datos.name).trim(), price: precio, cat, photo: datos.photo !== undefined ? datos.photo : p.photo };
+  if (datos.seccionId !== undefined) {
+    q.seccionId = esSeccion(datos.seccionId, secciones()) ? datos.seccionId || null : null;
+  }
   const r = set((d) => { d.inventory = d.inventory.map((x) => (x.id === id ? q : x)); }, { log: "inv_edit", detail: `${q.name} · ${fmt(q.price)}`, usuario });
   return { ok: true, producto: q, persistencia: r };
 }
@@ -218,6 +225,52 @@ export function eliminarProducto(id, usuario) {
   // los pedidos conservan su snapshot: nada más que quitar del inventario
   const r = set((d) => { d.inventory = d.inventory.filter((x) => x.id !== id); }, { log: "inv_del", detail: p.name, usuario });
   return { ok: true, persistencia: r };
+}
+
+/** Mueve un producto a otra sección (o a "Sin sección" con null). No toca nada más. */
+export function moverProductoASeccion(id, seccionId, usuario) {
+  const p = productoPorId(id);
+  if (!p) return { ok: false, error: "Producto inexistente" };
+  if (!esSeccion(seccionId, secciones())) return { ok: false, error: "Esa sección ya no existe" };
+  const destino = seccionId || null;
+  if ((p.seccionId || null) === destino) return { ok: true, producto: p };
+  const q = { ...p, seccionId: destino };
+  const nombre = destino ? seccionPorId(destino).nombre : "Sin sección";
+  const r = set((d) => { d.inventory = d.inventory.map((x) => (x.id === id ? q : x)); }, { log: "inv_move", detail: `${q.name} · ${nombre}`, usuario });
+  return { ok: true, producto: q, persistencia: r };
+}
+
+/* ── Secciones personalizables del inventario (decisión B) ──
+   Borrar una sección NUNCA borra productos: sus artículos vuelven a "Sin sección". */
+export function crearSeccion(nombre, usuario) {
+  const v = validarNombreSeccion(nombre, secciones());
+  if (!v.ok) return v;
+  const s = seccionNueva(v.nombre);
+  const r = set((d) => { d.secciones = [...(d.secciones || []), s]; }, { log: "sec_new", detail: s.nombre, usuario });
+  return { ok: true, seccion: s, persistencia: r };
+}
+
+export function renombrarSeccion(id, nombre, usuario) {
+  const s = seccionPorId(id);
+  if (!s) return { ok: false, error: "Esa sección ya no existe" };
+  const v = validarNombreSeccion(nombre, secciones(), { exceptoId: id });
+  if (!v.ok) return v;
+  if (v.nombre === s.nombre) return { ok: true, seccion: s };
+  const q = { ...s, nombre: v.nombre };
+  const r = set((d) => { d.secciones = (d.secciones || []).map((x) => (x.id === id ? q : x)); }, { log: "sec_edit", detail: q.nombre, usuario });
+  return { ok: true, seccion: q, persistencia: r };
+}
+
+/** Borra la sección y pasa sus productos a "Sin sección" (en la misma escritura). */
+export function eliminarSeccion(id, usuario) {
+  const s = seccionPorId(id);
+  if (!s) return { ok: false, error: "Esa sección ya no existe" };
+  const movidos = contarEnSeccion(estado.inventory, id);
+  const r = set((d) => {
+    d.secciones = (d.secciones || []).filter((x) => x.id !== id);
+    d.inventory = d.inventory.map((p) => (p.seccionId === id ? { ...p, seccionId: null } : p));
+  }, { log: "sec_del", detail: movidos ? `${s.nombre} · ${movidos} a Sin sección` : s.nombre, usuario });
+  return { ok: true, movidos, persistencia: r };
 }
 
 /* ── Acciones de clientas ── */
@@ -306,8 +359,18 @@ export function importar(json, { confirmar } = {}) {
   const counts = { orders: arr(d.orders).length, inventory: arr(d.inventory).length, clients: arr(d.clients).length };
   if (!counts.orders && !counts.inventory && !counts.clients) return { ok: false, error: "El respaldo está vacío" };
   if (confirmar && !confirmar(counts)) return { ok: false, cancelado: true };
+  /* las secciones vienen del respaldo; si no las trae, se conservan las de esta app
+     para que los productos importados no pierdan su cajón */
+  const seccionesImportadas = arr(d.secciones)
+    .filter((s) => s.id && String(s.nombre || "").trim())
+    .map((s) => ({ id: s.id, nombre: String(s.nombre).trim() }));
+  const listaSecciones = seccionesImportadas.length ? seccionesImportadas : (estado.secciones || []);
+  const idsSeccion = new Set(listaSecciones.map((s) => s.id));
   const proximo = {
-    orders: arr(d.orders), inventory: arr(d.inventory), clients: arr(d.clients),
+    orders: arr(d.orders),
+    inventory: arr(d.inventory).map((p) => ({ ...p, seccionId: p.seccionId && idsSeccion.has(p.seccionId) ? p.seccionId : null })),
+    clients: arr(d.clients),
+    secciones: listaSecciones,
     events: arr(d.events), log: arr(d.log).slice(-LOG_MAX), users: estado.users,
     usuarioId: estado.usuarioId, prefijo: estado.prefijo || "+598", theme: estado.theme,
   };
