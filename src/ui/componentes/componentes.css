@@ -837,4 +837,8 @@ nav button.on svg{transform:translateY(-1px) scale(1.05); filter:drop-shadow(0 0
 @media (max-width:360px){
   nav{left:4px; right:4px; padding:0}
   nav button .nav-lbl{font-size:8px}
+  /* El FAB flotante tapa el centro de la ayuda del calendario a este ancho.
+     Reservar su columna a la derecha e alinear el texto a la izquierda deja
+     el aviso legible en dos líneas sin mover el botón ni tocar otras vistas. */
+  .ayuda{max-width:calc(100% - 66px); text-align:left; margin-left:2px; margin-right:0}
 }
