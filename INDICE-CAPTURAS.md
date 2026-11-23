@@ -428,3 +428,16 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | Hoja «Tus secciones» en el vivo, con contadores | 390 | claro | [dino-secciones-vivo-hoja-390-claro.png](capturas/2026-11-23/dino-secciones-vivo-hoja-390-claro.png) |
 | Los mismos cajones a 320 px, sin desborde | 320 | oscuro | [dino-secciones-vivo-320-oscuro.png](capturas/2026-11-23/dino-secciones-vivo-320-oscuro.png) |
 - QA de Flor sobre la rama (`8e3784e`): [inventario 390 claro](capturas/2026-11-23/flor-secciones-inventario-390-claro.png) · [390 oscuro](capturas/2026-11-23/flor-secciones-inventario-390-oscuro.png) · [320 oscuro](capturas/2026-11-23/flor-secciones-inventario-320-oscuro.png) · [vista lista 320](capturas/2026-11-23/flor-secciones-vista-lista-320-oscuro.png) · [hoja de secciones](capturas/2026-11-23/flor-secciones-hoja-390-oscuro.png).
+
+#### Verificación del vivo · salto de caché r26→r27 (generación del service worker) · 2026-11-23
+
+- **El incidente.** El SW r25 dejaba en caché `store.js` previo a `f8430f4` y el build r26 lo importaba con `secciones`: primer ingreso, `The requested module '../estado/store.js' does not provide an export named 'secciones'`, Inventario no montaba (línea de arriba).
+- **Reproducido** en el Chrome del proyecto con el mismo origen y dos árboles servidos: build previo (`2075d4c`, SW r24) navegado, y al cambiar el servidor al código r26 la recarga mezcló `main.js` nuevo con el `store.js` viejo de caché: `... does not provide an export named 'exportar'`. Se repitió con una entrada `store.js` sin `exportar`/`secciones` escrita a mano en la caché.
+- **Arreglo** (`sw.js`, commit `0e32ae7`): una caché por generación, cada asset precargado con `?gen=<VERSION>` (una caché anterior no puede contestar la clave nueva), respuesta desde caché solo cuando la generación precargó entera y borrado de la anterior en `activate`. `VERSION` en `r27`; test nuevo `tests/sw-generacion.test.mjs` (5 casos) corre el `sw.js` real en `node:vm` con un `store.js` viejo cacheado.
+- **Verificado en el vivo** (`0e32ae7` en master, Pages sirviendo `const VERSION = "r27"`): página abierta sin registro, `?demo=1#inventario` monta el Inventario con los tres cajones, `caches` queda solo en `ropa-v2-nav-1500ms-r27` con 34 claves y 0 errores de consola. Recorrido Pedidos → Inicio → Inventario a 320 px sin errores. `npm test` 152/152 y `npm run check` OK.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Inventario del vivo tras el arreglo, cajones por sección | 390 | oscuro | [dino-sw-r27-inventario-390-oscuro.png](capturas/2026-11-23/dino-sw-r27-inventario-390-oscuro.png) |
+| El mismo inventario en claro | 390 | claro | [dino-sw-r27-inventario-390-claro.png](capturas/2026-11-23/dino-sw-r27-inventario-390-claro.png) |
+| Inventario a 320 px sin desborde | 320 | claro | [dino-sw-r27-inventario-320-claro.png](capturas/2026-11-23/dino-sw-r27-inventario-320-claro.png) |
