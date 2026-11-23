@@ -451,6 +451,48 @@ test("detalle: cambiar estado pide confirmación, cancelar no muta y aceptar sí
   assert.deepEqual(errores, []);
 });
 
+test("detalle: rechazar cerrar el aviso de cambio de estado no pierde la guardia de las cuotas", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d3"]');
+  click("#cq-plus"); /* 2 de 3 pendiente, sin guardar */
+  click('[data-st="paid"]'); /* abre el aviso de estado */
+  await esperar();
+  click("#cv-no");
+  await esperar();
+  assert.equal(store.pedidoPorId("d3").estado, "due", "el estado no cambió");
+  assert.match(qs(".cuotas-mid").textContent, /2 de 3/, "las cuotas pendientes siguen a la vista");
+  /* regresión: cancelar el cambio de estado no debe borrar la guardia */
+  click("#dCerrar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "al cerrar vuelve a avisar por las cuotas");
+  click("#cv-no");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "no se cierra sin confirmar");
+  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 1, "nada se persistió");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: cambiar el estado de un pedido con cuotas pendientes avisa antes de perderlas", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d3"]');
+  click("#cq-plus");
+  click('[data-st="msg"]'); /* el cambio de estado ya pide su propia confirmación */
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "el cambio de estado pide confirmación");
+  click("#cv-yes");
+  await esperar(260);
+  click("#dCerrar");
+  await esperar();
+  const avisado = qs("#confirmar").classList.contains("abierta");
+  assert.equal(avisado, true, "cerrar con algo pendiente avisa");
+  click("#cv-yes");
+  await esperar(220);
+  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 1, "salir sin guardar no persiste cuotas");
+  assert.deepEqual(errores, []);
+});
+
 test("detalle: el primer toque selecciona y solo el segundo con foto abre el visor", async () => {
   await reiniciar();
   const foto = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E";

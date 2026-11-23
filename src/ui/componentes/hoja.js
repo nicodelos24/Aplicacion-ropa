@@ -13,14 +13,14 @@ let cerrando = false;
 export function marcarCierrePorBack() { cerrandoPorBack = true; }
 
 /* Guardia de la hoja abierta: una función async que devuelve true si se puede
-   cerrar. En cargarla el editor cuando tiene cambios sin guardar; abrirHoja y
-   cerrarHoja la limpian. */
+   cerrar. La carga la pantalla cuando tiene cambios sin guardar; SÓLO la limpia
+   cerrarHoja (cierre forzado tras confirmar o guardar): abrirHoja la conserva
+   para que reabrir el detalle no borre la guardia de una edición pendiente. */
 let guardia = null;
 /** Registra (o anula con null) la guardia de cambios sin guardar. */
 export function alCerrarHoja(fn) { guardia = fn || null; }
 
 export function abrirHoja(html) {
-  guardia = null;
   const h = hoja(), hi = hojaIn();
   const yaAbierta = h.classList.contains("abierta");
   hi.innerHTML = html;

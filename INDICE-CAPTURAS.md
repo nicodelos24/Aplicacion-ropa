@@ -334,3 +334,12 @@ Los puntos de la franja ahora tienen color asignado (antes no tenían regla CSS 
 | Aviso «¿Salir sin guardar las cuotas?» | 390 | claro | [confirmacion-aviso-salir-cuotas-390.png](capturas/2026-11-23/confirmacion-aviso-salir-cuotas-390.png) |
 | Aviso «¿Salir sin guardar las cuotas?» a 320 | 320 | claro | [confirmacion-aviso-salir-cuotas-320.png](capturas/2026-11-23/confirmacion-aviso-salir-cuotas-320.png) |
 | Aviso «¿Salir sin guardar el pedido?» en el editor | 320 | claro | [confirmacion-aviso-editor-pedido-320.png](capturas/2026-11-23/confirmacion-aviso-editor-pedido-320.png) |
+
+### QA independiente (Flor) · 2026-11-23
+
+Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el Chrome del proyecto. Verificado en navegador real: `+` mueve el contador y la barra sin escribir en `ropa_v2_data` (sigue `cuotasPagadas: 1`), tope 3/3 y piso 0, `Descartar` revierte, las cinco vías de cierre del detalle (X, Cerrar, fondo, Escape, atrás) avisan y conservan el cambio al cancelar (el atrás rearma `{hoja:1}`), `Guardar cuotas` persiste y celebra al completar, y los tres editores avisan solo con cambios. `npm test` 101/101 y `npm run check` OK.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Cuotas pendientes «2 de 3 sin guardar» (revisión QA) | 320 | claro | [qa-flor-cuotas-pendientes-320.png](capturas/2026-11-23/qa-flor-cuotas-pendientes-320.png) |
+| Aviso «¿Salir sin guardar las cuotas?» (revisión QA) | 320 | claro | [qa-flor-aviso-salir-cuotas-320.png](capturas/2026-11-23/qa-flor-aviso-salir-cuotas-320.png) |
