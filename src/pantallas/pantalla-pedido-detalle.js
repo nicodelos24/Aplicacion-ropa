@@ -18,6 +18,7 @@ import { stackHTML } from "../ui/componentes/stack.js";
 import { abrirWhatsApp } from "../servicios/whatsapp.js";
 import { abrirEditorPedido } from "./pantalla-pedido-editor.js";
 import { abrirEditorArticulo } from "./pantalla-pedido-item-editor.js";
+import { abrirNuevoProductoEnPedido } from "./pantalla-pedido-nuevo-producto.js";
 import { plantilla } from "../ui/plantilla.js";
 
 /* fracción "pagadas/total" para la barra de cuotas (en 8avos, sin estilo inline) */
@@ -127,6 +128,10 @@ export function abrirDetallePedido(id) {
   };
   pintarAccionItem();
 
+  /* alta de producto nuevo desde el pedido: el botón vive en la misma barra */
+  const btnNuevo = qs("#dItemNuevoBtn");
+  if (btnNuevo) btnNuevo.onclick = () => abrirNuevoProductoEnPedido(id);
+
   qs("#hClose").onclick = intentarCerrarHoja;
   qs("#dCerrar").onclick = intentarCerrarHoja;
   qs("#hEdit").onclick = () => abrirEditorPedido(o);
@@ -211,8 +216,8 @@ export function celebrar(mensaje) {
 
 /* barra de acciones del artículo: se muestra solo si el pedido tiene artículos */
 function accionItemHTML(items, ic) {
-  if (!items || !items.length) return "";
-  return plantilla(ACCION_ITEM, { pencil: ic.pencil, imagen: ic.image });
+  if (!items) return "";
+  return plantilla(ACCION_ITEM, { pencil: ic.pencil, imagen: ic.image, plus: ic.plus });
 }
 
 const HOJA = `
@@ -249,6 +254,7 @@ const DCARD = `
 
 const ACCION_ITEM = `
     <div class="ditem-accion">
+      <button type="button" class="btn btn-ghost" id="dItemNuevoBtn">{{plus}} Nuevo producto</button>
       <button type="button" class="btn btn-ghost" id="dItemEditarBtn">{{pencil}} <span class="ditem-lbl">Editar artículo</span></button>
       <span class="ditem-hint">{{imagen}} Segundo toque en una tarjeta: su foto ampliada</span>
     </div>`;

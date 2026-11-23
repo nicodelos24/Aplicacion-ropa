@@ -1771,7 +1771,6 @@ async function abrirDetallePaco() {
   click('#main .card[data-pedido="d2"]');   // Paco: Camisa blanca $950 + Corbata $300
   await esperar();
 }
-
 test("detalle: la foto ampliada ofrece «Editar este artículo» y abre la hoja del artículo", async () => {
   await reiniciar();
   await abrirDetallePaco();
@@ -1868,5 +1867,110 @@ test("detalle: la barra de acciones nombra el artículo al frente y edita ese", 
   assert.match(qs("#dItemEditarBtn").textContent, /Editar «Corbata»/, "sigue a la tarjeta al frente");
   click("#dItemEditarBtn");
   assert.equal(qs("#it-name").value, "Corbata");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: «Nuevo producto» sin foto agrega artículo al pedido y avatar por categoría", async () => {
+  await reiniciar();
+  await abrirDetallePaco();
+  const antes = store.db().orders.find((p) => p.id === "d2").items.length;
+  const inventarioAntes = store.db().inventory.length;
+  assert.ok(qs("#dItemNuevoBtn"), "el botón vive en la barra de acciones");
+  click("#dItemNuevoBtn");
+  assert.equal(qs("#hoja-in h2").textContent, "Nuevo producto");
+  assert.match(qs("#hoja-in .hint").textContent, /Paco/);
+
+  /* nombre vacío no guarda: error inline y la hoja sigue */
+  click("#np-save");
+  await esperar();
+  assert.equal(store.db().inventory.length, inventarioAntes, "no se creó producto sin nombre");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en la hoja con el error");
+
+  /* alta real, sin foto: precio con decimales (regla V2) */
+  qs("#np-name").value = "Bufanda lila";
+  qs("#np-price").value = "730.25";
+  click('#np-cat button[data-k="otro"]');
+  click("#np-save");
+  await esperar(240);
+
+  const inventario = store.db().inventory;
+  assert.equal(inventario.length, inventarioAntes + 1, "el producto entra al inventario");
+  const creado = inventario[inventario.length - 1];
+  assert.equal(creado.name, "Bufanda lila");
+  assert.equal(creado.price, 730.25);
+  assert.equal(creado.cat, "otro");
+  assert.equal(creado.photo, null, "sin foto subida, sin foto");
+
+  const guardado = store.db().orders.find((p) => p.id === "d2");
+  assert.equal(guardado.items.length, antes + 1, "el pedido tiene un artículo más");
+  const item = guardado.items[guardado.items.length - 1];
+  assert.equal(item.nombre, "Bufanda lila");
+  assert.equal(item.precio, 730.25);
+  assert.equal(item.productoId, creado.id, "el artículo apunta al producto nuevo");
+  assert.equal(item.foto ?? null, null, "el artículo nace sin foto");
+
+  /* se vuelve al detalle: la tarjeta nueva muestra el avatar por categoría
+     (el mismo fallback SVG que el resto de los artículos sin foto) y el total sube */
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "el pedido vuelve a estar al frente");
+  const detalle = qs("#hoja-in");
+  const carta = qsa("#dstack .dcard").find((c) => c.textContent.includes("Bufanda lila"));
+  assert.ok(carta, "la tarjeta del producto nuevo está en el detalle");
+  assert.ok(carta.querySelector(".dthumb svg"), "sin foto muestra el avatar SVG por categoría");
+  assert.match(carta.querySelector(".dprecio").textContent, /\$730/, "el subtotal del artículo nuevo");
+
+  /* cerrar el detalle no pregunta nada: lo guardado está guardado */
+  click("#hClose");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false);
+  assert.equal(store.db().inventory.length, inventarioAntes + 1);
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: «Nuevo producto» con foto guarda la foto en producto y artículo", async () => {
+  await reiniciar();
+  await abrirDetallePaco();
+  click("#dItemNuevoBtn");
+  const foto = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E";
+  qs("#np-name").value = "Sombrero de paja";
+  qs("#np-price").value = "1500";
+  /* la foto entra por el mismo camino que el elegidor (comprimirFoto en jsdom
+     no corre: se pinta la previa y se guarda lo que quedó en el estado de la hoja) */
+  window.__testFoto = foto;
+  qs("#np-prev").innerHTML = `<img class="inv-previa" src="${foto}" alt="Foto del producto">`;
+  qs("#np-photo-del").classList.remove("oculto");
+  qs("#np-name").dispatchEvent(new w.Event("input"));
+  click("#np-save");
+  await esperar(240);
+
+  const creado = store.db().inventory[store.db().inventory.length - 1];
+  const item = store.db().orders.find((p) => p.id === "d2").items.at(-1);
+  assert.ok(creado, "el producto se creó");
+  assert.equal(item.nombre, "Sombrero de paja");
+  /* la tarjeta muestra la foto, no el avatar */
+  const carta = qsa("#dstack .dcard").find((c) => c.textContent.includes("Sombrero"));
+  assert.ok(carta, "la tarjeta está en el detalle");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: cerrar la hoja de «Nuevo producto» sin guardar avisa y no crea nada", async () => {
+  await reiniciar();
+  await abrirDetallePaco();
+  const inventarioAntes = store.db().inventory.length;
+  click("#dItemNuevoBtn");
+  qs("#np-name").value = "Producto a medias";
+  qs("#np-price").value = "900";
+  click("#np-cancelar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "avisa antes de perder lo escrito");
+  click("#cv-no");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en la hoja");
+  assert.equal(qs("#np-name").value, "Producto a medias", "no se perdió lo escrito");
+  click("#np-cancelar");
+  await esperar();
+  click("#cv-yes");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false);
+  assert.equal(store.db().inventory.length, inventarioAntes, "ningún producto creado");
   assert.deepEqual(errores, []);
 });

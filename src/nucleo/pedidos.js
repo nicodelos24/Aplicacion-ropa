@@ -194,3 +194,9 @@ export function reemplazarItem(pedido, indice, item) {
   return { ...p, items };
 }
 
+/** Pedido con el artículo nuevo al final; el resto queda idéntico. */
+export function agregarItem(pedido, item) {
+  const p = pedido || {};
+  return { ...p, items: [...(p.items || []), item] };
+}
+

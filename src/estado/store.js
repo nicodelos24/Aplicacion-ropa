@@ -6,7 +6,7 @@ import { parseMoneda } from "../nucleo/moneda.js";
 import {
   ESTADOS, ORDEN_ESTADOS, ES_ESTADO, cambiarEstado, cuotaStep,
   aplicarDatosPedido, cuotasValidas, cuotasPagadasValidas, CUOTAS_MIN, qtyDe,
-  itemEditado, reemplazarItem, nombreItem, subtotalItem,
+  itemEditado, reemplazarItem, agregarItem, nombreItem, subtotalItem,
 } from "../nucleo/pedidos.js";
 import { CATEGORIAS_IDS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import {
@@ -259,6 +259,32 @@ export function crearProducto(datos, usuario) {
   const p = productoNuevo({ ...datos, price: precio, cat, seccionId });
   const r = set((d) => { d.inventory = [...d.inventory, p]; }, { log: "inv_new", detail: `${p.name} · ${fmt(p.price)}`, usuario });
   return { ok: true, producto: p, persistencia: r };
+}
+
+/* Alta de producto nuevo DESDE el detalle de un pedido: el producto entra al
+   inventario y queda agregado como artículo de ESE pedido, en UNA sola
+   escritura atómica (igual que crearPedido): si algo falla no queda ni producto
+   huérfano ni pedido tocado. Sin foto el artículo nace sin ella y la tarjeta
+   muestra el avatar por categoría (mismo fallback que el resto). */
+export function altaProductoEnPedido(pedidoId, datos, usuario) {
+  const p = pedidoPorId(pedidoId);
+  if (!p) return { ok: false, error: "Pedido inexistente" };
+  if (!String(datos.name || "").trim()) return { ok: false, campo: "nombre", error: "Escribí el nombre" };
+  const precio = parseMoneda(datos.price);
+  if (precio === null) return { ok: false, campo: "precio", error: "Precio inválido" };
+  if (precio <= 0) return { ok: false, campo: "precio", error: "El precio debe ser mayor a $0" };
+  const cat = CATEGORIAS_IDS.includes(datos.cat) ? datos.cat : CATEGORIA_DEFECTO;
+  const producto = productoNuevo({ ...datos, price: precio, cat, photo: datos.photo || null });
+  const item = itemDesdeProducto(producto, 1);
+  const pedido = agregarItem(p, item);
+  const r = set((d) => {
+    d.inventory = [...d.inventory, producto];
+    d.orders = d.orders.map((x) => (x.id === pedidoId ? pedido : x));
+  }, { log: "inv_new", detail: `${producto.name} · ${fmt(producto.price)} · en pedido de ${p.cliente || "cliente"}`, usuario });
+  return {
+    ok: r.ok, error: r.ok ? undefined : "No se pudo guardar en el dispositivo",
+    producto, item, pedido, persistencia: r,
+  };
 }
 
 export function editarProducto(id, datos, usuario) {
