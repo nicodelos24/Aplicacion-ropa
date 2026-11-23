@@ -589,3 +589,20 @@ Sobre el **sitio vivo publicado** https://nicodelos24.github.io/Aplicacion-ropa/
 - **Hallazgos 6 y 7 (barrel + filtros)**: los cinco chips están presentes con conteos (Todos 5, Pagado 2, Mensaje enviado 1, En cuotas 1, Nuevo 1). Tonos calculados: Pagado verde `rgb(132,237,176)`, Mensaje enviado naranja `rgb(255,192,137)`, En cuotas azul `rgb(180,195,255)`, Nuevo gris `rgb(198,202,217)`. Filtrar por «En cuotas» dejó solo Lucía; por «Nuevo», solo Rosita; «Todos» restaura las 5 tarjetas; la búsqueda «Lucía» filtra correctamente sobre el barrel. Sin regresiones visibles.
 - **Hallazgo 8 (foto)**: en el editor de prenda, «Tomar foto» (`capture="environment"`) y «Galería» (ambos `input[type=file]`, `accept=image/*`) reciben el archivo y cambian la vista previa a un `data:image` (verificado longitud ~51.635 caracteres). En el editor de pedido, «Escribir a mano» → «Agregar foto al producto» (`pedido-photo`) acepta el archivo y la hoja confirma «Foto lista: se guarda al confirmar» antes de Guardar.
 - **No incluido**: el disparo real de la cámara del dispositivo (en Chrome de escritorio se simuló con `setInputFiles` en el input `capture`). No se probaron otros anchos ni el tema claro en esta ronda; las capturas anteriores de Olga cubren esos casos sobre versiones previas.
+
+## Ropa v2 · textos de pagos y vacío de búsqueda en el vivo · Dino · 2026-11-23
+
+Sobre el **sitio vivo publicado** https://nicodelos24.github.io/Aplicacion-ropa/?demo=1 (master `390b834`, `sw.js VERSION = "r33"`), con el Chrome del proyecto a 659×631 y datos de demostración (`?demo=1`; sin clientas reales). Son los tres textos de `fix/ux34-residuos`, integrados en `87fe28f` y ya visibles en el vivo. Consola: 0 errores (solo el aviso de deprecación de `apple-mobile-web-app-capable`). `npm test` 167/167 y `npm run check` OK sobre el merge con r29.
+
+| Escena verificada | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Pedidos: buscar `zzz` deja el vacío «Sin resultados» con el botón «Limpiar búsqueda»; al tocarlo el buscador queda vacío y vuelven los 5 pedidos | 659 | claro | [ux34-vivo-limpiar-busqueda.png](capturas/2026-11-23/ux34-vivo-limpiar-busqueda.png) |
+| Ficha de Rosita: secciones «Pendientes de pago (1)» y «Pagados (1)», sin «Pendientes»/«Hechos» | 659 | claro | [ux34-vivo-cliente-pagados.png](capturas/2026-11-23/ux34-vivo-cliente-pagados.png) |
+| Detalle del pedido de Paco con la confirmación al pasar a Pagado: CTA «Marcar como pagado» (neutral) y Cancelar | 659 | claro | [ux34-vivo-marcar-como-pagado.png](capturas/2026-11-23/ux34-vivo-marcar-como-pagado.png) |
+
+### Detalle de lo probado
+
+- **UX34-13**: `#hoja-in .sect-titulo` devuelve exactamente `Pendientes de pago (1)` y `Pagados (1)`; no queda ningún título con el copy viejo.
+- **UX34-14**: desde el pedido de Paco (`msg`) el destino `paid` abre la confirmación con CTA `Marcar como pagado` y clase `cbtn-yes neutral`; un destino que no es Pagado sigue mostrando `Cambiar estado`; Cancelar cierra el diálogo y el pedido conserva su estado. En el pedido ya pagado (`d5`) la fila Pagado viene marcada y el clic no hace nada.
+- **UX34-10**: con `#search` en `zzz` el vacío muestra el botón `[data-acc="limpiar"]` «Limpiar búsqueda»; al tocarlo, `#search.value` queda vacío, el vacío desaparece y vuelven las 5 tarjetas.
+- **No incluido**: prueba táctil real en móvil y tema oscuro; las capturas son de la ventana del Chrome del proyecto.
