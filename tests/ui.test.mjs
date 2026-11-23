@@ -872,11 +872,13 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r\d+"/, "el caché se refresca al bajar la reaparición de la nav a 1,5 s");
-  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r24"/, "el caché se refresca al recortar el desborde del deslizo de la agenda");
-  assert.doesNotMatch(sw, /-r21"|-r22"|-r23"/, "la versión de caché no queda en las anteriores");
+  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r25"/, "el caché se refresca al sumar las secciones del inventario");
+  assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
+  assert.ok(sw.includes("./src/ui/componentes/secciones.css"), "el precache incluye el CSS de secciones");
+  assert.ok(sw.includes("./src/nucleo/secciones.js"), "el precache incluye el módulo de secciones");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
-  assert.match(cssMain, /componentes\.css\?v=3/, "los estilos nuevos de las cuotas entran con versión propia");
+  assert.match(cssMain, /componentes\.css\?v=4/, "los estilos nuevos del inventario por secciones entran con versión propia");
   assert.match(cssMain, /motion\.css\?v=3/, "las animaciones nuevas de la agenda entran con versión propia");
   assert.doesNotMatch(sw, /ropa-v2-nav-90s-r19|ropa-v2-paco-corbata-r18|ropa-v2-nav-2000ms-toast-r17|ropa-v2-nav-2500ms-toast-r16|ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15/, "la versión de caché no queda en la de publicaciones anteriores");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
@@ -1135,4 +1137,184 @@ test("animaciones: los chips de Pedidos e Historial se animan al filtrar y no se
     assert.equal(qsa("#main .chip.on").length, 1, "un solo autor activo en Historial");
   }
   assert.deepEqual(errores, []);
+});
+/* ---------- Inventario por secciones (decisión B aprobada por Nico) ---------- */
+test("secciones: el inventario se agrupa por cajón, con contador y «Sin sección» al final", async () => {
+  await reiniciar();
+  irA("inventario");
+  const cajones = qsa("#main .sec");
+  assert.equal(cajones.length, 3, "dos secciones + Sin sección");
+  assert.deepEqual(cajones.map((c) => c.querySelector(".sec-nombre").textContent),
+    ["Dama · verano", "Hombre · básicos", "Sin sección"]);
+  assert.deepEqual(cajones.map((c) => c.querySelector(".sec-cnt").textContent), ["2", "2", "2"]);
+  assert.equal(qsa("#main .inv-card").length, 6, "6 productos demo");
+  assert.equal(qsa("#stats .stat").length, 2, "productos y secciones arriba");
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: plegar un cajón deja de mostrar sus prendas y no repinta la pantalla", async () => {
+  await reiniciar();
+  irA("inventario");
+  const toggle = qs("#main .sec:nth-of-type(2) .sec-toggle");
+  assert.equal(toggle.getAttribute("aria-expanded"), "true");
+  click(toggle);
+  const sec = qs("#main .sec:nth-of-type(2)");
+  assert.equal(sec.classList.contains("plegada"), true, "el cajón queda plegado");
+  assert.equal(toggle.getAttribute("aria-expanded"), "false", "el botón anuncia el estado");
+  assert.equal(qs("#main .sec:nth-of-type(2) .sec-body").hidden, true, "el cuerpo se oculta");
+  assert.equal(qsa("#main .sec").length, 3, "los cajones no se repintan ni desaparecen");
+  click(qs("#main .sec:nth-of-type(2) .sec-toggle"));
+  assert.equal(qs("#main .sec:nth-of-type(2) .sec-body").hidden, false);
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: crear una sección desde la hoja la deja en el inventario y en el historial", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('[data-acc="secciones"]');
+  await esperar();
+  qs("#sec-nombre").value = "Nena · fiesta";
+  click('[data-acc="nueva"]');
+  await esperar();
+  assert.equal(store.secciones().length, 3, "la sección nueva queda en el store");
+  assert.equal(store.secciones()[2].nombre, "Nena · fiesta");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la hoja sigue abierta para seguir ordenando");
+  assert.ok(qsa("#main .sec-nombre").some((n) => n.textContent === "Nena · fiesta"), "el cajón aparece atrás");
+  assert.equal(store.log().at(-1).action, "sec_new");
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: nombre repetido no crea nada y el error queda en la hoja", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('[data-acc="secciones"]');
+  await esperar();
+  qs("#sec-nombre").value = "dama · VERANO";
+  click('[data-acc="nueva"]');
+  await esperar();
+  assert.equal(store.secciones().length, 2, "no se duplica la sección");
+  assert.match(qs("#hoja-in").textContent, /Ya tenés una sección con ese nombre/);
+  assert.equal(qs("#sec-nombre").getAttribute("aria-invalid"), "true", "el campo marca el error");
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: renombrar cambia el nombre en el cajón y no mueve prendas", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('[data-acc="secciones"]');
+  await esperar();
+  click('#hoja-in .sec-fila[data-id="ds1"] [data-sec="renombrar"]');
+  await esperar();
+  qs("#hoja-in #sec-nombre").value = "Dama · invierno";
+  click('#hoja-in [data-acc="guardar"]');
+  await esperar();
+  assert.equal(store.seccionPorId("ds1").nombre, "Dama · invierno");
+  assert.equal(store.productoPorId("di1").seccionId, "ds1", "las prendas no se mueven");
+  assert.ok(qsa("#main .sec-nombre").some((n) => n.textContent === "Dama · invierno"));
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: borrar una sección pasa sus prendas a «Sin sección» y no borra productos", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('[data-acc="secciones"]');
+  await esperar();
+  click('#hoja-in .sec-fila[data-id="ds1"] [data-sec="borrar"]');
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "pide confirmación");
+  assert.match(qs("#cv-p").textContent, /2 prendas pasan a “Sin sección”/);
+  click("#cv-yes");
+  await esperar();
+  assert.equal(store.db().inventory.length, 6, "no se borra ningún producto");
+  assert.equal(store.seccionPorId("ds1"), null, "la sección sí se borra");
+  const sinSeccion = qsa("#main .sec").find((s) => s.querySelector(".sec-nombre").textContent === "Sin sección");
+  assert.equal(sinSeccion.querySelector(".sec-cnt").textContent, "4", "cuatro prendas quedan sin sección");
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: cancelar el borrado no toca nada", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('[data-acc="secciones"]');
+  await esperar();
+  click('#hoja-in .sec-fila[data-id="ds2"] [data-sec="borrar"]');
+  await esperar();
+  click("#cv-no");
+  await esperar();
+  assert.equal(store.seccionPorId("ds2").nombre, "Hombre · básicos", "la sección sigue");
+  assert.equal(store.productoPorId("di2").seccionId, "ds2", "las prendas siguen en su cajón");
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: asignar prendas desde la hoja mueve solo las marcadas", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('[data-acc="secciones"]');
+  await esperar();
+  click('#hoja-in .sec-fila[data-id="ds1"] [data-sec="abrir"]');
+  await esperar();
+  const marcas = qsa("#hoja-in [data-pick]");
+  assert.equal(marcas.length, 6, "se listan todas las prendas");
+  assert.deepEqual(marcas.filter((c) => c.checked).map((c) => c.dataset.pick), ["di1", "di3"], "arranca con las que ya están");
+  marcas.find((c) => c.dataset.pick === "di5").checked = true;
+  marcas.find((c) => c.dataset.pick === "di6").checked = true;
+  marcas.find((c) => c.dataset.pick === "di3").checked = false;
+  click('#hoja-in [data-acc="aplicar"]');
+  await esperar();
+  assert.equal(store.productoPorId("di5").seccionId, "ds1");
+  assert.equal(store.productoPorId("di6").seccionId, "ds1");
+  assert.equal(store.productoPorId("di3").seccionId, null, "la desmarcada vuelve a Sin sección");
+  assert.equal(store.productoPorId("di2").seccionId, "ds2", "las de otras secciones no cambian");
+  assert.equal(store.productoPorId("di4").seccionId, "ds2");
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: el editor de la prenda deja elegir la sección y la guarda", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('#main .inv-card[data-id="di5"] [data-act="edit"]');
+  await esperar();
+  const sel = qs("#inv-sec");
+  assert.ok(sel, "el editor tiene selector de sección");
+  assert.equal(sel.value, "", "la prenda suelta arranca en Sin sección");
+  sel.value = "ds2";
+  sel.dispatchEvent(new w.Event("change"));
+  click("#inv-save");
+  await esperar(240);
+  assert.equal(store.productoPorId("di5").seccionId, "ds2", "la sección elegida se guarda");
+  assert.equal(store.db().inventory.length, 6, "no se duplica ni se pierde nada");
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: buscar filtra dentro de los cajones y deja solo los que tienen coincidencias", async () => {
+  await reiniciar();
+  irA("inventario");
+  qs("#search").value = "vestido";
+  qs("#search").dispatchEvent(new w.Event("input"));
+  await esperar();
+  assert.equal(qsa("#main .sec").length, 1, "solo el cajón con la coincidencia");
+  assert.equal(qs("#main .sec-nombre").textContent, "Dama · verano");
+  assert.equal(qsa("#main .inv-card").length, 1);
+  assert.equal(qsa("#main .sec-acc").length, 0, "mientras se busca no se muestran las acciones de la sección");
+  qs("#search").value = "zzz";
+  qs("#search").dispatchEvent(new w.Event("input"));
+  await esperar();
+  assert.match(qs("#main").textContent, /Sin resultados/);
+  qs("#search").value = "";
+  qs("#search").dispatchEvent(new w.Event("input"));
+  await esperar();
+  assert.equal(qsa("#main .sec").length, 3, "al vaciar la búsqueda vuelven los tres cajones");
+  assert.deepEqual(errores, []);
+});
+
+test("secciones: los blancos táctiles del inventario por secciones llegan a 44 px", () => {
+  const css = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/secciones.css"), "utf8");
+  const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
+  assert.ok(cssMain.includes("secciones.css"), "la hoja de secciones entra en main.css");
+  for (const regla of [".sec-toggle{", ".sec-acc{", ".hoja-cab .hbtn{", ".sec-fila-abre{"]) {
+    const bloque = new RegExp(regla.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^}]*)").exec(css);
+    assert.ok(bloque, "existe la regla " + regla);
+    const alto = /(?:min-)?height:(\d+)px/.exec(bloque[1]);
+    assert.ok(alto && Number(alto[1]) >= 44, regla + " con blanco táctil ≥44 px");
+  }
 });

@@ -5,7 +5,7 @@ import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { esPrecioValido, parseMoneda } from "../nucleo/moneda.js";
 import { CATEGORIAS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
-import { crearProducto, editarProducto, productos } from "../estado/store.js";
+import { crearProducto, editarProducto, productos, secciones } from "../estado/store.js";
 import { abrirHoja, cerrarHoja, intentarCerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
 import { mostrarError } from "../ui/componentes/campo.js";
@@ -17,6 +17,9 @@ export function abrirEditorInventario(orig) {
   const esNuevo = !orig;
   let cat = orig?.cat || CATEGORIA_DEFECTO;
   let foto = orig?.photo || null;
+  /* sección: la del producto o la que venía de la pantalla (null = Sin sección) */
+  const listaSecciones = secciones();
+  let seccionId = listaSecciones.some(s => s.id === orig?.seccionId) ? orig.seccionId : null;
 
   const previa = d => d ? `<img class="inv-previa" src="${esc(d)}" alt="Foto del producto">` : "";
 
@@ -32,13 +35,17 @@ export function abrirEditorInventario(orig) {
     })).join(""),
     nombre: esc(orig?.name || ""),
     precio: orig?.price ?? "",
+    secciones: [
+      `<option value="">Sin sección</option>`,
+      ...listaSecciones.map(s => `<option value="${esc(s.id)}" ${seccionId === s.id ? "selected" : ""}>${esc(s.nombre)}</option>`),
+    ].join(""),
     guardar: esNuevo ? "Agregar al inventario" : "Guardar cambios",
   }));
 
   /* cambios sin guardar: se compara lo que hay en pantalla contra el original */
   const hayCambios = () => {
-    const inicial = { name: (orig?.name || "").trim(), price: String(orig?.price ?? ""), cat: orig?.cat || CATEGORIA_DEFECTO, photo: orig?.photo || null };
-    const ahora = { name: qs("#inv-name").value.trim(), price: qs("#inv-price").value.trim(), cat, photo: foto || null };
+    const inicial = { name: (orig?.name || "").trim(), price: String(orig?.price ?? ""), cat: orig?.cat || CATEGORIA_DEFECTO, photo: orig?.photo || null, seccion: orig?.seccionId || "" };
+    const ahora = { name: qs("#inv-name").value.trim(), price: qs("#inv-price").value.trim(), cat, photo: foto || null, seccion: seccionId || "" };
     return Object.keys(inicial).some((k) => inicial[k] !== ahora[k]);
   };
   const puedeSalir = async () => hayCambios()
@@ -59,6 +66,7 @@ export function abrirEditorInventario(orig) {
     cat = b.dataset.k;
     qsa("#seg-cat button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
   });
+  qs("#inv-sec").onchange = e => { seccionId = e.target.value || null; };
   qs("#camBtn").onclick = () => qs("#inv-cam").click();
   qs("#photoBtn").onclick = () => qs("#inv-photo").click();
   qs("#inv-photo-del").onclick = () => updPrev(null);
@@ -83,7 +91,7 @@ export function abrirEditorInventario(orig) {
       mostrarError(qs("#inv-price"), "El precio debe ser mayor a $0");
       return;
     }
-    const datos = { name, price: precioTexto, cat, photo: foto };
+    const datos = { name, price: precioTexto, cat, photo: foto, seccionId };
     const r = esNuevo ? crearProducto(datos) : editarProducto(orig.id, datos);
     if (!r.ok) { mostrarError(qs("#inv-price"), r.error || "No se pudo guardar"); return; }
     cerrarHoja(); toast("Inventario actualizado");
@@ -109,6 +117,8 @@ const HOJA = `
     <input id="inv-name" value="{{nombre}}" placeholder="Ej. Camisola Angélica"></label>
   <label class="campo"><span class="campo-label">Precio</span>
     <input id="inv-price" inputmode="numeric" value="{{precio}}" placeholder="$"></label>
+  <label class="campo"><span class="campo-label">Sección</span>
+    <select id="inv-sec">{{secciones}}</select></label>
   <button class="btn btn-primario" id="inv-save">{{guardar}}</button>
   <button class="btn btn-ghost" id="inv-cancelar">Cancelar</button>`;
 

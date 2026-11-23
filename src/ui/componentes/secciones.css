@@ -1,0 +1,119 @@
+/* secciones.css — secciones personalizables del inventario (decisión B).
+   Cajones plegables con contador y caret, hoja «Tus secciones» y asignación de
+   prendas. Blancos táctiles de 44 px o más (ajuste pedido por Olga/Flor). */
+
+/* ---- cajón de sección ---- */
+.sec{margin-bottom:14px}
+.sec:first-child{margin-top:2px}
+.sec-cab{display:flex; align-items:center; gap:6px; min-height:48px}
+.sec-toggle{
+  flex:1; min-width:0; min-height:44px; display:flex; align-items:center; gap:9px;
+  padding:6px 4px; background:none; text-align:left; border-radius:12px;
+  transition:background var(--t-fast) var(--ease-out);
+}
+.sec-toggle:hover{background:color-mix(in srgb,var(--card2) 70%,transparent)}
+.sec-nombre{
+  font-size:13.5px; font-weight:800; letter-spacing:-.1px; color:var(--txt);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.sec-cnt{
+  font-size:10.5px; color:var(--mut); background:var(--card2); border-radius:var(--r-full);
+  padding:3px 8px; font-variant-numeric:tabular-nums; font-weight:750; flex-shrink:0;
+}
+.sec-caret{
+  margin-left:auto; display:flex; align-items:center; justify-content:center;
+  width:28px; height:28px; color:var(--mut); flex-shrink:0;
+  transition:transform var(--t-med) var(--ease-out);
+}
+.sec-caret svg{width:16px; height:16px}
+.sec.plegada .sec-caret{transform:rotate(-90deg)}
+.sec-body{margin-top:8px}
+.sec.plegada .sec-body{display:none}
+.sec-vacia{font-size:12px; color:var(--mut); line-height:1.5; padding:10px 4px 4px}
+
+/* acciones del cajón (mover / renombrar / borrar): 44 px cada una */
+.sec-mas{display:flex; gap:2px; flex-shrink:0}
+.sec-acc{
+  width:44px; height:44px; display:flex; align-items:center; justify-content:center;
+  border-radius:12px; background:none; color:var(--mut);
+  transition:background var(--t-fast), color var(--t-fast), transform var(--t-fast) var(--spring);
+}
+.sec-acc svg{width:17px; height:17px}
+.sec-acc:hover{background:var(--card2); color:var(--txt)}
+.sec-acc:active{transform:scale(.9)}
+.sec-acc.danger:hover{color:var(--c-red)}
+.sec-acc.danger:hover{background:color-mix(in srgb,var(--c-red) 12%,var(--card2))}
+
+/* botón «Secciones» al pie del inventario + nota */
+.sec-pie{margin-top:6px}
+.sec-nueva{
+  width:100%; min-height:48px; gap:9px; background:var(--card2); color:var(--txt-2);
+  border:1px solid var(--line); box-shadow:var(--sh-1), var(--inset-hair);
+}
+.sec-nueva:hover{background:var(--card3); color:var(--txt)}
+.sec-nueva svg{width:18px; height:18px}
+.sec-nota{font-size:11px; color:var(--mut); margin:10px 4px 0; line-height:1.45}
+
+/* ---- hoja «Tus secciones» ---- */
+.hoja-cab{display:flex; align-items:center; gap:6px; margin:4px 0 2px}
+.hoja-cab h2{flex:1; min-width:0; margin:6px 0 8px}
+.hoja-cab .hbtn{
+  width:44px; height:44px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  border-radius:12px; background:none; color:var(--mut);
+  transition:background var(--t-fast), color var(--t-fast), transform var(--t-fast) var(--spring);
+}
+.hoja-cab .hbtn svg{width:19px; height:19px}
+.hoja-cab .hbtn:hover{background:var(--card2); color:var(--txt)}
+.hoja-cab .hbtn:active{transform:scale(.9)}
+.hoja-sub{font-size:12.5px; color:var(--mut); line-height:1.5; margin:0 0 14px}
+
+.sec-lista{display:flex; flex-direction:column; gap:2px}
+.sec-fila{
+  display:flex; align-items:center; gap:4px; min-height:52px;
+  border-bottom:1px solid var(--line);
+}
+.sec-fila:last-child{border-bottom:none}
+.sec-fila.sin{padding:0 4px; color:var(--mut)}
+.sec-fila-abre{
+  flex:1; min-width:0; min-height:44px; display:flex; align-items:center; gap:9px;
+  padding:4px; background:none; text-align:left; border-radius:10px;
+  transition:background var(--t-fast);
+}
+.sec-fila-abre:hover{background:color-mix(in srgb,var(--card2) 70%,transparent)}
+.sec-fila-nombre{
+  font-size:14px; font-weight:700; color:var(--txt); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.sec-fila .sec-cnt{margin-left:auto; margin-right:6px}
+.sec-fila.sin .sec-fila-nombre{font-weight:650}
+.sec-fila.sin .sec-cnt{margin-left:auto; margin-right:52px}
+
+.campo-sec-nueva{margin-top:16px}
+.sec-nueva-fila{display:flex; gap:8px; align-items:stretch}
+.sec-nueva-fila input{
+  flex:1; min-width:0; min-height:48px; background:var(--card2); border:1px solid var(--line);
+  border-radius:13px; padding:13px 14px; outline:none; color:var(--txt); box-shadow:var(--inset-hair);
+  transition:border-color var(--t-fast), box-shadow var(--t-med);
+}
+.sec-nueva-fila input:focus{border-color:var(--acc); box-shadow:0 0 0 3.5px var(--acc-soft)}
+.sec-nueva-fila input[aria-invalid="true"]{border-color:var(--c-red); box-shadow:0 0 0 3.5px color-mix(in srgb,var(--c-red) 20%,transparent)}
+.sec-nueva-fila .btn{width:auto; min-width:92px; margin-top:0; padding:13px 18px}
+
+/* ---- hoja de asignación de prendas ---- */
+.sec-pick{display:flex; flex-direction:column; margin-bottom:6px}
+.sec-pick-fila{
+  display:flex; align-items:center; gap:11px; min-height:48px; padding:4px 2px;
+  border-bottom:1px solid var(--line); cursor:pointer;
+}
+.sec-pick-fila:last-child{border-bottom:none}
+.sec-pick-fila input{
+  width:22px; height:22px; flex-shrink:0; accent-color:var(--acc); cursor:pointer;
+}
+.sec-pick-nombre{flex:1; min-width:0; font-size:14px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sec-pick-precio{font-size:12.5px; color:var(--mut); font-variant-numeric:tabular-nums; font-weight:700}
+
+.btn-ancho{width:100%}
+
+@media (prefers-reduced-motion:reduce){
+  .sec-caret{transition:none}
+}
