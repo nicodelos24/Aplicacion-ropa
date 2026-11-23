@@ -12,6 +12,11 @@ export const vista = {
   /* agenda: "calendario" (mensual, el de siempre) o "semanas" (franja LU…DO). */
   agendaModo: "calendario",
   logFiltro: "all",
+  /* inventario: filtro por categoría, orden y vista (grilla / lista compacta).
+     Se recuerda mientras la app está abierta; no se guarda en los datos. */
+  invCategoria: "todas",
+  invOrden: "alta",
+  invVista: "grilla",
 };
 export function suscribirVista(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }
 export function emitirVista() { for (const fn of oyentes) { try { fn(vista); } catch (e) { console.error(e); } } }

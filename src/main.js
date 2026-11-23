@@ -216,6 +216,8 @@ function render() {
   }
 
   qs("#searchrow").style.display = CON_BUSQUEDA.includes(v) ? "flex" : "none";
+  /* el buscador del inventario dice qué busca: nombre de la prenda */
+  qs("#search").placeholder = v === "inventario" ? "Buscar prenda…" : "Buscar…";
   qs("#chips").style.display = v === "pedidos" ? "flex" : "none";
   if (!CON_BUSQUEDA.includes(v) && vista.busqueda) { vista.busqueda = ""; qs("#search").value = ""; }
   const fab = qs("#fab");

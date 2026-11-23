@@ -2,6 +2,9 @@
 // por Nico, 23-nov: buscador con filtros y orden + lista compacta «más usados»).
 // Datos puros, sin DOM: la pantalla elige, acá se decide el orden.
 import { normalizar } from "./buscador.js";
+
+/** Minúsculas y sin tildes: «Pantalón» y «pantalon» son el mismo texto. */
+const plano = (s) => normalizar(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 import { CATEGORIAS, esCategoria } from "./catalogo.js";
 
 /** Órdenes ofrecidos. El primero es el de siempre (orden de entrada del inventario). */
@@ -54,7 +57,7 @@ export function filtrarInventario(inventario = [], categoria = "todas") {
  */
 export function ordenarInventario(inventario = [], orden = ORDEN_DEFECTO, { usos = new Map() } = {}) {
   const lista = [...(inventario || [])];
-  const porNombre = (a, b) => normalizar(a.name).localeCompare(normalizar(b.name), "es");
+  const porNombre = (a, b) => plano(a.name).localeCompare(plano(b.name), "es");
   const id = esOrden(orden) ? orden : ORDEN_DEFECTO;
   if (id === "az") return lista.sort(porNombre);
   if (id === "precio-asc") return lista.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0) || porNombre(a, b));
