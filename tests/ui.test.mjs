@@ -1623,3 +1623,43 @@ test("filtros: el buscador del inventario dice «Buscar prenda» y los blancos t
   }
   assert.deepEqual(errores, []);
 });
+
+test("persistencia: si el dispositivo rechaza el cambio, el aviso aparece y se puede cerrar", async () => {
+  await reiniciar();
+  /* el disco rechaza la escritura: la franja de aviso tiene que aparecer */
+  store.configurar({ guardar: () => ({ ok: false, degradado: true }) });
+  const aviso = qs("#aviso-disco");
+  assert.equal(aviso.hidden, true, "arranca oculta");
+  irA("inventario");
+  click("#fab");
+  qs("#inv-name").value = "Prenda sin guardar";
+  qs("#inv-price").value = "1000";
+  click("#inv-save");
+  assert.equal(aviso.hidden, false, "el aviso se muestra cuando no se guardó");
+  assert.equal(aviso.dataset.tono, "error", "rojo: no se guardó nada");
+  assert.match(qs("#aviso-disco-titulo").textContent, /No se guardó/);
+  assert.match(qs("#aviso-disco-texto").textContent, /no se guardó nada/i);
+  click("#aviso-disco-x");
+  assert.equal(aviso.hidden, true, "se puede cerrar");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la hoja queda abierta para reintentar");
+  /* vuelve a la persistencia real para no contaminar los tests que siguen */
+  const { guardar } = await import(pathToFileURL(path.join(RAIZ, "src/datos/local.js")).href);
+  store.configurar({ guardar });
+  reiniciar();
+});
+
+test("persistencia: guardar sin las fotos avisa aparte y con otro tono", async () => {
+  await reiniciar();
+  const { guardar } = await import(pathToFileURL(path.join(RAIZ, "src/datos/local.js")).href);
+  store.configurar({ guardar: (d) => ({ ok: true, degradado: true }) });
+  irA("contactos");
+  click("#fab");
+  qs("#ce-name").value = "Clienta sin foto";
+  click("#ce-save");
+  const aviso = qs("#aviso-disco");
+  assert.equal(aviso.hidden, false, "el aviso aparece");
+  assert.equal(aviso.dataset.tono, "aviso", "ámbar: se guardó sin fotos");
+  assert.match(qs("#aviso-disco-titulo").textContent, /sin las fotos/);
+  store.configurar({ guardar });
+  reiniciar();
+});
