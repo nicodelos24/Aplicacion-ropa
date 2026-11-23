@@ -1,6 +1,6 @@
 // Filtros, búsquedas y resúmenes (pases de QA de la v1: homónimos $300,
 // búsqueda 90/no-match, flechas+contador de filtros, mixto qty2/$0).
-import { nombreItem } from "./pedidos.js";
+import { nombreItem, total } from "./pedidos.js";
 
 export const FILTROS = [
   { id: "all", label: "Todos", tono: "neutral" },
@@ -50,11 +50,12 @@ export function resumenCliente(pedidos, clienteId) {
   };
 }
 
-/** Total facturado y pendiente (para Inicio). */
+/** Total facturado y pendiente (para Inicio). Usa el motor único de `pedidos.js`:
+ *  un pedido nunca vale una cosa acá y otra en su tarjeta. */
 export function resumenGeneral(pedidos) {
   let cobrado = 0, pendiente = 0;
   for (const p of pedidos) {
-    const t = (p.items || []).reduce((s, i) => s + (Number(i.precio ?? i.price) || 0) * (Number(i.qty) || 1), 0);
+    const t = total(p);
     if (p.estado === "paid") cobrado += t;
     else pendiente += t;
   }

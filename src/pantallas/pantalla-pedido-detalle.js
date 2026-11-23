@@ -5,7 +5,7 @@ import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, fdateShort } from "../nucleo/nucleo.js";
 import {
-  ESTADOS, ORDEN_ESTADOS, total, cuotasDe, cuotasPagadasDe, cuotasPagadasValidas, nombreItem, precioItem, qtyDe,
+  ESTADOS, ORDEN_ESTADOS, total, cuotasDe, cuotasPagadasDe, cuotasPagadasValidas, nombreItem, subtotalItem,
 } from "../nucleo/pedidos.js";
 import { setEstadoPedido, cuotaPedido, pedidoPorId, db, eliminarPedido } from "../estado/store.js";
 import { abrirHoja, cerrarHoja, intentarCerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
@@ -37,7 +37,7 @@ export function abrirDetallePedido(id) {
     return plantilla(DCARD, {
       ph: esc(foto ?? ""),
       thumb: foto ? `<img class="dthumb" src="${esc(foto)}" alt="">` : `<span class="dthumb" aria-hidden="true">${svgCategoria(i.categoria)}</span>`,
-      precio: fmt(precioItem(i) * qtyDe(i)),
+      precio: fmt(subtotalItem(i)),
       nombre: esc(nombreItem(i)) || "Producto",
       label: esc(nombreItem(i)) || "producto",
     });

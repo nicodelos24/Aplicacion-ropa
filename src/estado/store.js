@@ -5,7 +5,7 @@ import { total, fmt } from "../nucleo/nucleo.js";
 import { parseMoneda } from "../nucleo/moneda.js";
 import {
   ESTADOS, ORDEN_ESTADOS, ES_ESTADO, cambiarEstado, cuotaStep,
-  cuotasCompletas, estadoAlGuardar, cuotasValidas, cuotasPagadasValidas, CUOTAS_MIN,
+  aplicarDatosPedido, cuotasValidas, cuotasPagadasValidas, CUOTAS_MIN,
 } from "../nucleo/pedidos.js";
 import { CATEGORIAS_IDS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import {
@@ -94,37 +94,45 @@ function set(mutador, { log: accion, detail, usuario } = {}) {
     proximo.log = [...(previo.log || []), entradaLog(accion, detail, usuario || { id: previo.usuarioId, nombre: "Yo" })];
     if (proximo.log.length > LOG_MAX) proximo.log = proximo.log.slice(-LOG_MAX);
   }
-  estado = proximo;
-  const r = persistencia.guardar(estado);
+  /* si el disco rechaza lo que la memoria sí aceptó, la app tiene que decirlo:
+     `persistencia` viaja en el resultado de cada acción. */
+  const r = persistencia.guardar(proximo) || { ok: true, degradado: false };
+  estado = r.ok === false ? previo : proximo;
   emitir();
-  return r;
+  return { ok: r.ok !== false, degradado: !!r.degradado };
 }
 
 /* ── Acciones de pedidos ── */
+/* Alta atómica: los productos nuevos y el pedido entran en UN solo `set`.
+   Nada se escribe en `estado` antes de saber que el pedido tiene ítems: si el
+   alta falla, el inventario no queda con productos huérfanos. */
 export function crearPedido(datos, usuario) {
-  const inventario = estado.inventory;
-  let nuevosProductos = 0;
+  const items = datos.items || [];
+  const nuevas = [];                                  // productos a mano que faltan del inventario
   const pedido = pedidoNuevo({ ...datos, estado: datos.estado || "new" });
-  pedido.items = (datos.items || []).map((i) => {
+  pedido.items = items.map((i) => {
     if (i.productoId) return itemDesdeProducto(productoPorId(i.productoId) || { id: i.productoId, name: i.nombre, price: i.precio, photo: i.foto, cat: i.categoria }, i.qty);
     // a mano: nombre → entra solo al inventario si no existe
     const nm = String(i.nombre || "").trim();
-    const existente = clienteProductoPorNombre(nm);
+    const existente = clienteProductoPorNombre(nm) || nuevas.find((p) => p.name.trim().toLowerCase() === nm.toLowerCase());
     if (!existente) {
-      estado = { ...estado, inventory: [...estado.inventory, productoNuevo({ name: nm, price: i.precio, photo: i.foto })] };
-      nuevosProductos++;
-      return itemDesdeProducto(estado.inventory[estado.inventory.length - 1], i.qty);
+      const producto = productoNuevo({ name: nm, price: i.precio, photo: i.foto });
+      nuevas.push(producto);
+      return itemDesdeProducto(producto, i.qty);
     }
     return { ...itemDesdeProducto(existente, i.qty), foto: i.foto || existente.photo || null };
   });
   if (!pedido.items.length) return { ok: false, error: "Agrega al menos un producto" };
   vincularCliente(pedido);
-  if (pedido.estado === "due") pedido.estado = cuotasCompletas(pedido) ? "paid" : "due";
-  pedido.estado = estadoAlGuardar(pedido);
-  const r = set((d) => { d.orders = [...d.orders, pedido]; }, {
-    log: "order_new", detail: `${pedido.cliente} · ${fmt(total(pedido))}`, usuario,
-  });
-  return { ok: true, pedido, nuevosProductos, persistencia: r };
+  const { estado: fin, cuotasPagadas } = aplicarDatosPedido(null, pedido);
+  pedido.estado = fin;
+  pedido.cuotasPagadas = cuotasPagadas;
+  const detalle = `${pedido.cliente} · ${fmt(total(pedido))}`;
+  const r = set((d) => {
+    if (nuevas.length) d.inventory = [...d.inventory, ...nuevas];
+    d.orders = [...d.orders, pedido];
+  }, { log: "order_new", detail: detalle, usuario });
+  return { ok: r.ok, error: r.ok ? undefined : "No se pudo guardar en el dispositivo", pedido, nuevosProductos: nuevas.length, persistencia: r };
 }
 
 function clienteProductoPorNombre(nombre) {
@@ -145,11 +153,15 @@ export function editarPedido(id, datos, usuario) {
   };
   // El vínculo con la clienta se resuelve por el nombre final (fix clienteId).
   vincularCliente(actualizado);
-  actualizado.estado = estadoAlGuardar(actualizado);
+  /* Estado y cuotas los decide el núcleo, no el spread: un pedido pagado no
+     vuelve atrás guardando una edición (el pago se revierte desde el detalle). */
+  const { estado: fin, cuotasPagadas } = aplicarDatosPedido(original, actualizado);
+  actualizado.estado = fin;
+  actualizado.cuotasPagadas = cuotasPagadas;
   const r = set((d) => { d.orders = d.orders.map((p) => (p.id === id ? actualizado : p)); }, {
     log: "order_edit", detail: `${actualizado.cliente} · ${fmt(total(actualizado))}`, usuario,
   });
-  return { ok: true, pedido: actualizado, persistencia: r };
+  return { ok: r.ok, error: r.ok ? undefined : "No se pudo guardar en el dispositivo", pedido: actualizado, persistencia: r };
 }
 
 export function eliminarPedido(id, usuario) {

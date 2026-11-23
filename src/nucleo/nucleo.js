@@ -23,7 +23,7 @@ export {
   cambiarEstado, cuotaStep, cuotasCompletas, estadoAlGuardar,
   cuotasValidas, cuotasPagadasValidas, CUOTAS_MIN, CUOTAS_MAX, ES_ESTADO,
   requiereConfirmacion, setCuotasDe,
-  precioItem, nombreItem, qtyDe, subtotalItem,
+  precioItem, nombreItem, qtyDe, subtotalItem, totalItems, aplicarDatosPedido,
 } from "./pedidos.js";
 export {
   itemDesdeProducto, itemAMano, normalizarItem,

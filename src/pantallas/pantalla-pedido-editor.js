@@ -7,7 +7,7 @@
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, parseMoneda, esPrecioValido } from "../nucleo/moneda.js";
-import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, estadoAlGuardar, qtyDe, subtotalItem } from "../nucleo/pedidos.js";
+import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, qtyDe, subtotalItem, totalItems } from "../nucleo/pedidos.js";
 import { maskTel } from "../nucleo/contacto.js";
 import { CATEGORIAS } from "../nucleo/catalogo.js";
 import { gruposParaElegir, hayResultados, contarElegidos } from "../nucleo/pedido-picker.js";
@@ -44,7 +44,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   // selección actual: ids del inventario ya en el pedido (edición) o del preset
   const selInicial = new Set(qtyInicial.keys());
   const cantidades = new Map(qtyInicial); // copia de trabajo: el usuario puede cambiar la cantidad al editar
-  const totalInicial = (orig?.items || []).reduce((s, i) => s + subtotalItem(i), 0);
+  const totalInicial = totalItems(orig?.items);
 
   abrirHoja(`<div class="agarre"></div><h2>${esNuevo ? (presetCliente ? `Nuevo pedido · ${esc(presetCliente.name)}` : "Nuevo pedido") : "Editar pedido"}</h2>
     <label class="campo"><span class="campo-label">Cliente</span><input id="f-cliente" value="${esc(base.cliente)}" placeholder="Nombre del cliente" list="clients-dl" autocomplete="off"></label>
@@ -69,10 +69,14 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       <button class="addp" id="addp">Agregar producto</button>
     </div>
     <div class="totalbar"><span id="ftotal-lbl">Total</span><b id="ftotal" class="monto">${fmt(totalInicial)}</b></div>
-    <label class="campo campo-est"><span class="campo-label">Estado</span>
+    ${base.estado === "paid"
+      ? `<label class="campo campo-est"><span class="campo-label">Estado</span>
+           <p class="hint hint-ok">${ESTADOS.paid.l} · para deshacer el pago, cambialo desde el detalle del pedido.</p>
+         </label>`
+      : `<label class="campo campo-est"><span class="campo-label">Estado</span>
       <div class="seg" id="seg-est" role="group" aria-label="Elegir estado">
         ${ORDEN_ESTADOS.map(k => `<button data-k="${k}" class="${base.estado === k ? "on " + ({ paid: "s-green", msg: "s-orange", due: "s-blue" }[k] || "") : ""}" aria-pressed="${base.estado === k}">${ESTADOS[k].l}</button>`).join("")}
-      </div></label>
+      </div></label>`}
     <div id="cuotas-wrap" class="${base.estado === "due" ? "" : "oculto"}">
       <label class="campo"><span class="campo-label">Número de cuotas (2–12)</span><input id="f-cuotas" type="number" min="2" max="12" value="${base.cuotas || CUOTAS_MIN}"></label>
     </div>
@@ -125,12 +129,13 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   alCerrarHoja(puedeSalir);
 
   const calc = () => {
-    let t = 0;
-    picked.forEach(iid => {
-      const p = productos().find(x => x.id === iid);
-      if (p) t += (Number(p.price) || 0) * (cantidades.get(iid) || 1);
-    });
-    t += manuales.reduce((s, i) => s + (Number(parseMoneda(i.precio)) || 0) * (Number(i.qty) || 1), 0);
+    /* el total del carrito lo calcula el núcleo (mismo motor que la tarjeta y el detalle) */
+    const delInventario = [...picked]
+      .map(iid => productos().find(x => x.id === iid))
+      .filter(Boolean)
+      .map(p => ({ precio: p.price, qty: cantidades.get(p.id) || 1 }));
+    const aMano = manuales.map(i => ({ precio: parseMoneda(i.precio), qty: i.qty }));
+    const t = totalItems([...delInventario, ...aMano]);
     qs("#ftotal").textContent = fmt(t);
     /* el contador dice cuántas prendas del inventario lleva el pedido */
     const n = contarElegidos(picked);

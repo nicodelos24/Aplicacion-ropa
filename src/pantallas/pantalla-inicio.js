@@ -2,7 +2,8 @@
 // Jerarquía del rediseño: tarjeta primaria de dinero protagonista, dos medianas y tres compactas.
 import { esc, qsa } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
-import { fmt, totalLista, estadoDe, MESES } from "../nucleo/nucleo.js";
+import { fmt, estadoDe, MESES } from "../nucleo/nucleo.js";
+import { resumenGeneral } from "../nucleo/filtros.js";
 import { DSEM, hoy, fdateShort } from "../nucleo/fechas.js";
 import { db, pedidos } from "../estado/store.js";
 import { irA } from "../estado/vista.js";
@@ -23,8 +24,8 @@ export function pintarInicio(main, abrirDetalle) {
   });
 
   const t = new Date();
-  const porCobrar = totalLista(pendientes);
-  const cobrado = totalLista(pagados);
+  /* Inicio usa el mismo resumen del núcleo que el resto de la app */
+  const { pendiente: porCobrar, cobrado } = resumenGeneral(todos);
   const nCuotas = enCuotas.length;
 
   const bloqueAgenda = proximos.length ? `

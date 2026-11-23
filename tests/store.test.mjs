@@ -107,9 +107,10 @@ test("editar pedido con qty=2 conserva cantidad y total $500 (regresión medias 
   assert.equal(antes.items[0].qty, 2);
   assert.equal(total(antes), 500);
 
-  // el editor guarda un cambio de estado mandando los mismos ítems con su qty
+  // el editor guarda mandando los mismos ítems con su qty (d4 está pagado: el
+  // estado no lo cambia una edición, lo fija el núcleo)
   const r = store.editarPedido("d4", {
-    cliente: "Rosita", estado: "new", cuotas: 2, cuotasPagadas: 0,
+    cliente: "Rosita", estado: "paid", cuotas: 2, cuotasPagadas: 2,
     items: antes.items.map((i) => ({ ...i })),
   }, U);
   assert.ok(r.ok);
@@ -117,7 +118,7 @@ test("editar pedido con qty=2 conserva cantidad y total $500 (regresión medias 
   assert.equal(despues.items.length, 1, "sigue siendo una tarjeta");
   assert.equal(despues.items[0].qty, 2, "conserva la cantidad ×2");
   assert.equal(despues.items[0].precio, 250, "conserva el precio unitario");
-  assert.equal(despues.estado, "new", "aplica el cambio pedido");
+  assert.equal(despues.estado, "paid", "sigue pagado: editar no deshace el pago");
   // total calculado con qty sigue siendo $500 (250 × 2)
   assert.equal(total(despues), 500, "el total NO baja a $250");
 });

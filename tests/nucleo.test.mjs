@@ -6,6 +6,7 @@ import {
   total, cuotasDe, cuotasPagadasDe, alPagarCuota, completaCuotas,
   cambiarEstado, cuotaStep, estadoAlGuardar, cuotasValidas,
   CUOTAS_MIN, CUOTAS_MAX, ES_ESTADO, requiereConfirmacion,
+  subtotalItem, totalItems, aplicarDatosPedido,
 } from "../src/nucleo/pedidos.js";
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, resumenGeneral, ordenarPedidos } from "../src/nucleo/filtros.js";
 import { itemDesdeProducto, normalizarItem, pedidoDesdeDatos, productoNuevo } from "../src/nucleo/entidades.js";
@@ -171,4 +172,40 @@ test("9 categorías con ícono y defecto 'otro'", () => {
   assert.equal(CATEGORIAS_IDS.length, 9);
   assert.ok(iconoCategoria("vestido") !== undefined);
   assert.equal(iconoCategoria("no-existe"), iconoCategoria("otro"));
+});
+
+/* ---- regresión arquitectura 23-nov (hallazgo 1): un solo motor de total ---- */
+
+test("un solo motor de total: resumenGeneral coincide con total() pedido por pedido", () => {
+  const lista = [
+    /* los casos que antes divergían: qty negativa, precio no numérico, qty 0 y strings */
+    { estado: "paid", items: [{ precio: 100, qty: -3 }, { precio: "abc", qty: 2 }] },
+    { estado: "new", items: [{ precio: 250, qty: 2 }, { precio: 0, qty: 0 }] },
+    { estado: "due", items: [{ name: "Medias", price: 300, qty: "2" }] },
+  ];
+  const r = resumenGeneral(lista);
+  const pagados = lista.filter((p) => p.estado === "paid").reduce((s, p) => s + total(p), 0);
+  const pendientes = lista.filter((p) => p.estado !== "paid").reduce((s, p) => s + total(p), 0);
+  assert.equal(r.cobrado, pagados, "cobrado es la misma suma que total()");
+  assert.equal(r.pendiente, pendientes, "pendiente es la misma suma que total()");
+  assert.equal(r.cobrado, 100);
+  assert.equal(r.pendiente, 1100);
+});
+
+test("totalItems: el subtotal del carrito usa la misma regla que la tarjeta", () => {
+  const items = [{ precio: 100, qty: -3 }, { precio: 400, qty: 2 }];
+  assert.equal(totalItems(items), subtotalItem(items[0]) + subtotalItem(items[1]));
+  assert.equal(total({ items }), totalItems(items), "misma regla para el pedido y para ítems sueltos");
+  assert.equal(totalItems([]), 0);
+  assert.equal(totalItems(null), 0);
+});
+
+test("aplicarDatosPedido: cuotas completas al guardar pasan el pedido a pagado", () => {
+  const enCuotas = { estado: "due", cuotas: 3, cuotasPagadas: 1 };
+  assert.equal(aplicarDatosPedido(enCuotas, { estado: "due", cuotas: 3, cuotasPagadas: 3 }).estado, "paid");
+  const sigue = aplicarDatosPedido(enCuotas, { estado: "due", cuotas: 3, cuotasPagadas: 2 });
+  assert.equal(sigue.estado, "due");
+  assert.equal(sigue.cuotasPagadas, 2);
+  /* bajar las cuotas recorta las pagadas al nuevo techo */
+  assert.equal(aplicarDatosPedido(enCuotas, { estado: "due", cuotas: 2, cuotasPagadas: 2 }).cuotasPagadas, 2);
 });

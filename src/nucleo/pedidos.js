@@ -18,7 +18,13 @@ export const FILTROS = [
 ];
 
 export function total(o) {
-  return (o.items || []).reduce((s, i) => s + subtotalItem(i), 0);
+  return totalItems(o && o.items);
+}
+
+/** Subtotal de una lista de ítems sueltos (carrito del editor, tarjetas de pedido).
+ *  Único punto de cálculo: nadie fuera de este módulo multiplica precio × cantidad. */
+export function totalItems(items) {
+  return (items || []).reduce((s, i) => s + subtotalItem(i), 0);
 }
 
 export function totalLista(lista) {
@@ -97,6 +103,34 @@ export function cuotaStep(o, delta) {
 export function estadoAlGuardar(o) {
   if (o.estado === "due" && cuotasCompletas(o)) return "paid";
   return o.estado;
+}
+
+/**
+ * Transición única al guardar (alta y edición comparten esta regla): decide
+ * estado y cuotas de un pedido a partir del original y de los datos que llegan.
+ * Reglas duras:
+ *  - un pedido pagado no se "despaga" guardando una edición. El pago se
+ *    revierte desde el detalle, que es donde se pide confirmación explícita;
+ *  - pagar sella las cuotas; salir de "En cuotas" descarta las cuotas;
+ *  - con las cuotas completas, el pedido pasa a Pagado.
+ */
+export function aplicarDatosPedido(original, datos) {
+  const orig = original || {};
+  const d = datos || {};
+  const cuotas = cuotasDe({ ...orig, ...d });
+  const estadoPedido = ES_ESTADO(d.estado) ? d.estado : (orig.estado || "new");
+  if (orig.estado === "paid") return { estado: "paid", cuotasPagadas: cuotasPagadasDe(orig) };
+  let cuotasPagadas;
+  if (estadoPedido === "paid") {
+    cuotasPagadas = cuotas;                                  // pagar sella las cuotas
+  } else if (estadoPedido === "due") {
+    cuotasPagadas = cuotasPagadasValidas(
+      d.cuotasPagadas !== undefined ? d.cuotasPagadas : cuotasPagadasDe(orig), cuotas
+    );
+  } else {
+    cuotasPagadas = 0;                                       // salir de cuotas descarta las cuotas
+  }
+  return { estado: estadoAlGuardar({ estado: estadoPedido, cuotasPagadas, cuotas }), cuotasPagadas };
 }
 
 /** ¿La transición pide confirmación explícita? (paid → otro) */

@@ -2,11 +2,10 @@
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, VACIO_SVG } from "../ui/iconos.js";
 import { fmt } from "../nucleo/nucleo.js";
-import { FILTROS } from "../nucleo/filtros.js";
+import { FILTROS, resumenGeneral } from "../nucleo/filtros.js";
 import { pedidos, pedidosFiltrados, conteo, db } from "../estado/store.js";
 import { vista, emitirVista } from "../estado/vista.js";
 import { cardPedidoHTML, cablearCardsPedidos } from "../ui/componentes/stack.js";
-import { totalLista } from "../nucleo/pedidos.js";
 import { abrirEditorPedido } from "./pantalla-pedido-editor.js";
 
 export function pintarStats(items) {
@@ -18,11 +17,11 @@ export function pintarPedidos(main, abrirDetalle) {
   const d = db();
   const lista = pedidosFiltrados(vista.filtro, vista.busqueda);
   const todos = pedidos();
-  const pagados = todos.filter(o => o.estado === "paid");
-  const pend = todos.filter(o => o.estado !== "paid");
+  /* Cobrado y por cobrar salen del mismo resumen que Inicio: un solo motor */
+  const { cobrado, pendiente } = resumenGeneral(todos);
   pintarStats([
-    { b: fmt(totalLista(pagados)), s: "Cobrado" },
-    { b: fmt(totalLista(pend)), s: "Por cobrar" },
+    { b: fmt(cobrado), s: "Cobrado" },
+    { b: fmt(pendiente), s: "Por cobrar" },
     { b: todos.length, s: "Pedidos" },
   ]);
 
