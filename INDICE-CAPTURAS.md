@@ -343,3 +343,9 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 |---|---|---|---|
 | Cuotas pendientes «2 de 3 sin guardar» (revisión QA) | 320 | claro | [qa-flor-cuotas-pendientes-320.png](capturas/2026-11-23/qa-flor-cuotas-pendientes-320.png) |
 | Aviso «¿Salir sin guardar las cuotas?» (revisión QA) | 320 | claro | [qa-flor-aviso-salir-cuotas-320.png](capturas/2026-11-23/qa-flor-aviso-salir-cuotas-320.png) |
+
+### Cierre del hallazgo y publicación · 2026-11-23
+
+- Hallazgo de Flor: `abrirHoja()` limpiaba la guardia, así que al reabrir el detalle o cancelar el aviso de cambio de estado, las cuotas pendientes se perdían sin preguntar. Arreglado en `f235805`: la guardia solo la limpia el cierre forzado o el cierre ya confirmado, con dos tests nuevos (`npm test` 103/103).
+- Caché de la PWA a `ropa-v2-nav-1500ms-r22` y `componentes.css?v=3` (`21ec0a1`), para que las clientas no queden con los estilos viejos.
+- Publicado en master (`21ec0a1`). Verificado en vivo sobre https://nicodelos24.github.io/Aplicacion-ropa/?demo=1: `sw.js` sirve `r22` y `main.css` pide `componentes.css?v=3`; en el detalle de Lucía `+` deja «Pagó 2 de 3 sin guardar» sin tocar `ropa_v2_data` (sigue 1), cancelar el aviso de «Mensaje enviado» conserva el pendiente, y cerrar por X pregunta «¿Salir sin guardar las cuotas?»; salir sin guardar deja el pedido en 1 de 3. 0 errores de consola.
