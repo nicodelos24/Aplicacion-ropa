@@ -387,3 +387,16 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | Escena | Ancho | Tema | Archivo |
 |---|---|---|---|
 | Calendario en el vivo publicado, sin desborde tras los cambios de mes | 320 | oscuro | [dino-agenda-320-clip-vivo.png](capturas/2026-11-23/dino-agenda-320-clip-vivo.png) |
+
+## Ropa v2 · Inventario por secciones (decisión B) · Dino · 2026-11-23
+
+- Secciones propias de la clienta para ordenar el inventario: crear, renombrar, borrar (las prendas pasan a «Sin sección», nunca se borran) y asignar prendas. El inventario se muestra en cajones plegables por sección, con «Sin sección» al final, contador y búsqueda que filtra dentro de cada cajón.
+- Ajustes de Olga aplicados y medidos en el Chrome del proyecto a 390 px: blancos táctiles de 28 controles (`.sec-toggle`, `.sec-acc`, `.sec-nueva`, tarjetas y acciones) todos ≥44 px y sin solapamientos (hit-test en el centro de cada uno); carets que bajan al abrir y vuelven a la derecha al plegar (`aria-expanded` acompañando); copy del cajón vacío «Todavía no hay prendas acá. Editá una prenda y elegí esta sección.». En la hoja: X 44×44, filas de 52 px, input de 50 px y botón Crear 92×50.
+- Sin desborde horizontal (documento 375 px sobre viewport de 390), fotos sin roturas, 0 errores de consola. `npm test` 132/132 y `npm run check` OK.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Inventario agrupado por secciones con cajones y contadores | 390 | claro | [secciones-inventario-390-claro.png](capturas/2026-11-23/secciones-inventario-390-claro.png) |
+| El mismo inventario en tema oscuro | 390 | oscuro | [secciones-inventario-390-oscuro.png](capturas/2026-11-23/secciones-inventario-390-oscuro.png) |
+| Hoja «Tus secciones» con renombrar y borrar por fila | 390 | oscuro | [secciones-hoja-390-oscuro.png](capturas/2026-11-23/secciones-hoja-390-oscuro.png) |
+| Cajón recién creado y vacío, con el copy de estado vacío | 390 | oscuro | [secciones-vacia-390-oscuro.png](capturas/2026-11-23/secciones-vacia-390-oscuro.png) |
