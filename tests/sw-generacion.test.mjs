@@ -173,8 +173,8 @@ test("el store.js actual exporta secciones y el inventario lo importa de ahí", 
   assert.match(cuerpo, /export const secciones/, "el archivo servido en el vivo coincide con el que exporta secciones");
 });
 
-test("el precache nombra la generación y el CACHE está en r28", () => {
-  assert.match(CODIGO, /const VERSION = "r28"/, "VERSION en r28");
+test("el precache nombra la generación y el CACHE está en r29", () => {
+  assert.match(CODIGO, /const VERSION = "r29"/, "VERSION en r29");
   assert.match(CODIGO, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
   assert.match(CODIGO, /\?gen=.*VERSION|"gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
 });
