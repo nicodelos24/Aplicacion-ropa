@@ -987,7 +987,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r32"/, "el caché sube a r32 con el motor único de total y la edición sin revivir pagados");
+  assert.match(sw, /const VERSION = "r33"/, "el caché sube a r33 con el aviso de guardado y los duplicados unificados");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -999,6 +999,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.ok(sw.includes("./src/nucleo/pedido-picker.js"), "el precache incluye el módulo del selector por sección");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
+  assert.match(cssMain, /capas\.css\?v=4/, "el aviso de guardado entra con versión propia");
   assert.match(cssMain, /componentes\.css\?v=5/, "los estilos nuevos del inventario por secciones entran con versión propia");
   assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
   assert.match(cssMain, /picker\.css\?v=1/, "los estilos del selector del pedido por sección entran con versión propia");

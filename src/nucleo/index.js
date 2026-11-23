@@ -1,13 +1,18 @@
-// nucleo/index.js — dominio puro, sin DOM ni I/O. Una sola fuente de verdad
-// para los cálculos; la UI no calcula nada.
+// nucleo/index.js — ÚNICO barrel del núcleo: dominio puro, sin DOM ni I/O.
+// Una sola fuente de verdad para los cálculos; la UI no calcula nada.
+//
+// Había dos barrels (este y nucleo.js) con listas de export distintas y
+// divergentes: quien importaba de uno no veía los símbolos que el otro sí.
+// Ahora queda este solo; lo que la app necesita importar del núcleo sale de acá.
 //
 // Módulos:
 //   ids.js        uid()
-//   moneda.js     parseMoneda / fmt (gramática validada, P1 UX36-01)
+//   moneda.js     parseMoneda / fmt / fmtMonto (gramática validada, P1 UX36-01)
 //   fechas.js     dstr / fdate / agenda
-//   estados.js    pedidos: estados, cuotas y transiciones (P1 cuotas/confirmación)
+//   pedidos.js    pedidos: total, cuotas, estados y transiciones (P1)
 //   entidades.js  fábricas: pedido/producto/cliente/evento/log + snapshot por uuid
-//   filtros.js    FILTROS, conteo, búsqueda, resúmenes (QA v1: homónimos, no-match)
+//   filtros.js    FILTROS (única definición), conteo, búsqueda y resúmenes
+//   buscador.js   normalización y coincidencias de búsqueda
 //   contacto.js   clientes + WhatsApp
 //   catalogo.js   categorías con ícono y meta del log
 export { uid } from "./ids.js";
@@ -17,11 +22,12 @@ export {
   esHoy, esPasado, celdasMes, sumarMes,
 } from "./fechas.js";
 export {
-  ESTADOS, ORDEN_ESTADOS, FILTROS, total, totalLista, cuotasDe, cuotasPagadasDe,
+  ESTADOS, ORDEN_ESTADOS, tonoDe, total, totalItems, totalLista, cuotasDe, cuotasPagadasDe,
   alPagarCuota, completaCuotas, estadoDe, colorEstado,
   cambiarEstado, cuotaStep, cuotasCompletas, estadoAlGuardar,
   cuotasValidas, cuotasPagadasValidas, CUOTAS_MIN, CUOTAS_MAX, ES_ESTADO,
   requiereConfirmacion, setCuotasDe,
+  precioItem, nombreItem, qtyDe, subtotalItem, aplicarDatosPedido,
 } from "./pedidos.js";
 export {
   itemDesdeProducto, itemAMano, normalizarItem,
@@ -29,12 +35,15 @@ export {
   entradaLog, LOG_MAX,
 } from "./entidades.js";
 export {
-  conteoFiltros, buscarPedidos, filtrarPorEstado, resumenCliente,
+  FILTROS, conteoFiltros, buscarPedidos, filtrarPorEstado, resumenCliente,
   resumenGeneral, entregasPorDia, ordenarPedidos,
 } from "./filtros.js";
 export {
-  clientePorId, pedidosDe, resumenCliente as resumenClienteViejo,
-  waTel, maskTel, fmtTel, linkWhatsApp, PREFIJO_DEFECTO, prefijoLimpio,
+  normalizar, coincidePedido, coincideProducto, coincideCliente,
+} from "./buscador.js";
+export {
+  PREFIJO_DEFECTO, clientePorId, pedidosDe,
+  waTel, maskTel, fmtTel, linkWhatsApp, prefijoLimpio,
 } from "./contacto.js";
 export {
   CATEGORIAS, CATEGORIAS_IDS, CATEGORIA_DEFECTO, esCategoria, categoria,

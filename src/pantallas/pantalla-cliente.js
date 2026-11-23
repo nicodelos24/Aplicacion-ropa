@@ -1,9 +1,9 @@
 // pantalla-cliente.js — hoja de detalle: pendientes, hechos y "+ nuevo pedido para…".
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
-import { fmt, fdateShort } from "../nucleo/nucleo.js";
+import { fmt, fdateShort } from "../nucleo/index.js";
 import { fmtTel, resumenCliente } from "../nucleo/contacto.js";
-import { estadoDe, total, nombreItem } from "../nucleo/pedidos.js";
+import { estadoDe, total, nombreItem, tonoDe } from "../nucleo/pedidos.js";
 import { db, clientes, pedidos, eliminarCliente } from "../estado/store.js";
 import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
 import { abrirWhatsApp } from "../servicios/whatsapp.js";
@@ -13,11 +13,9 @@ import { abrirDetallePedido } from "./pantalla-pedido-detalle.js";
 import { toast } from "../ui/componentes/toast.js";
 import { plantilla } from "../ui/plantilla.js";
 
-const TONOS = { new: "yellow", msg: "orange", due: "blue", paid: "green" };
-
 /* fila de pedido dentro de la hoja: título = productos, monto a la derecha, estado + fecha */
 function filaPedido(o) {
-  const tono = TONOS[o.estado] || "yellow";
+  const tono = tonoDe(o);
   return plantilla(FILA, {
     id: o.id,
     tono,

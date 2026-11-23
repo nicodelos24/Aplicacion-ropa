@@ -1,7 +1,7 @@
 // pantalla-pedidos.js — lista con filtros por estado (contador), búsqueda y vacíos con salida.
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, VACIO_SVG } from "../ui/iconos.js";
-import { fmt } from "../nucleo/nucleo.js";
+import { fmt } from "../nucleo/index.js";
 import { FILTROS, resumenGeneral } from "../nucleo/filtros.js";
 import { pedidos, pedidosFiltrados, conteo, db } from "../estado/store.js";
 import { vista, emitirVista } from "../estado/vista.js";

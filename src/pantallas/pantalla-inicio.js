@@ -2,7 +2,7 @@
 // Jerarquía del rediseño: tarjeta primaria de dinero protagonista, dos medianas y tres compactas.
 import { esc, qsa } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
-import { fmt, estadoDe, MESES } from "../nucleo/nucleo.js";
+import { fmt, estadoDe, MESES } from "../nucleo/index.js";
 import { resumenGeneral } from "../nucleo/filtros.js";
 import { DSEM, hoy, fdateShort } from "../nucleo/fechas.js";
 import { db, pedidos } from "../estado/store.js";

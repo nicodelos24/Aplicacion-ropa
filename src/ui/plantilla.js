@@ -1,6 +1,7 @@
 // plantilla.js — mini motor de plantillas del design system.
 // El markup de cada pantalla vive en una plantilla legible con {{claves}}; acá sólo se rellena.
 // Nada de estilos inline en pantallas: el estilo vive en src/ui/**/*.css.
+import { fmt } from "../nucleo/moneda.js";
 export function plantilla(tpl, datos) {
   return tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => (datos[k] ?? ""));
 }
@@ -17,7 +18,8 @@ export function animarContadores(root) {
     const pintar = ahora => {
       const t = Math.min(1, (ahora - inicio) / dur);
       const v = final * (1 - Math.pow(1 - t, 3));          // ease-out cúbico
-      el.textContent = formato === "n" ? String(Math.round(v)) : "$" + Math.round(v).toLocaleString("es-MX");
+      /* el contador animado muestra el mismo texto que el valor final: fmt() */
+      el.textContent = formato === "n" ? String(Math.round(v)) : fmt(v);
       if (t < 1) requestAnimationFrame(pintar);
       else el.textContent = el.dataset.final || el.textContent;
     };

@@ -3,7 +3,7 @@
 // premiante al completar cuotas. Cerrar con cambios de cuota sin guardar avisa antes de perderlos.
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
-import { fmt, fdateShort } from "../nucleo/nucleo.js";
+import { fmt, fdateShort } from "../nucleo/index.js";
 import {
   ESTADOS, ORDEN_ESTADOS, total, cuotasDe, cuotasPagadasDe, cuotasPagadasValidas, nombreItem, subtotalItem,
 } from "../nucleo/pedidos.js";

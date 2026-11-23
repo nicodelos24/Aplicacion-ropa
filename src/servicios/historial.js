@@ -1,7 +1,7 @@
 // Historial: registro centralizado de movimientos y su lectura con filtro.
 import { registrarLog } from "../estado/store.js";
 import { LOG_META, LOG_ACCIONES } from "../nucleo/catalogo.js";
-import { fmt, total } from "../nucleo/nucleo.js";
+import { fmt, total } from "../nucleo/index.js";
 
 export { LOG_META, LOG_ACCIONES };
 

@@ -2,7 +2,7 @@
 // Dependencias hacia adentro: pantallas → ui → estado → datos → nucleo.
 import { qs, qsa, espacioToast } from "./ui/dom.js";
 import { ICONO } from "./ui/iconos.js";
-import { boot, db, suscribir, setTema } from "./estado/store.js";
+import { boot, db, suscribir, setTema, suscribirDisco, enSoloMemoria } from "./estado/store.js";
 import { datosDemo } from "./datos/demo.js";
 import { vista, emitirVista, suscribirVista, irA } from "./estado/vista.js";
 import { aplicarTema } from "./pantallas/pantalla-ajustes.js";
@@ -19,6 +19,8 @@ import { abrirEditorInventario } from "./pantallas/pantalla-inventario-editor.js
 import { abrirEditorCliente } from "./pantallas/pantalla-cliente-editor.js";
 import { cerrarHoja, intentarCerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
 import { ocultarToast } from "./ui/componentes/toast.js";
+import { mostrarAvisoDisco, cerrarAvisoDisco } from "./ui/componentes/aviso-disco.js";
+import { avisoGuardado, avisoSoloMemoria } from "./nucleo/avisos-disco.js";
 import {
   estadoInicial, medirScroll, mostrar, mostrarPorPausa, ocultarPorInactividad,
   recorridoRueda, registrarActividad, INACTIVIDAD_MS, REAPARICION_MS,
@@ -27,6 +29,15 @@ import {
 /* arranque: modo demo (?demo=1) o datos locales */
 const DEMO = /[?&]demo=1/.test(location.search);
 boot(DEMO ? datosDemo() : null);
+
+/* Persistencia: si el dispositivo rechaza la escritura (o la acepta sin fotos)
+   se avisa en pantalla. Antes la app seguía como si nada y el cambio se perdía
+   al recargar. `suscribirDisco` escucha el resultado de cada acción. */
+suscribirDisco((r) => {
+  const aviso = avisoGuardado(r);
+  if (aviso) mostrarAvisoDisco(aviso);
+});
+if (enSoloMemoria()) mostrarAvisoDisco(avisoSoloMemoria());
 
 const SUBTITULOS = {
   inicio: "Todo tu negocio en un vistazo",
@@ -263,6 +274,7 @@ qs("#fab").onclick = () => {
   else if (v === "agenda") abrirEditorPedido(null, null, vista.diaSel || undefined);
 };
 
+qs("#aviso-disco-x").onclick = cerrarAvisoDisco;
 qs("#hoja").onclick = e => { if (e.target.id === "hoja") intentarCerrarHoja(); };
 window.addEventListener("resize", espacioToast);
 /* Escape cierra la hoja, pero si hay una confirmación abierta es de ella */

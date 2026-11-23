@@ -9,13 +9,14 @@ export const ESTADOS = {
 
 export const ORDEN_ESTADOS = ["new", "msg", "due", "paid"];
 
-export const FILTROS = [
-  ["all",  "Todos",           "neutral"],
-  ["paid", "Pagado",          "green"],
-  ["msg",  "Mensaje enviado", "orange"],
-  ["due",  "En cuotas",       "blue"],
-  ["new",  "Nuevo",           "neutral"],
-];
+/* Los filtros de la franja de Pedidos viven en filtros.js (junto al conteo y la
+   búsqueda que los usan): acá estaba una segunda lista en otro formato. */
+
+/** Tono de color por estado, para chips y bordes. Única fuente: ESTADOS. */
+export function tonoDe(o) {
+  const st = ESTADOS[(o && o.estado) || "new"] || ESTADOS.new;
+  return st.c;
+}
 
 export function total(o) {
   return totalItems(o && o.items);

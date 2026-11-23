@@ -4,7 +4,7 @@
 // foto mini y precio, grilla 3× de siempre, editar/eliminar, lightbox y la hoja
 // "Secciones". Los filtros son de pantalla: no cambian ningún dato.
 import { esc, qs, qsa } from "../ui/dom.js";
-import { fmt } from "../nucleo/nucleo.js";
+import { fmt } from "../nucleo/index.js";
 import { db, productos, pedidos, eliminarProducto, secciones } from "../estado/store.js";
 import { vista, emitirVista } from "../estado/vista.js";
 import { abrirLightbox } from "../ui/componentes/lightbox.js";

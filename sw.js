@@ -9,7 +9,7 @@
  *    (`listo`): si la nueva no precargó entera, se va a la red y no se fusiona;
  *  - la generación vieja se borra en `activate`, antes de tomar el control.
  */
-const VERSION = "r32";
+const VERSION = "r33";
 const CACHE = "ropa-v2-nav-1500ms-" + VERSION;
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
@@ -20,11 +20,14 @@ const ASSETS = [
   "./src/ui/componentes/secciones.css",
   "./src/ui/componentes/filtros.css",
   "./src/ui/componentes/picker.css",
+  "./src/ui/componentes/foto-picker.js",
+  "./src/ui/componentes/aviso-disco.js",
+  "./src/nucleo/avisos-disco.js",
   "./src/estado/store.js", "./src/estado/vista.js", "./src/datos/demo.js",
   "./src/datos/local.js", "./src/datos/fotos-demo.js",
   "./fotos/vestido.jpg", "./fotos/campera.jpg", "./fotos/jean.jpg",
   "./fotos/bolso.jpg", "./fotos/buzo.jpg",
-  "./src/nucleo/nucleo.js", "./src/nucleo/ids.js",
+  "./src/nucleo/index.js", "./src/nucleo/ids.js",
   "./src/nucleo/pedido-picker.js",
   "./src/nucleo/moneda.js", "./src/nucleo/fechas.js", "./src/nucleo/pedidos.js",
   "./src/nucleo/contacto.js", "./src/nucleo/buscador.js", "./src/nucleo/secciones.js",

@@ -1,7 +1,7 @@
 // Respaldo JSON: exportar descargable e importar validado (sin ejecutar nada).
 // La confirmación la maneja la UI vía el callback `confirmar`.
 import { exportar, importar } from "../estado/store.js";
-import { dstr } from "../nucleo/nucleo.js";
+import { dstr } from "../nucleo/index.js";
 
 export function nombreArchivo() {
   return "respaldo-ropa-" + dstr(new Date()) + ".json";

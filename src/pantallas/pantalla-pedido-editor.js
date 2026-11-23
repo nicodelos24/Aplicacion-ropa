@@ -19,7 +19,7 @@ import { abrirHoja, cerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
 import { mostrarError } from "../ui/componentes/campo.js";
 import { confirmar } from "../ui/componentes/confirmar.js";
-import { comprimirFoto } from "../servicios/fotos.js";
+import { fotoPickerHTML, conectarFotoPicker } from "../ui/componentes/foto-picker.js";
 import { abrirDetallePedido } from "./pantalla-pedido-detalle.js";
 
 export function abrirEditorPedido(orig, presetCliente, presetDate) {
@@ -64,7 +64,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       <div id="pick-grupos"></div>
     </div>
     <div id="mode-man" class="oculto">
-      <input type="file" id="man-photo" accept="image/*" capture="environment" class="oculto">
+      ${fotoPickerHTML({ camara: "man-photo", galeria: null })}
       <div id="plist"></div>
       <button class="addp" id="addp">Agregar producto</button>
     </div>
@@ -257,16 +257,21 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     qsa(".pn").forEach(el => el.oninput = () => { manuales[el.dataset.i].nombre = el.value; });
     qsa(".pp").forEach(el => el.oninput = () => { manuales[el.dataset.i].precio = el.value; calc(); });
     qsa(".prow .quitar").forEach(el => el.onclick = () => { manuales.splice(el.dataset.i, 1); if (!manuales.length) manuales = [{ nombre: "", precio: "", qty: 1, foto: null }]; drawMan(); calc(); });
-    qsa(".mpic").forEach(el => el.onclick = () => { manPhotoIdx = Number(el.dataset.i); qs("#man-photo").click(); });
+    qsa(".mpic").forEach(el => el.onclick = () => { manPhotoIdx = Number(el.dataset.i); picker.elegir(); });
   };
 
+  /* elegir foto: un solo flujo compartido (ui/componentes/foto-picker.js).
+     El editor de pedido ya usaba la cámara para el producto a mano; se mantiene. */
   let manPhotoIdx = null;
-  qs("#man-photo").onchange = e => {
-    const f = e.target.files[0]; e.target.value = "";
-    if (f == null || manPhotoIdx == null) return;
-    comprimirFoto(f).then(url => { manuales[manPhotoIdx].foto = url; manPhotoIdx = null; drawMan(); })
-      .catch(er => toast(er.message || "No se pudo procesar la foto", "err"));
-  };
+  const picker = conectarFotoPicker({
+    camara: "man-photo", galeria: null,
+    alElegir: (url) => {
+      if (manPhotoIdx == null) return;
+      manuales[manPhotoIdx].foto = url;
+      manPhotoIdx = null;
+      drawMan();
+    },
+  });
 
   drawInv(); drawMan(); calc();
   qsa("#mode-seg button").forEach(x => x.classList.toggle("on", x.dataset.m === "inv"));

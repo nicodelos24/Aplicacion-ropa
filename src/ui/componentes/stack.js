@@ -2,8 +2,9 @@
 // Lee snapshots del ítem (v2: nombre/precio/foto) con compat v1 (name/price).
 import { esc } from "../dom.js";
 import { svgCategoria, ICONO } from "../iconos.js";
-import { total, nombreItem, precioItem, qtyDe } from "../../nucleo/pedidos.js";
+import { total, nombreItem, precioItem, qtyDe, tonoDe, estadoDe, cuotasDe, cuotasPagadasDe } from "../../nucleo/pedidos.js";
 import { esFotoDemo } from "../../datos/fotos-demo.js";
+import { fmt } from "../../nucleo/moneda.js";
 
 export function miniaturaItem(item) {
   const foto = item.foto ?? item.photo;
@@ -21,16 +22,13 @@ export function stackHTML(o, inventario = []) {
     <span class="stack-lbl">${its.length === 1 ? "producto" : its.length + " productos"}</span>  </div>`;
 }
 
-const TONOS = { new: "yellow", msg: "orange", due: "blue", paid: "green" };
-export function tonoDe(o) { return TONOS[o.estado] || "yellow"; }
-
 /** Card resumen de pedido reutilizable (Pedidos, Inicio, Contactos, Agenda). */
 export function cardPedidoHTML(o, { mostrarFecha = false } = {}) {
   const tono = tonoDe(o);
-  const cuotas = Number(o.cuotas) || 2;
-  const pagadas = Number(o.cuotasPagadas) || 0;
+  const cuotas = cuotasDe(o);
+  const pagadas = cuotasPagadasDe(o);
   const chips = [
-    `<span class="b b-${tono}">${{ new: "Nuevo", msg: "Mensaje enviado", due: "En cuotas", paid: "Pagado" }[o.estado] || "Nuevo"}</span>`,
+    `<span class="b b-${tono}">${estadoDe(o).l}</span>`,
     o.estado === "due" ? `<span class="b b-neutro monto">Pagó ${pagadas} de ${cuotas}</span>` : "",
     mostrarFecha && o.fecha ? `<span class="b b-neutro">${ICONO.cal}</span>` : "",
   ].join("");
@@ -39,7 +37,7 @@ export function cardPedidoHTML(o, { mostrarFecha = false } = {}) {
   const barra = o.estado === "due" && nBarra > 0
     ? `<div class="barra-cuotas" data-r="${nBarra}/${pasos}"><div class="relleno"></div></div>` : "";
   const items = esc((o.items || []).map(i => `${qtyDe(i) > 1 ? qtyDe(i) + "× " : ""}${nombreItem(i)}`).join(" · ")) || "Sin productos";
-  const monto = "$" + Number(total(o)).toLocaleString("es-MX");
+  const monto = fmt(total(o));
   return `<div class="card borde-${tono}" data-pedido="${o.id}" role="button" tabindex="0" aria-label="Pedido de ${esc(o.cliente) || "cliente"}, total ${monto}">
     ${stackHTML(o)}
     <div class="card-fila"><h3 class="card-titulo contenedor-texto">${esc(o.cliente) || "Sin nombre"}</h3><span class="card-monto monto">${monto}</span></div>

@@ -10,7 +10,7 @@ import { abrirHoja, cerrarHoja, intentarCerrarHoja, alCerrarHoja } from "../ui/c
 import { toast } from "../ui/componentes/toast.js";
 import { mostrarError } from "../ui/componentes/campo.js";
 import { confirmar } from "../ui/componentes/confirmar.js";
-import { comprimirFoto } from "../servicios/fotos.js";
+import { fotoPickerHTML, conectarFotoPicker } from "../ui/componentes/foto-picker.js";
 import { plantilla } from "../ui/plantilla.js";
 
 export function abrirEditorInventario(orig) {
@@ -35,6 +35,7 @@ export function abrirEditorInventario(orig) {
     })).join(""),
     nombre: esc(orig?.name || ""),
     precio: orig?.price ?? "",
+    fotoPicker: fotoPickerHTML({ camara: "inv-cam", galeria: "inv-photo" }),
     secciones: [
       `<option value="">Sin sección</option>`,
       ...listaSecciones.map(s => `<option value="${esc(s.id)}" ${seccionId === s.id ? "selected" : ""}>${esc(s.nombre)}</option>`),
@@ -67,12 +68,11 @@ export function abrirEditorInventario(orig) {
     qsa("#seg-cat button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
   });
   qs("#inv-sec").onchange = e => { seccionId = e.target.value || null; };
-  qs("#camBtn").onclick = () => qs("#inv-cam").click();
-  qs("#photoBtn").onclick = () => qs("#inv-photo").click();
+  /* elegir foto: un solo flujo compartido (ui/componentes/foto-picker.js) */
+  const picker = conectarFotoPicker({ camara: "inv-cam", galeria: "inv-photo", alElegir: updPrev });
+  qs("#camBtn").onclick = () => picker.elegir();
+  qs("#photoBtn").onclick = () => picker.galeria();
   qs("#inv-photo-del").onclick = () => updPrev(null);
-  const tomar = e => { const f = e.target.files[0]; if (f) comprimirFoto(f).then(updPrev).catch(er => toast(er.message, "err")); };
-  qs("#inv-cam").onchange = tomar;
-  qs("#inv-photo").onchange = tomar;
   qs("#inv-cancelar").onclick = intentarCerrarHoja;
   if (esNuevo && !orig?.cat) {
     const segCat = qs("#seg-cat");
@@ -102,8 +102,7 @@ const HOJA = `
   <div class="agarre"></div>
   <h2>{{titulo}}</h2>
   <div id="inv-prev">{{previa}}</div>
-  <input type="file" id="inv-photo" accept="image/*" class="oculto">
-  <input type="file" id="inv-cam" accept="image/*" capture="environment" class="oculto">
+  {{fotoPicker}}
   <div class="foto-acciones">
     <button class="btn btn-ghost" id="camBtn">{{camara}} Tomar foto</button>
     <button class="btn btn-ghost" id="photoBtn">{{imagen}} Galería</button>

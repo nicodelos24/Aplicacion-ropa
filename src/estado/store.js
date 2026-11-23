@@ -1,7 +1,7 @@
 // Store observable: una sola fuente de verdad. Los módulos de UI se suscriben
 // y despachan acciones; ninguna pantalla calcula ni muta el estado directo.
 // Depende de: nucleo, datos (inyectados, para poder testear sin localStorage).
-import { total, fmt } from "../nucleo/nucleo.js";
+import { total, fmt } from "../nucleo/index.js";
 import { parseMoneda } from "../nucleo/moneda.js";
 import {
   ESTADOS, ORDEN_ESTADOS, ES_ESTADO, cambiarEstado, cuotaStep,
@@ -21,7 +21,12 @@ export const ESTADOS_PEDIDO = ESTADOS;
 export const ORDEN = ORDEN_ESTADOS;
 
 const suscriptores = new Set();
+/* Oído opcional al resultado de cada escritura (main.js lo usa para avisar
+   cuando el dispositivo no pudo guardar). Nunca reemplaza al `suscriptor`
+   del estado: es un canal aparte, con {ok, degradado}. */
+const oyentesDisco = new Set();
 let estado = null;
+let soloMemoria = false;
 let persistencia = { guardar: guardarLocal, cargar: cargarLocal, disponible: disponible };
 
 /** Sustituye la capa de persistencia (tests, F4 nube). */
@@ -31,6 +36,16 @@ export function suscribir(fn) {
   suscriptores.add(fn);
   return () => suscriptores.delete(fn);
 }
+
+/** Suscribe a los resultados de persistencia de cada acción (aviso en pantalla). */
+export function suscribirDisco(fn) {
+  oyentesDisco.add(fn);
+  return () => oyentesDisco.delete(fn);
+}
+function avisarDisco(r) { for (const fn of oyentesDisco) { try { fn(r); } catch (e) { console.error(e); } } }
+
+/** ¿Arrancó sin poder guardar (localStorage no disponible)? */
+export function enSoloMemoria() { return soloMemoria; }
 function emitir() { for (const fn of suscriptores) fn(estado); }
 
 function iniciar(datos) {
@@ -45,7 +60,10 @@ export function boot(datos = null) {
     persistencia.guardar(estado);
     return;
   }
-  const d = persistencia.disponible() ? persistencia.cargar() : { ...cargarLocal(), _soloMemoria: true };
+  /* sin localStorage escribible la app funciona igual, pero avisa que nada va a
+     quedar guardado: `soloMemoria` lo consume main.js al arrancar. */
+  soloMemoria = !persistencia.disponible();
+  const d = soloMemoria ? cargarLocal() : persistencia.cargar();
   iniciar(d);
 }
 
@@ -99,7 +117,9 @@ function set(mutador, { log: accion, detail, usuario } = {}) {
   const r = persistencia.guardar(proximo) || { ok: true, degradado: false };
   estado = r.ok === false ? previo : proximo;
   emitir();
-  return { ok: r.ok !== false, degradado: !!r.degradado };
+  const fin = { ok: r.ok !== false, degradado: !!r.degradado };
+  avisarDisco(fin);
+  return fin;
 }
 
 /* ── Acciones de pedidos ── */
@@ -355,6 +375,7 @@ export function borrarDatos(usuario) {
   estado = conservado;
   const r = persistencia.guardar(estado);
   emitir();
+  if (r && r.ok === false) avisarDisco({ ok: false, degradado: true });
   return { ok: true, persistencia: r };
 }
 
@@ -390,6 +411,7 @@ export function importar(json, { confirmar } = {}) {
   estado = proximo;
   const r = persistencia.guardar(estado);
   emitir();
+  if (r && r.ok === false) avisarDisco({ ok: false, degradado: true });
   return { ok: true, counts, persistencia: r };
 }
 

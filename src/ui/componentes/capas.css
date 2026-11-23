@@ -50,6 +50,35 @@
 .toast.err svg,.toast.warn svg{color:var(--c-danger)}
 .toast.hoja-oculto{opacity:0}
 
+/* ---- aviso de guardado (persistencia degradada) ----
+   Vive en el flujo, arriba del contenido. Ámbar = se guardó sin las fotos;
+   rojo = no se guardó. Nunca tapa lo que la persona está mirando. */
+.aviso-disco{padding:10px 16px 0}
+.aviso-disco[hidden]{display:none}
+.aviso-disco-in{
+  display:flex; align-items:flex-start; gap:10px;
+  padding:11px 12px; border-radius:15px;
+  background:color-mix(in srgb,var(--c-yellow) 12%,var(--card));
+  border:1px solid color-mix(in srgb,var(--c-yellow) 34%,var(--line));
+  box-shadow:var(--inset-hair);
+}
+.aviso-disco[data-tono="error"] .aviso-disco-in{
+  background:color-mix(in srgb,var(--c-danger) 12%,var(--card));
+  border-color:color-mix(in srgb,var(--c-danger) 38%,var(--line));
+}
+.aviso-disco-ico{display:flex; flex-shrink:0; margin-top:1px; color:var(--c-yellow-text)}
+.aviso-disco[data-tono="error"] .aviso-disco-ico{color:var(--c-red)}
+.aviso-disco-ico svg{width:18px; height:18px}
+.aviso-disco-txt{flex:1; min-width:0}
+.aviso-disco-txt b{display:block; font-size:13.5px; font-weight:800; letter-spacing:-.15px}
+.aviso-disco-txt p{font-size:12.5px; color:var(--mut); line-height:1.5; margin-top:2px}
+.aviso-disco-x{
+  flex-shrink:0; width:32px; height:32px; min-height:32px; border-radius:10px; border:0;
+  background:transparent; color:var(--mut); display:flex; align-items:center; justify-content:center;
+}
+.aviso-disco-x svg{width:15px; height:15px}
+.aviso-disco-x:hover{background:var(--card3); color:var(--txt)}
+
 /* ---- confirmación neutral ---- */
 .cov{
   position:fixed; inset:0; background:var(--overlay); z-index:100;

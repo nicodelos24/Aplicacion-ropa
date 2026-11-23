@@ -8,7 +8,7 @@ import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
 import { mostrarError } from "../ui/componentes/campo.js";
 import { confirmar } from "../ui/componentes/confirmar.js";
 import { toast } from "../ui/componentes/toast.js";
-import { fmt } from "../nucleo/nucleo.js";
+import { fmt } from "../nucleo/index.js";
 import { db, secciones, productos, crearSeccion, renombrarSeccion, eliminarSeccion, moverProductoASeccion, seccionPorId } from "../estado/store.js";
 import { emitirVista } from "../estado/vista.js";
 import { contarEnSeccion, SECCION_NOMBRE_MAX } from "../nucleo/secciones.js";

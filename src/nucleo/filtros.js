@@ -1,13 +1,13 @@
 // Filtros, búsquedas y resúmenes (pases de QA de la v1: homónimos $300,
 // búsqueda 90/no-match, flechas+contador de filtros, mixto qty2/$0).
-import { nombreItem, total } from "./pedidos.js";
+import { ESTADOS, nombreItem, total } from "./pedidos.js";
 
+/* ÚNICA lista de filtros de la franja de Pedidos. Los estados salen de
+   ESTADOS (etiqueta y tono), así renombrar un estado cambia chip y filtro
+   juntos; "Todos" no es un estado y va aparte. */
 export const FILTROS = [
   { id: "all", label: "Todos", tono: "neutral" },
-  { id: "paid", label: "Pagado", tono: "green" },
-  { id: "msg", label: "Mensaje enviado", tono: "orange" },
-  { id: "due", label: "En cuotas", tono: "blue" },
-  { id: "new", label: "Nuevo", tono: "neutral" },
+  ...["paid", "msg", "due", "new"].map((id) => ({ id, label: ESTADOS[id].l, tono: ESTADOS[id].c })),
 ];
 
 /** Conteo por filtro, para las flechas + contador de la franja de chips. */

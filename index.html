@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Ropa v2 — Catálogo de Ventas</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="src/main.css?v=4">
+<link rel="stylesheet" href="src/main.css?v=5">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
@@ -31,6 +31,19 @@
       <div class="chips" id="chips"></div>
     </div>
   </header>
+
+  <!-- Aviso de guardado (persistencia degradada): lo pinta main.js. Arranca
+       oculto y sin alto; vive en el flujo, así que no tapa el contenido. -->
+  <div class="aviso-disco" id="aviso-disco" role="status" aria-live="polite" hidden>
+    <div class="aviso-disco-in">
+      <span class="aviso-disco-ico" id="aviso-disco-ico" aria-hidden="true"></span>
+      <div class="aviso-disco-txt">
+        <b id="aviso-disco-titulo"></b>
+        <p id="aviso-disco-texto"></p>
+      </div>
+      <button class="aviso-disco-x" id="aviso-disco-x" aria-label="Cerrar aviso"></button>
+    </div>
+  </div>
 
   <main id="main" class="vista"></main>
 
