@@ -110,6 +110,10 @@ async function reiniciar() {
   vista.verPasadas = false;
   vista.logFiltro = "all";
   qs("#search").value = "";
+  /* Inventario: el filtro, el orden y la vista alterna también viven en vista. */
+  vista.invCategoria = "todas";
+  vista.invOrden = "alta";
+  vista.invVista = "grilla";
   /* Fuente única del tema: db().theme dentro de ropa_v2_data. */
   store.boot({ ...datosDemo(), theme: "dark" });
   aplicarTema();
@@ -872,13 +876,16 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r\d+"/, "el caché se refresca al bajar la reaparición de la nav a 1,5 s");
-  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r25"/, "el caché se refresca al sumar las secciones del inventario");
+  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r26"/, "el caché se refresca al sumar los filtros del inventario");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
   assert.ok(sw.includes("./src/ui/componentes/secciones.css"), "el precache incluye el CSS de secciones");
   assert.ok(sw.includes("./src/nucleo/secciones.js"), "el precache incluye el módulo de secciones");
+  assert.ok(sw.includes("./src/ui/componentes/filtros.css"), "el precache incluye el CSS del buscador con filtros");
+  assert.ok(sw.includes("./src/nucleo/orden.js"), "el precache incluye el módulo de filtros y orden");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
   assert.match(cssMain, /componentes\.css\?v=4/, "los estilos nuevos del inventario por secciones entran con versión propia");
+  assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
   assert.match(cssMain, /motion\.css\?v=3/, "las animaciones nuevas de la agenda entran con versión propia");
   assert.doesNotMatch(sw, /ropa-v2-nav-90s-r19|ropa-v2-paco-corbata-r18|ropa-v2-nav-2000ms-toast-r17|ropa-v2-nav-2500ms-toast-r16|ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15/, "la versión de caché no queda en la de publicaciones anteriores");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
@@ -1317,4 +1324,163 @@ test("secciones: los blancos táctiles del inventario por secciones llegan a 44 
     const alto = /(?:min-)?height:(\d+)px/.exec(bloque[1]);
     assert.ok(alto && Number(alto[1]) >= 44, regla + " con blanco táctil ≥44 px");
   }
+});
+
+/* ---------- Inventario: buscador con filtros y orden (decisión 1 aprobada por Nico) ---------- */
+test("filtros: el inventario filtra por categoría con contador y no toca los datos", async () => {
+  await reiniciar();
+  irA("inventario");
+  const chips = qsa("#main .chip-cat");
+  assert.deepEqual(chips.map((c) => c.textContent.replace(/\d+$/, "")),
+    ["Todas", "Vestido", "Pantalón / Leggin", "Camisa / Blusa", "Abrigo / Chaqueta", "Medias", "Accesorio / Otro"],
+    "un chip por categoría con prendas, en el orden del catálogo");
+  assert.equal(chips[0].classList.contains("on"), true, "arranca en Todas");
+  assert.equal(qsa("#main .inv-card").length, 6);
+  click('#main .chip-cat[data-inv-cat="vestido"]');
+  assert.equal(qsa("#main .inv-card").length, 1, "queda una sola prenda");
+  assert.equal(qs("#main .inv-card").getAttribute("data-id"), "di1");
+  assert.equal(qs('#main .chip-cat[data-inv-cat="vestido"]').getAttribute("aria-pressed"), "true");
+  assert.match(qs("#inv-resumen").textContent, /1 producto/);
+  assert.match(qs("#inv-resumen").textContent, /Vestido/);
+  assert.equal(qsa("#main .sec").length, 1, "solo el cajón que tiene la coincidencia");
+  assert.equal(store.db().inventory.length, 6, "filtrar no borra ni mueve nada");
+  click('#main .chip-cat[data-inv-cat="todas"]');
+  assert.equal(qsa("#main .inv-card").length, 6, "volver a Todas muestra todo");
+  assert.deepEqual(errores, []);
+});
+
+test("filtros: el orden por precio y A–Z reordena dentro de cada cajón", async () => {
+  await reiniciar();
+  irA("inventario");
+  /* el orden actúa dentro de cada sección: los cajones siguen el orden de la clienta */
+  const porCajon = () => qsa("#main .sec").map((s) => ({
+    nombre: s.querySelector(".sec-nombre").textContent,
+    precios: [...s.querySelectorAll(".inv-card .inv-cuerpo p")].map((p) => Number(p.textContent.replace(/[^\d]/g, ""))),
+    nombres: [...s.querySelectorAll(".inv-card .inv-cuerpo h4")].map((h) => h.textContent.toLowerCase()),
+  }));
+  const sel = qs("#inv-orden");
+  assert.ok(sel, "hay selector de orden");
+  assert.equal(sel.value, "alta", "arranca en el orden de siempre");
+  sel.value = "precio-asc";
+  sel.dispatchEvent(new w.Event("change"));
+  await esperar();
+  for (const g of porCajon()) {
+    assert.deepEqual(g.precios, [...g.precios].sort((a, b) => a - b), "menor a mayor en " + g.nombre);
+  }
+  const sinSeccion = porCajon().find((g) => g.nombre === "Sin sección");
+  assert.deepEqual(sinSeccion.precios, [250, 300], "Medias lanas antes que Corbata");
+  qs("#inv-orden").value = "precio-desc";
+  qs("#inv-orden").dispatchEvent(new w.Event("change"));
+  await esperar();
+  for (const g of porCajon()) {
+    assert.deepEqual(g.precios, [...g.precios].sort((a, b) => b - a), "mayor a menor en " + g.nombre);
+  }
+  assert.deepEqual(porCajon().find((g) => g.nombre === "Hombre · básicos").precios, [3200, 950], "Abrigo largo primero");
+  qs("#inv-orden").value = "az";
+  qs("#inv-orden").dispatchEvent(new w.Event("change"));
+  await esperar();
+  for (const g of porCajon()) {
+    assert.deepEqual(g.nombres, [...g.nombres].sort((a, b) => a.localeCompare(b, "es")), "alfabético en " + g.nombre);
+  }
+  assert.deepEqual(porCajon().find((g) => g.nombre === "Dama · verano").nombres, ["pantalón negro", "vestido floral"]);
+  assert.equal(qsa("#main .inv-card").length, 6, "no se pierde ninguna prenda al ordenar");
+  assert.equal(store.db().inventory[0].id, "di1", "el orden es de pantalla: el inventario guardado no cambia");
+  assert.deepEqual(errores, []);
+});
+
+test("filtros: «más usados» pone arriba la prenda que entra en más pedidos", async () => {
+  await reiniciar();
+  irA("inventario");
+  qs("#inv-orden").value = "usados";
+  qs("#inv-orden").dispatchEvent(new w.Event("change"));
+  await esperar();
+  const ids = qsa("#main .inv-card").map((c) => c.dataset.id);
+  /* demo: Medias lanas suma 3 unidades en dos pedidos y queda primera en «Sin sección»;
+     en Hombre · básicos el Abrigo largo (1 pedido) va antes que la Camisa (0). */
+  const sinSeccion = qs('#main .sec[data-sec-grupo="sin"]');
+  assert.equal(sinSeccion.querySelector(".inv-card").dataset.id, "di5", "Medias lanas es la más usada");
+  const hombre = qs('#main .sec[data-sec-grupo="ds2"]');
+  assert.deepEqual([...hombre.querySelectorAll(".inv-card")].map((c) => c.dataset.id), ["di4", "di2"]);
+  assert.equal(ids.length, 6);
+  assert.deepEqual(errores, []);
+});
+
+test("vista alterna: la lista compacta muestra foto mini, sección y precio, y no cambia los datos", async () => {
+  await reiniciar();
+  irA("inventario");
+  assert.equal(qsa("#main .inv-fila").length, 0, "arranca en grilla");
+  const boton = qs("#inv-vista");
+  assert.equal(boton.getAttribute("aria-pressed"), "false");
+  click(boton);
+  assert.equal(qsa("#main .inv-fila").length, 6, "una fila por prenda");
+  assert.equal(qsa("#main .inv-card").length, 0, "la grilla se reemplaza, no se duplica");
+  const fila = qsa("#main .inv-fila")[0];
+  assert.ok(fila.querySelector(".fila-mini img"), "foto mini en la fila");
+  assert.ok(fila.querySelector(".fila-txt b").textContent);
+  assert.match(fila.querySelector(".fila-txt small").textContent, /Dama · verano/, "la fila dice de qué sección es");
+  assert.match(fila.querySelector(".fila-precio").textContent, /\$/);
+  assert.equal(qs("#inv-vista").getAttribute("aria-pressed"), "true");
+  assert.match(qs("#inv-vista").textContent, /Grilla/, "el botón ofrece volver a la grilla");
+  click("#inv-vista");
+  assert.equal(qsa("#main .inv-card").length, 6, "volver a grilla");
+  assert.equal(store.db().inventory.length, 6);
+  assert.deepEqual(errores, []);
+});
+
+test("vista alterna: la lista respeta el filtro y la búsqueda", async () => {
+  await reiniciar();
+  irA("inventario");
+  click("#inv-vista");
+  click('#main .chip-cat[data-inv-cat="media"]');
+  const filas = qsa("#main .inv-fila");
+  assert.equal(filas.length, 1, "el filtro también aplica en lista");
+  assert.equal(filas[0].getAttribute("data-id"), "di5");
+  qs("#search").value = "vestido";
+  qs("#search").dispatchEvent(new w.Event("input"));
+  await esperar();
+  assert.match(qs("#main").textContent, /Sin resultados/, "un filtro que no coincide con la búsqueda avisa");
+  qs("#search").value = "";
+  qs("#search").dispatchEvent(new w.Event("input"));
+  await esperar();
+  assert.equal(qsa("#main .inv-fila").length, 1, "la lista sigue en pie tras buscar");
+  assert.deepEqual(errores, []);
+});
+
+test("filtros: sin coincidencias el vacío explica y «Quitar filtros» vuelve a todo", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('#main .chip-cat[data-inv-cat="media"]');
+  qs("#search").value = "vestido";
+  qs("#search").dispatchEvent(new w.Event("input"));
+  await esperar();
+  assert.match(qs("#main").textContent, /Sin resultados/);
+  assert.match(qs("#main").textContent, /Medias/, "dice qué filtro está puesto");
+  const limpiar = qs('[data-acc="limpiar-filtros"]');
+  assert.ok(limpiar, "hay atajo para quitar los filtros");
+  click(limpiar);
+  assert.equal(qs("#inv-orden").value, "alta", "el orden vuelve al de siempre");
+  assert.equal(qs('#main .chip-cat[data-inv-cat="todas"]').classList.contains("on"), true);
+  qs("#search").value = "";
+  qs("#search").dispatchEvent(new w.Event("input"));
+  await esperar();
+  assert.equal(qsa("#main .inv-card").length, 6, "vuelven las seis prendas");
+  assert.deepEqual(errores, []);
+});
+
+test("filtros: el buscador del inventario dice «Buscar prenda» y los blancos táctiles llegan a 44 px", async () => {
+  await reiniciar();
+  irA("inventario");
+  assert.equal(qs("#search").placeholder, "Buscar prenda…");
+  irA("pedidos");
+  assert.equal(qs("#search").placeholder, "Buscar…", "en el resto de las secciones no cambia");
+  const css = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/filtros.css"), "utf8");
+  const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
+  assert.ok(cssMain.includes("filtros.css"), "la hoja de filtros entra en main.css");
+  for (const regla of [".invtools-orden{", ".invtools-vista{", ".inv-fila{"]) {
+    const bloque = new RegExp(regla.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^}]*)").exec(css);
+    assert.ok(bloque, "existe la regla " + regla);
+    const alto = /(?:min-)?height:(\d+)px/.exec(bloque[1]);
+    assert.ok(alto && Number(alto[0].match(/\d+/)[0]) >= 44, regla + " con blanco táctil ≥44 px");
+  }
+  assert.deepEqual(errores, []);
 });
