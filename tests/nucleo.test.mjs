@@ -7,6 +7,7 @@ import {
   cambiarEstado, cuotaStep, estadoAlGuardar, cuotasValidas,
   CUOTAS_MIN, CUOTAS_MAX, ES_ESTADO, requiereConfirmacion,
   subtotalItem, totalItems, aplicarDatosPedido,
+  itemEditado, reemplazarItem, PRECIO_CERO, PRECIO_INVALIDO,
 } from "../src/nucleo/pedidos.js";
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, resumenGeneral, ordenarPedidos } from "../src/nucleo/filtros.js";
 import { itemDesdeProducto, normalizarItem, pedidoDesdeDatos, productoNuevo } from "../src/nucleo/entidades.js";
@@ -208,4 +209,48 @@ test("aplicarDatosPedido: cuotas completas al guardar pasan el pedido a pagado",
   assert.equal(sigue.cuotasPagadas, 2);
   /* bajar las cuotas recorta las pagadas al nuevo techo */
   assert.equal(aplicarDatosPedido(enCuotas, { estado: "due", cuotas: 2, cuotasPagadas: 2 }).cuotasPagadas, 2);
+});
+
+/* ---- editar un artículo del pedido: regla única del núcleo ---- */
+
+test("itemEditado: cambia nombre, precio y tipo sin tocar cantidad, foto ni los demás datos", () => {
+  const original = { productoId: "p1", nombre: "Camisa blanca", precio: 950, foto: "data:x", categoria: "camisa", qty: 3, extra: 1 };
+  const r = itemEditado(original, { nombre: "Camisa azul", precio: 1250.5, categoria: "top" });
+  assert.equal(r.ok, true);
+  assert.equal(r.item.nombre, "Camisa azul");
+  assert.equal(r.item.precio, 1250.5, "los decimales se conservan");
+  assert.equal(r.item.categoria, "top");
+  assert.equal(r.item.qty, 3, "la cantidad no se toca");
+  assert.equal(r.item.foto, "data:x", "la foto se conserva");
+  assert.equal(r.item.productoId, "p1", "el vínculo con el inventario se conserva");
+  assert.equal(r.item.extra, 1, "lo que no se edita queda igual");
+  assert.equal(original.nombre, "Camisa blanca", "no muta el original");
+});
+
+test("itemEditado: nombre vacío, precio cero, negativo o inválido se rechazan con su campo", () => {
+  const o = { nombre: "Corbata", precio: 300, qty: 1 };
+  assert.deepEqual(itemEditado(o, { nombre: "  " }), { ok: false, campo: "nombre", error: "Escribí el nombre del producto" });
+  assert.deepEqual(itemEditado(o, { precio: 0 }), { ok: false, campo: "precio", error: PRECIO_CERO });
+  assert.deepEqual(itemEditado(o, { precio: -5 }), { ok: false, campo: "precio", error: PRECIO_INVALIDO });
+  assert.deepEqual(itemEditado(o, { precio: "abc" }), { ok: false, campo: "precio", error: PRECIO_INVALIDO });
+  assert.deepEqual(itemEditado(o, { precio: Infinity }), { ok: false, campo: "precio", error: PRECIO_INVALIDO });
+});
+
+test("itemEditado: precio vacío conserva el que tenía y un tipo desconocido cae en el de defecto", () => {
+  const o = { nombre: "Medias lanas", precio: 250, categoria: "media", qty: 2 };
+  const r = itemEditado(o, { precio: "" });
+  assert.equal(r.ok, true);
+  assert.equal(r.item.precio, 250, "vacío no deja el artículo en $0");
+  assert.equal(itemEditado(o, { categoria: "inexistente" }).item.categoria, "otro");
+  assert.equal(itemEditado(o, {}).item.categoria, "media", "sin dato conserva el tipo que tenía");
+});
+
+test("reemplazarItem: solo cambia el artículo indicado y devuelve un pedido nuevo", () => {
+  const p = { id: "d1", items: [{ nombre: "A", precio: 100, qty: 1 }, { nombre: "B", precio: 200, qty: 2 }] };
+  const r = reemplazarItem(p, 1, { nombre: "B2", precio: 250, qty: 2 });
+  assert.equal(r.items[0].nombre, "A");
+  assert.equal(r.items[1].precio, 250);
+  assert.equal(r.id, "d1");
+  assert.equal(p.items[1].nombre, "B", "el pedido original no se muta");
+  assert.equal(total(r), 100 + 500, "el total sale de los artículos ya editados");
 });

@@ -1,4 +1,5 @@
 // pedidos.js — dominio puro de pedidos: total, cuotas, estados y transiciones.
+import { CATEGORIAS_IDS, CATEGORIA_DEFECTO } from "./catalogo.js";
 
 export const ESTADOS = {
   new:  { l: "Nuevo",           c: "yellow", t: "nuevo" },
@@ -158,3 +159,38 @@ export function qtyDe(i) {
 export function subtotalItem(i) {
   return precioItem(i) * qtyDe(i);
 }
+
+/* ---- Editar UN artículo de un pedido (nombre, precio, tipo de prenda, foto) ----
+   Regla única, pura: la usan el store (al guardar) y la hoja del artículo (para
+   avisar antes). No toca la cantidad ni los demás artículos, y un precio vacío
+   conserva el que ya tenía. El producto del inventario no se toca: esto edita el
+   artículo DE ESTE pedido (snapshot), con su productoId como estaba. */
+export const PRECIO_INVALIDO = "Precio inválido: solo números y un punto (ej. 1200 o 1250.50)";
+export const PRECIO_CERO = "El precio debe ser mayor a $0";
+
+/** Devuelve { ok, item } con el artículo ya normalizado, o { ok:false, campo, error }. */
+export function itemEditado(original, datos) {
+  const o = original || {};
+  const d = datos || {};
+  const nombre = String(d.nombre ?? nombreItem(o)).trim();
+  if (!nombre) return { ok: false, campo: "nombre", error: "Escribí el nombre del producto" };
+  const precio = d.precio === undefined || d.precio === null || d.precio === ""
+    ? precioItem(o)
+    : d.precio;
+  if (typeof precio !== "number" || !Number.isFinite(precio) || precio < 0) {
+    return { ok: false, campo: "precio", error: PRECIO_INVALIDO };
+  }
+  if (precio <= 0) return { ok: false, campo: "precio", error: PRECIO_CERO };
+  const pedida = d.categoria ?? o.categoria;
+  const categoria = CATEGORIAS_IDS.includes(pedida) ? pedida : CATEGORIA_DEFECTO;
+  const foto = d.foto !== undefined ? (d.foto || null) : (o.foto ?? o.photo ?? null);
+  return { ok: true, item: { ...o, nombre, precio, categoria, foto } };
+}
+
+/** Pedido con el artículo `indice` reemplazado; el resto queda idéntico. */
+export function reemplazarItem(pedido, indice, item) {
+  const p = pedido || {};
+  const items = (p.items || []).map((x, j) => (j === indice ? { ...x, ...item } : x));
+  return { ...p, items };
+}
+

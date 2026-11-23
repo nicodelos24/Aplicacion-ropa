@@ -258,3 +258,55 @@ test("editar pedido resuelve clienteId con mayúsculas/espacios y conserva el id
   assert.equal(r.pedido.id, "d2", "no cambia la identidad del pedido");
   assert.ok(r.pedido.created, "conserva la fecha de creación");
 });
+
+/* ---- editar un artículo del pedido (doble toque → «Editar este artículo») ---- */
+
+test("editarItemPedido: guarda nombre, precio y tipo en ESE pedido y conserva cantidad y vínculo", () => {
+  const mem = storeTest();
+  store.boot(datosDemo());
+  const antes = store.pedidoPorId("d2");                 // Paco: Camisa blanca $950 + Corbata $300
+  const r = store.editarItemPedido("d2", 0, { nombre: "Camisa blanca", precio: 1200.5, categoria: "camisa" }, U);
+  assert.equal(r.ok, true);
+  const despues = store.pedidoPorId("d2");
+  assert.equal(despues.items[0].precio, 1200.5, "precio con decimales guardado");
+  assert.equal(despues.items[0].qty, antes.items[0].qty, "la cantidad no cambia");
+  assert.equal(despues.items[0].productoId, antes.items[0].productoId, "el vínculo con el inventario queda");
+  assert.equal(despues.items[1].precio, 300, "los demás artículos no se tocan");
+  assert.equal(despues.estado, antes.estado, "el estado del pedido no cambia");
+  assert.equal(total(despues), 1200.5 + 300, "el total sale del artículo editado");
+  assert.ok(mem.escrituras.length >= 1, "se persiste en el dispositivo");
+  assert.equal(store.log().at(-1).action, "order_edit", "queda en el historial");
+  /* editar el artículo del pedido no cambia el producto del inventario */
+  const producto = store.db().inventory.find((p) => p.id === antes.items[0].productoId);
+  assert.equal(producto.price, antes.items[0].precio, "el precio del inventario no se pisa");
+});
+
+test("editarItemPedido: rechaza sin tocar el pedido y no escribe", () => {
+  const mem = storeTest();
+  store.boot(datosDemo());
+  const antes = store.pedidoPorId("d2");
+  const escrituras = mem.escrituras.length;
+  const cero = store.editarItemPedido("d2", 0, { nombre: "Camisa blanca", precio: 0 }, U);
+  assert.equal(cero.ok, false);
+  assert.equal(cero.campo, "precio", "la hoja sabe qué campo marcar");
+  assert.equal(store.editarItemPedido("d2", 9, { nombre: "X", precio: 10 }, U).ok, false, "índice inexistente");
+  assert.equal(store.editarItemPedido("nope", 0, { nombre: "X", precio: 10 }, U).ok, false, "pedido inexistente");
+  assert.deepEqual(store.pedidoPorId("d2").items, antes.items);
+  assert.equal(mem.escrituras.length, escrituras, "un rechazo no persiste nada");
+});
+
+test("editarItemPedido: la foto nueva se guarda, el precio vacío conserva el anterior y quitar no guarda la de muestra", () => {
+  const mem = storeTest();
+  store.boot(datosDemo());
+  const antes = store.pedidoPorId("d3");
+  assert.ok(antes.items[0].foto, "la lectura muestra la foto de muestra del ítem demo");
+  const foto = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E";
+  const r = store.editarItemPedido("d3", 0, { nombre: antes.items[0].nombre, precio: "", foto }, U);
+  assert.equal(r.ok, true);
+  assert.equal(r.item.precio, antes.items[0].precio, "precio vacío conserva el que tenía");
+  const guardado = (d) => d.orders.find((o) => o.id === "d3").items[0];
+  assert.equal(guardado(mem.escrituras.at(-1)).foto, foto, "la foto elegida se persiste");
+  /* quitar la foto: las de /fotos son de muestra y nunca se guardan como propias */
+  store.editarItemPedido("d3", 0, { foto: null }, U);
+  assert.equal(guardado(mem.escrituras.at(-1)).foto, null, "quitar la foto no persiste la de muestra");
+});

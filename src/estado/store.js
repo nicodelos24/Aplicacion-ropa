@@ -5,7 +5,8 @@ import { total, fmt } from "../nucleo/index.js";
 import { parseMoneda } from "../nucleo/moneda.js";
 import {
   ESTADOS, ORDEN_ESTADOS, ES_ESTADO, cambiarEstado, cuotaStep,
-  aplicarDatosPedido, cuotasValidas, cuotasPagadasValidas, CUOTAS_MIN,
+  aplicarDatosPedido, cuotasValidas, cuotasPagadasValidas, CUOTAS_MIN, qtyDe,
+  itemEditado, reemplazarItem, nombreItem, subtotalItem,
 } from "../nucleo/pedidos.js";
 import { CATEGORIAS_IDS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import {
@@ -182,6 +183,30 @@ export function editarPedido(id, datos, usuario) {
     log: "order_edit", detail: `${actualizado.cliente} · ${fmt(total(actualizado))}`, usuario,
   });
   return { ok: r.ok, error: r.ok ? undefined : "No se pudo guardar en el dispositivo", pedido: actualizado, persistencia: r };
+}
+
+/* Editar UN artículo del pedido (doble toque → «Editar este artículo»).
+   Cambia nombre, precio y tipo de prenda de ese ítem; la cantidad, los demás
+   artículos, el estado y las cuotas quedan como estaban, y el ítem conserva su
+   productoId y su foto: esto edita el artículo DE ESTE pedido (nombre/precio
+   acordado/tipo), no el producto del inventario. La regla y la validación viven
+   en el núcleo (itemEditado); acá sólo se aplica y se guarda por el mismo
+   camino que el resto (`set` + persistencia/aviso de disco). */
+export function editarItemPedido(pedidoId, indice, datos, usuario) {
+  const p = pedidoPorId(pedidoId);
+  if (!p) return { ok: false, error: "Pedido inexistente" };
+  const i = Math.floor(Number(indice));
+  if (!(i >= 0) || i >= (p.items || []).length) return { ok: false, error: "Ese artículo ya no está en el pedido" };
+  const r = itemEditado(p.items[i], datos);
+  if (!r.ok) return { ok: false, campo: r.campo, error: r.error };
+  const actualizado = reemplazarItem(p, i, r.item);
+  const r2 = set((d) => { d.orders = d.orders.map((x) => (x.id === pedidoId ? actualizado : x)); }, {
+    log: "order_edit", detail: `${p.cliente} · ${nombreItem(r.item)} · ${fmt(subtotalItem(r.item))}`, usuario,
+  });
+  return {
+    ok: r2.ok, error: r2.ok ? undefined : "No se pudo guardar en el dispositivo",
+    pedido: actualizado, item: r.item, indice: i, persistencia: r2,
+  };
 }
 
 export function eliminarPedido(id, usuario) {

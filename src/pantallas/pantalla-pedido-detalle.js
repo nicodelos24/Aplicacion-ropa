@@ -1,4 +1,6 @@
 // pantalla-pedido-detalle.js — detalle: stack seleccionable + lightbox, cambio de estado con confirmación,
+// artículo al frente: el segundo toque amplía su foto y desde ahí (o desde la barra de acciones)
+// se abre «Editar este artículo», que guarda el cambio en el pedido,
 // cuotas con +/− que solo se guardan al confirmar («Guardar cuotas»), WhatsApp directo; momento
 // premiante al completar cuotas. Cerrar con cambios de cuota sin guardar avisa antes de perderlos.
 import { esc, qs, qsa } from "../ui/dom.js";
@@ -15,6 +17,7 @@ import { abrirLightbox } from "../ui/componentes/lightbox.js";
 import { stackHTML } from "../ui/componentes/stack.js";
 import { abrirWhatsApp } from "../servicios/whatsapp.js";
 import { abrirEditorPedido } from "./pantalla-pedido-editor.js";
+import { abrirEditorArticulo } from "./pantalla-pedido-item-editor.js";
 import { plantilla } from "../ui/plantilla.js";
 
 /* fracción "pagadas/total" para la barra de cuotas (en 8avos, sin estilo inline) */
@@ -31,6 +34,10 @@ export function abrirDetallePedido(id) {
   const st = ESTADOS[o.estado] || ESTADOS.new;
   const items = o.items || [];
   const hero = items.find(i => i.foto || i.photo);
+
+  const ayudaPie = (items.length > 1 || hero)
+    ? `Tocá una tarjeta para traerla al frente${hero ? " · otro toque amplía su foto" : ""}`
+    : "";
 
   const dcards = items.map(i => {
     const foto = i.foto ?? i.photo;
@@ -56,8 +63,8 @@ export function abrirDetallePedido(id) {
     estados,
     fecha: o.fecha ? `<span class="det-fecha">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : "",
     dcards,
-    ayuda: (items.length > 1 || hero)
-      ? `<p class="ayuda ayuda-izq">Tocá una tarjeta para traerla al frente${hero ? " · otro toque amplía su foto" : ""}</p>` : "",
+    ayuda: ayudaPie ? `<p class="ayuda ayuda-izq">${ayudaPie}</p>` : "",
+    accionItem: accionItemHTML(items, ICONO),
     total: fmt(total(o)),
     cuotasHtml: o.estado === "due" ? plantilla(BLOQUE_CUOTAS, {
       r: fraccion(pagadas, cuotas),
@@ -72,6 +79,30 @@ export function abrirDetallePedido(id) {
   const cartas = qsa(".dcard", dstack);
   const huecos = cartas.length - 1;
   let activa = -1;
+  /* barra de acciones del artículo al frente: edita el que está al frente (con
+     uno solo, ese; sin elegir, el primero que muestra el abanico) */
+  const btnItem = qs("#dItemEditarBtn");
+  const indiceAlFrente = () => (activa >= 0 ? activa : (cartas.length ? 0 : -1));
+  const pintarAccionItem = () => {
+    if (!btnItem) return;
+    const i = indiceAlFrente();
+    const nombre = i >= 0 ? (nombreItem(items[i]) || "este artículo") : "";
+    btnItem.classList.toggle("oculto", i < 0);
+    btnItem.dataset.indice = String(i);
+    qs(".ditem-lbl", btnItem).textContent = `Editar «${nombre}»`;
+  };
+  /* foto ampliada: el visor conocido, con la acción que abre la edición del
+     artículo, así no hay que volver a la tarjeta para editarlo */
+  const ampliar = (i) => {
+    const foto = items[i] && (items[i].foto ?? items[i].photo);
+    if (!foto) return;                        /* sin foto no hay nada que ampliar */
+    abrirLightbox(foto, {
+      acciones: [{
+        label: "Editar este artículo", icono: ICONO.pencil,
+        alTocar: () => abrirEditorArticulo(id, i),
+      }],
+    });
+  };
   dstack.style.setProperty("--huecos", Math.max(1, huecos));
   cartas.forEach((c, i) => {
     const lado = i - huecos / 2;
@@ -80,13 +111,21 @@ export function abrirDetallePedido(id) {
     c.style.setProperty("--nivel", i + 1);
     c.onclick = () => {
       c.focus({ preventScroll: true });
-      if (activa === i) { abrirLightbox(c.dataset.ph); return; }
+      /* segundo toque sobre la tarjeta que está al frente: amplía su foto */
+      if (activa === i) { ampliar(i); return; }
       cartas[activa]?.setAttribute("aria-pressed", "false");
       activa = i;
       c.setAttribute("aria-pressed", "true");
       cartas.forEach((carta, j) => carta.style.setProperty("--nivel", cartas.length - Math.abs(j - activa)));
+      pintarAccionItem();
     };
   });
+
+  if (btnItem) btnItem.onclick = () => {
+    const i = indiceAlFrente();
+    if (i >= 0) abrirEditorArticulo(id, i);
+  };
+  pintarAccionItem();
 
   qs("#hClose").onclick = intentarCerrarHoja;
   qs("#dCerrar").onclick = intentarCerrarHoja;
@@ -170,6 +209,12 @@ export function celebrar(mensaje) {
   setTimeout(fuera, quieto ? 400 : 1250);
 }
 
+/* barra de acciones del artículo: se muestra solo si el pedido tiene artículos */
+function accionItemHTML(items, ic) {
+  if (!items || !items.length) return "";
+  return plantilla(ACCION_ITEM, { pencil: ic.pencil, imagen: ic.image });
+}
+
 const HOJA = `
   <div class="detail">
     <div class="agarre"></div>
@@ -186,6 +231,7 @@ const HOJA = `
     </div>
     <div class="dcards" id="dstack">{{dcards}}</div>
     {{ayuda}}
+    {{accionItem}}
     <div class="totalbar"><span>Total</span><b class="monto">{{total}}</b></div>
     {{cuotasHtml}}
     {{wa}}
@@ -200,6 +246,12 @@ const DCARD = `
         <span class="dnombre contenedor-texto">{{nombre}}</span>
       </span>
     </button>`;
+
+const ACCION_ITEM = `
+    <div class="ditem-accion">
+      <button type="button" class="btn btn-ghost" id="dItemEditarBtn">{{pencil}} <span class="ditem-lbl">Editar artículo</span></button>
+      <span class="ditem-hint">{{imagen}} Segundo toque en una tarjeta: su foto ampliada</span>
+    </div>`;
 
 const BLOQUE_CUOTAS = `
       <div class="barra-cuotas barra-det" data-r="{{r}}"><div class="relleno"></div></div>

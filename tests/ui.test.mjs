@@ -638,10 +638,110 @@ test("detalle: el primer toque selecciona y solo el segundo con foto abre el vis
   assert.equal(qs(".lightbox"), null, "el primer toque solo trae al frente");
   click(conFoto);
   assert.equal(qs(".lightbox img").getAttribute("src"), foto);
-  assert.equal(d.activeElement, qs(".lbx"));
+  /* el foco arranca en «Editar este artículo», la acción del visor */
+  const accion = qs(".lb-acciones .btn");
+  assert.match(accion.textContent, /Editar este artículo/);
+  assert.equal(d.activeElement, accion);
   click(".lbx");
   assert.equal(qs(".lightbox"), null);
   assert.equal(d.activeElement, conFoto, "devuelve el foco a la carta activa");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: «Editar este artículo» guarda el cambio en el pedido y vuelve al detalle", async () => {
+  await reiniciar();
+  const foto = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E";
+  const items = [
+    { productoId: "di1", nombre: "Vestido floral", precio: 1200, qty: 2, foto, categoria: "vestido" },
+    { nombre: "Artículo a mano", precio: 300, qty: 1, categoria: "otro" },
+  ];
+  store.boot({ ...store.db(), orders: [{ id: "editar", cliente: "Prueba editar", estado: "new", items }] });
+  irA("pedidos");
+  click('#main .card[data-pedido="editar"]');
+  const cartas = qsa("#dstack .dcard");
+  /* la barra de acciones edita el que está al frente: sin elegir, el primero */
+  assert.equal(qs("#dItemEditarBtn").dataset.indice, "0");
+  click(cartas[1]);
+  assert.match(qs("#dItemEditarBtn .ditem-lbl").textContent, /Artículo a mano/, "sigue al artículo al frente");
+
+  /* segundo toque → visor con la acción → abre la hoja del artículo */
+  click(cartas[1]);
+  click(cartas[1]);
+  assert.equal(qs(".lightbox"), null, "el artículo sin foto no tiene visor");
+  click(cartas[0]);
+  click(cartas[0]);
+  assert.ok(qs(".lightbox"), "segundo toque sobre la tarjeta con foto abre el visor");
+  click(".lb-acciones .btn");
+  assert.equal(qs(".lightbox"), null, "la acción cierra el visor");
+  assert.equal(qs("#hoja-in h2").textContent, "Editar este artículo");
+  assert.equal(qs("#it-name").value, "Vestido floral");
+  assert.equal(qs("#it-price").value, "1200");
+  assert.match(qs("#it-cant").textContent, /Cantidad 2 (·|&middot;)/);
+  assert.match(qs("#it-cant").textContent.replace(/\s+/g, " "), /\$2,400/);
+
+  /* vaciar el nombre no guarda: error inline y el pedido queda igual */
+  qs("#it-name").value = "";
+  click("#it-save");
+  await esperar();
+  assert.equal(store.pedidoPorId("editar").items[0].nombre, "Vestido floral");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en la hoja con el error");
+
+  /* edición real: nombre, precio con decimales y tipo de prenda */
+  qs("#it-name").value = "Vestido floral bordado";
+  qs("#it-price").value = "1250.50";
+  qs("#it-price").dispatchEvent(new w.Event("input"));
+  click('#it-cat button[data-k="top"]');
+  assert.match(qs("#it-cant").textContent, /\$2,501/, "el subtotal sigue al precio mientras se escribe");
+  click("#it-save");
+  await esperar(240);
+
+  const guardado = store.pedidoPorId("editar");
+  assert.equal(guardado.items[0].nombre, "Vestido floral bordado");
+  assert.equal(guardado.items[0].precio, 1250.5, "el precio con decimales se guarda");
+  assert.equal(guardado.items[0].categoria, "top");
+  assert.equal(guardado.items[0].qty, 2, "la cantidad no se toca");
+  assert.equal(guardado.items[1].precio, 300, "el otro artículo queda igual");
+  assert.equal(store.productoPorId("di1").price, 1200, "el inventario no se pisa");
+
+  /* se vuelve al detalle, ya con el cambio a la vista */
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "el pedido vuelve a estar al frente");
+  const detalle = qs("#hoja-in");
+  assert.match(detalle.querySelector("h2").textContent, /Prueba editar/);
+  assert.match(detalle.innerHTML, /Vestido floral bordado/, "la tarjeta muestra el nombre nuevo");
+  assert.match(qs("#dstack .dcard .dprecio").textContent, /\$2,501/, "y el precio nuevo por la cantidad");
+  assert.match(detalle.querySelector(".totalbar .monto").textContent, /\$2,801/, "el total del pedido se recalcula");
+
+  /* cerrar el detalle no pregunta nada: lo guardado está guardado */
+  click("#hClose");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false);
+  assert.equal(store.pedidoPorId("editar").items[0].precio, 1250.5);
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: cerrar la hoja del artículo sin guardar avisa y no toca el pedido", async () => {
+  await reiniciar();
+  const items = [{ nombre: "Camisa blanca", precio: 950, qty: 1, categoria: "camisa" }];
+  store.boot({ ...store.db(), orders: [{ id: "cancelar", cliente: "Prueba cancelar", estado: "new", items }] });
+  irA("pedidos");
+  click('#main .card[data-pedido="cancelar"]');
+  click("#dItemEditarBtn");
+  assert.equal(qs("#it-name").value, "Camisa blanca");
+  qs("#it-price").value = "1100";
+  click("#it-cancelar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "avisa antes de perder el cambio");
+  click("#cv-no");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en la hoja");
+  assert.equal(qs("#it-price").value, "1100", "no se perdió lo escrito");
+  assert.equal(store.pedidoPorId("cancelar").items[0].precio, 950, "nada se guardó solo");
+  click("#it-cancelar");
+  await esperar();
+  click("#cv-yes");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false);
+  assert.equal(store.pedidoPorId("cancelar").items[0].precio, 950);
   assert.deepEqual(errores, []);
 });
 
@@ -987,7 +1087,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r33"/, "el caché sube a r33 con el aviso de guardado y los duplicados unificados");
+  assert.match(sw, /const VERSION = "r34"/, "el caché sube a r34 con la edición del artículo desde el pedido");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -999,8 +1099,8 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.ok(sw.includes("./src/nucleo/pedido-picker.js"), "el precache incluye el módulo del selector por sección");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
-  assert.match(cssMain, /capas\.css\?v=4/, "el aviso de guardado entra con versión propia");
-  assert.match(cssMain, /componentes\.css\?v=5/, "los estilos nuevos del inventario por secciones entran con versión propia");
+  assert.match(cssMain, /capas\.css\?v=5/, "el aviso de guardado y las acciones del visor entran con versión propia");
+  assert.match(cssMain, /componentes\.css\?v=6/, "los estilos de la edición del artículo entran con versión propia");
   assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
   assert.match(cssMain, /picker\.css\?v=1/, "los estilos del selector del pedido por sección entran con versión propia");
   assert.match(cssMain, /motion\.css\?v=3/, "las animaciones nuevas de la agenda entran con versión propia");
@@ -1662,4 +1762,111 @@ test("persistencia: guardar sin las fotos avisa aparte y con otro tono", async (
   assert.match(qs("#aviso-disco-titulo").textContent, /sin las fotos/);
   store.configurar({ guardar });
   reiniciar();
+});
+
+/* ---- editar un artículo desde el detalle del pedido (21-nov) ---- */
+
+async function abrirDetallePaco() {
+  irA("pedidos");
+  click('#main .card[data-pedido="d2"]');   // Paco: Camisa blanca $950 + Corbata $300
+  await esperar();
+}
+
+test("detalle: la foto ampliada ofrece «Editar este artículo» y abre la hoja del artículo", async () => {
+  await reiniciar();
+  await abrirDetallePaco();
+  const cartas = qsa("#dstack .dcard");
+  assert.equal(cartas.length, 2);
+  click(cartas[0]);
+  assert.equal(qs(".lightbox"), null, "el primer toque solo trae la tarjeta al frente");
+  click(cartas[0]);
+  const lb = qs(".lightbox");
+  assert.ok(lb, "el segundo toque amplía la foto");
+  assert.ok(lb.querySelector("img"));
+  const accion = lb.querySelector(".lb-acciones button");
+  assert.ok(accion, "el visor ofrece editar el artículo");
+  assert.match(accion.textContent, /Editar este artículo/);
+  click(accion);
+  assert.equal(qs(".lightbox"), null, "el visor se cierra");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la hoja de edición queda abierta");
+  assert.match(qs("#hoja-in").textContent, /Editar este artículo/);
+  assert.match(qs("#hoja-in").textContent, /Paco/, "la hoja dice de qué pedido es");
+  assert.equal(qs("#it-name").value, "Camisa blanca");
+  assert.equal(qs("#it-price").value, "950");
+  assert.equal(qs("#it-cat button.on").dataset.k, "camisa", "el tipo de prenda viene marcado");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: «Editar este artículo» guarda nombre y precio con decimales y no cambia la cantidad", async () => {
+  await reiniciar();
+  await abrirDetallePaco();
+  const antes = store.pedidoPorId("d2");
+  click("#dItemEditarBtn");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la barra de acciones abre la hoja");
+  qs("#it-price").value = "1250.50";
+  qs("#it-price").dispatchEvent(new w.Event("input"));
+  click("#it-save");
+  await esperar();
+  const despues = store.pedidoPorId("d2");
+  assert.equal(despues.items[0].precio, 1250.5, "precio con decimales guardado");
+  assert.equal(despues.items[0].qty, antes.items[0].qty, "la cantidad no cambia");
+  assert.equal(despues.items[1].precio, 300, "el otro artículo queda igual");
+  /* guardar vuelve al pedido ya actualizado, que es el destino de la edición */
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "el pedido queda al frente");
+  assert.match(qs("#hoja-in").querySelector("h2").textContent, /Paco/, "y es el detalle del pedido");
+  assert.match(qs("#hoja-in").textContent, /\$1,550\.50/, "el total del pedido ya muestra el nuevo precio");
+  assert.match(qs("#toast").textContent, /\$1,250\.50/, "el aviso muestra el nuevo subtotal");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: precio en $0 no guarda, marca el campo y deja la hoja abierta", async () => {
+  await reiniciar();
+  await abrirDetallePaco();
+  const antes = store.pedidoPorId("d2").items[0].precio;
+  click("#dItemEditarBtn");
+  qs("#it-price").value = "0";
+  click("#it-save");
+  await esperar();
+  assert.equal(store.pedidoPorId("d2").items[0].precio, antes, "no guarda con precio cero");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la hoja sigue abierta");
+  assert.equal(qs("#it-price").getAttribute("aria-invalid"), "true");
+  assert.match(qs("#hoja-in").textContent, /mayor a \$0/, "explica por qué no se guardó");
+  qs("#it-price").value = "abc";
+  click("#it-save");
+  await esperar();
+  assert.equal(store.pedidoPorId("d2").items[0].precio, antes, "tampoco con texto inválido");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: cerrar la edición con cambios avisa y cancelar no los pierde", async () => {
+  await reiniciar();
+  await abrirDetallePaco();
+  const antes = store.pedidoPorId("d2").items[0].precio;
+  click("#dItemEditarBtn");
+  qs("#it-price").value = "999";
+  click("#it-cancelar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "avisa antes de perder el cambio");
+  click("#cv-no");
+  await esperar();
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "cancelar el aviso deja la hoja");
+  assert.equal(qs("#it-price").value, "999", "lo escrito sigue ahí");
+  click("#it-cancelar");
+  await esperar();
+  click("#cv-yes");
+  await esperar(260);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false, "aceptar cierra sin guardar");
+  assert.equal(store.pedidoPorId("d2").items[0].precio, antes, "el pedido no cambió");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: la barra de acciones nombra el artículo al frente y edita ese", async () => {
+  await reiniciar();
+  await abrirDetallePaco();
+  assert.match(qs("#dItemEditarBtn").textContent, /Editar «Camisa blanca»/, "sin elegir, el primero del abanico");
+  click(qsa("#dstack .dcard")[1]);
+  assert.match(qs("#dItemEditarBtn").textContent, /Editar «Corbata»/, "sigue a la tarjeta al frente");
+  click("#dItemEditarBtn");
+  assert.equal(qs("#it-name").value, "Corbata");
+  assert.deepEqual(errores, []);
 });

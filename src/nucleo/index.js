@@ -28,6 +28,7 @@ export {
   cuotasValidas, cuotasPagadasValidas, CUOTAS_MIN, CUOTAS_MAX, ES_ESTADO,
   requiereConfirmacion, setCuotasDe,
   precioItem, nombreItem, qtyDe, subtotalItem, aplicarDatosPedido,
+  itemEditado, reemplazarItem, PRECIO_INVALIDO, PRECIO_CERO,
 } from "./pedidos.js";
 export {
   itemDesdeProducto, itemAMano, normalizarItem,
