@@ -1,13 +1,15 @@
 // pantalla-inventario-editor.js — hoja alta/edición de producto (foto cámara/galería, categoría, precio validado).
 // Fix QA F0F1: precio 0 bloqueado (>0) y alta arranca en "Accesorio / Otro" con el selector enfocado.
+// Nada se guarda sin «Guardar»: cerrar con ediciones pendientes avisa antes de perderlas.
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { esPrecioValido, parseMoneda } from "../nucleo/moneda.js";
 import { CATEGORIAS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import { crearProducto, editarProducto, productos } from "../estado/store.js";
-import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
+import { abrirHoja, cerrarHoja, intentarCerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
 import { mostrarError } from "../ui/componentes/campo.js";
+import { confirmar } from "../ui/componentes/confirmar.js";
 import { comprimirFoto } from "../servicios/fotos.js";
 import { plantilla } from "../ui/plantilla.js";
 
@@ -33,6 +35,21 @@ export function abrirEditorInventario(orig) {
     guardar: esNuevo ? "Agregar al inventario" : "Guardar cambios",
   }));
 
+  /* cambios sin guardar: se compara lo que hay en pantalla contra el original */
+  const hayCambios = () => {
+    const inicial = { name: (orig?.name || "").trim(), price: String(orig?.price ?? ""), cat: orig?.cat || CATEGORIA_DEFECTO, photo: orig?.photo || null };
+    const ahora = { name: qs("#inv-name").value.trim(), price: qs("#inv-price").value.trim(), cat, photo: foto || null };
+    return Object.keys(inicial).some((k) => inicial[k] !== ahora[k]);
+  };
+  const puedeSalir = async () => hayCambios()
+    ? !!(await confirmar({
+        title: "¿Salir sin guardar el producto?",
+        msg: "Hay cambios en este producto que todavía no guardaste.",
+        ok: "Salir sin guardar",
+      }))
+    : true;
+  alCerrarHoja(puedeSalir);
+
   const updPrev = d => {
     foto = d;
     qs("#inv-prev").innerHTML = previa(d);
@@ -48,7 +65,7 @@ export function abrirEditorInventario(orig) {
   const tomar = e => { const f = e.target.files[0]; if (f) comprimirFoto(f).then(updPrev).catch(er => toast(er.message, "err")); };
   qs("#inv-cam").onchange = tomar;
   qs("#inv-photo").onchange = tomar;
-  qs("#inv-cancelar").onclick = cerrarHoja;
+  qs("#inv-cancelar").onclick = intentarCerrarHoja;
   if (esNuevo && !orig?.cat) {
     const segCat = qs("#seg-cat");
     segCat.setAttribute("tabindex", "-1");

@@ -1,11 +1,13 @@
-// pantalla-cliente-editor.js — alta/edición de cliente.
+// pantalla-cliente-editor.js — alta/edición de cliente. Nada se guarda sin «Guardar»:
+// cerrar con ediciones pendientes avisa antes de perderlas.
 import { esc, qs } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
 import { maskTel, fmtTel } from "../nucleo/contacto.js";
 import { crearCliente, editarCliente, clientes, db } from "../estado/store.js";
-import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
+import { abrirHoja, cerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
 import { mostrarError } from "../ui/componentes/campo.js";
+import { confirmar } from "../ui/componentes/confirmar.js";
 import { abrirHojaCliente, borrarCliente } from "./pantalla-cliente.js";
 
 export function abrirEditorCliente(c) {
@@ -20,8 +22,32 @@ export function abrirEditorCliente(c) {
     ${!esNuevo ? `<button class="btn btn-ghost danger" id="ce-del">${ICONO.trash} Eliminar cliente</button>` : ""}
     <button class="btn btn-ghost" id="ce-cancelar">Cancelar</button>`);
 
+  /* cambios sin guardar: se compara lo que hay en pantalla contra el original */
+  const hayCambios = () => {
+    const ahora = {
+      name: qs("#ce-name").value.trim(),
+      tel: qs("#ce-tel").value.trim(),
+      notas: qs("#ce-notas").value.trim(),
+    };
+    return ahora.name !== (cl.name || "").trim()
+      || ahora.tel !== (cl.tel || "").trim()
+      || ahora.notas !== (cl.notas || "").trim();
+  };
+  const puedeSalir = async () => hayCambios()
+    ? !!(await confirmar({
+        title: "¿Salir sin guardar el cliente?",
+        msg: "Hay cambios en este cliente que todavía no guardaste.",
+        ok: "Salir sin guardar",
+      }))
+    : true;
+  alCerrarHoja(puedeSalir);
+
   qs("#ce-tel").oninput = e => { e.target.value = maskTel(e.target.value); };
-  qs("#ce-cancelar").onclick = () => esNuevo ? cerrarHoja() : abrirHojaCliente(cl.id);
+  qs("#ce-cancelar").onclick = async () => {
+    if (!(await puedeSalir())) return;
+    if (esNuevo) cerrarHoja();
+    else abrirHojaCliente(cl.id); /* reemplaza la hoja y limpia la guardia */
+  };
   qs("#ce-save").onclick = () => {
     const name = qs("#ce-name").value.trim();
     if (!name) { mostrarError(qs("#ce-name"), "Escribí el nombre"); return; }

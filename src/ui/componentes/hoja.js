@@ -12,7 +12,15 @@ let cerrandoPorBack = false;
 let cerrando = false;
 export function marcarCierrePorBack() { cerrandoPorBack = true; }
 
+/* Guardia de la hoja abierta: una función async que devuelve true si se puede
+   cerrar. En cargarla el editor cuando tiene cambios sin guardar; abrirHoja y
+   cerrarHoja la limpian. */
+let guardia = null;
+/** Registra (o anula con null) la guardia de cambios sin guardar. */
+export function alCerrarHoja(fn) { guardia = fn || null; }
+
 export function abrirHoja(html) {
+  guardia = null;
   const h = hoja(), hi = hojaIn();
   const yaAbierta = h.classList.contains("abierta");
   hi.innerHTML = html;
@@ -31,7 +39,28 @@ export function abrirHoja(html) {
   (foco || hi).focus({ preventScroll: true });
 }
 
+/* cierre forzado: lo que ya confirmó el usuario (guardado, entrada sin datos) */
 export function cerrarHoja() {
+  guardia = null;
+  cerrarHojaForzado();
+}
+
+/** Cierre que respeta la guardia: avisa antes de perder cambios sin guardar. */
+export async function intentarCerrarHoja() {
+  if (guardia) {
+    let puede = false;
+    try { puede = await guardia(); } catch (e) { puede = false; }
+    if (!puede) return false;
+    guardia = null;
+  }
+  cerrarHojaForzado();
+  return true;
+}
+
+/** ¿Hay cambios sin guardar en la hoja abierta? */
+export function hayCambiosSinGuardar() { return !!guardia; }
+
+function cerrarHojaForzado() {
   const h = hoja();
   if (!h.classList.contains("abierta") || cerrando) return;
   cerrando = true;
@@ -68,7 +97,7 @@ function engancharGesto() {
   const soltar = () => {
     if (y0 == null) return;
     h.classList.remove("arrastrando");
-    if (dy > 110) { cerrarHoja(); }
+    if (dy > 110) { intentarCerrarHoja(); }
     else hi.style.transform = "";
     y0 = null; dy = 0;
   };

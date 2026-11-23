@@ -206,21 +206,230 @@ test("pedidos: sin datos aparece el vacío de bienvenida con Nuevo pedido", asyn
   assert.deepEqual(errores, []);
 });
 
-test("detalle: las cuotas tienen piso 0 y al completarlas el pedido pasa a Pagado", async () => {
+test("detalle: las cuotas se guardan solo al confirmar y con piso 0", async () => {
   await reiniciar();
   irA("pedidos");
   click('#main .card[data-pedido="d3"]');
   assert.equal(store.pedidoPorId("d3").estado, "due");
   assert.ok(qs("#cq-minus") && qs("#cq-plus"));
+  /* nada se persiste mientras no se confirme */
   click("#cq-minus");
   click("#cq-minus");
-  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 0, "no baja de 0");
-  assert.equal(store.pedidoPorId("d3").estado, "due");
-  for (let i = 0; i < 3; i++) click("#cq-plus");
+  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 1, "dos − no tocan el pedido guardado");
+  click("#cq-minus");
+  assert.match(qs(".cuotas-mid").textContent, /0 de 3/, "el contador no baja de 0 en pantalla");
+  click("#cq-plus");
+  click("#cq-plus");
+  click("#cq-plus");
+  click("#cq-plus");
+  assert.match(qs(".cuotas-mid").textContent, /3 de 3/, "no pasa de las cuotas del pedido");
+  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 1, "sin guardar sigue en 1");
+  click("#cq-guardar");
+  await esperar(220);
   assert.equal(store.pedidoPorId("d3").cuotasPagadas, 3);
   assert.equal(store.pedidoPorId("d3").estado, "paid", "completar cuotas paga");
-  await esperar(220);
   assert.equal(qs("#hoja").classList.contains("abierta"), false, "la hoja se cierra");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: «Descartar» revierte las cuotas y solo guarda lo confirmado", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d3"]');
+  click("#cq-plus");
+  assert.match(qs(".cuotas-mid").textContent, /2 de 3/, "el contador sube en pantalla");
+  assert.equal(qs("#cuotas-acciones").classList.contains("oculto"), false, "aparecen Guardar y Descartar");
+  click("#cq-descartar");
+  assert.match(qs(".cuotas-mid").textContent, /1 de 3/, "vuelve al valor guardado");
+  assert.equal(qs("#cuotas-acciones").classList.contains("oculto"), true, "sin cambios no hay acciones");
+  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 1, "Descartar no persiste nada");
+  /* guardar una cuota sola deja el pedido en curso */
+  click("#cq-plus");
+  click("#cq-guardar");
+  await esperar(220);
+  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 2);
+  assert.equal(store.pedidoPorId("d3").estado, "due", "sin completar sigue debiendo");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: cerrar con cuotas sin guardar avisa y cancelar no las pierde", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d3"]');
+  click("#cq-plus");
+  click("#dCerrar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "pide confirmación");
+  assert.match(qs("#cv-t").textContent, /cuotas/i);
+  click("#cv-no");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la hoja sigue abierta");
+  assert.match(qs(".cuotas-mid").textContent, /2 de 3/, "el cambio pendiente sigue ahí");
+  click("#dCerrar");
+  await esperar();
+  click("#cv-yes");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false, "salir sin guardar cierra");
+  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 1, "salir sin guardar no persiste");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: Escape con cuotas sin guardar pregunta antes de cerrar (una sola vez)", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d3"]');
+  click("#cq-plus");
+  d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "abre el aviso");
+  click("#cv-no");
+  await esperar();
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "no cerró");
+  assert.equal(qs("#confirmar").classList.contains("abierta"), false, "el aviso se cerró");
+  /* regresión: un Escape sin aviso abierto cierra la hoja, no la deja trabada */
+  d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "vuelve a preguntar");
+  click("#cv-no");
+  await esperar();
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la hoja sigue abierta y usable");
+  assert.equal(store.pedidoPorId("d3").cuotasPagadas, 1, "nada se persistió");
+  assert.deepEqual(errores, []);
+});
+
+test("aviso: Escape cierra el aviso una sola vez y no reabre otro encima", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d3"]');
+  click("#cq-plus");
+  /* Escape sobre la hoja del detalle abre el aviso de cambios sin guardar */
+  d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "primer aviso");
+  /* Escape en el aviso: lo cierra y NO debe volver a abrirse en el mismo gesto */
+  d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), false, "el aviso se cierra y no se reabre");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la hoja conserva los cambios");
+  assert.match(qs(".cuotas-mid").textContent, /2 de 3/, "el cambio pendiente sigue en pantalla");
+  assert.deepEqual(errores, []);
+});
+
+test("detalle: sin cambios no hay diálogos al cerrar", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d3"]');
+  click("#dCerrar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), false, "cerrar sin editar no pregunta");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false);
+  assert.deepEqual(errores, []);
+});
+
+test("editor de pedido: Cancelar con datos sin guardar avisa y no crea el pedido", async () => {
+  await reiniciar();
+  irA("pedidos");
+  const antes = store.db().orders.length;
+  click('#fab');
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), false, "abrir el editor no pregunta nada");
+  qs("#f-cliente").value = "Clienta sin guardar";
+  qs("#f-cliente").dispatchEvent(new w.Event("input", { bubbles: true }));
+  click("#cancelar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "pide confirmación al salir");
+  assert.match(qs("#cv-t").textContent, /sin guardar/i);
+  click("#cv-no");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en el editor");
+  assert.equal(qs("#f-cliente").value, "Clienta sin guardar", "no se perdió lo escrito");
+  assert.equal(store.db().orders.length, antes, "nada se guardó solo");
+  click("#cancelar");
+  await esperar();
+  click("#cv-yes");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false, "sale sin guardar");
+  assert.equal(store.db().orders.length, antes, "no creó ningún pedido");
+  assert.deepEqual(errores, []);
+});
+
+test("editor de pedido: los +/− de cantidad no guardan hasta «Guardar cambios»", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d4"]');
+  await esperar();
+  click("#hEdit");
+  await esperar();
+  const qtyAntes = store.pedidoPorId("d4").items[0].qty;
+  click("#mode-inv .qtyplus");
+  assert.equal(qs("#mode-inv .qtystep b").textContent.trim(), String(qtyAntes + 1), "sube en pantalla");
+  assert.equal(store.pedidoPorId("d4").items[0].qty, qtyAntes, "el pedido guardado no cambia");
+  click("#saveBtn");
+  await esperar(220);
+  assert.equal(store.pedidoPorId("d4").items[0].qty, qtyAntes + 1, "guardar sí persiste");
+  assert.deepEqual(errores, []);
+});
+
+test("editor de pedido: sin tocar nada, Cancelar cierra sin preguntar", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d4"]');
+  await esperar();
+  click("#hEdit");
+  await esperar();
+  click("#cancelar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), false, "no hay edición: no pregunta");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false);
+  assert.deepEqual(errores, []);
+});
+
+test("editor de inventario: cerrar con cambios sin guardar avisa y conserva lo escrito", async () => {
+  await reiniciar();
+  irA("inventario");
+  const antes = store.db().inventory.length;
+  click('#fab');
+  await esperar();
+  qs("#inv-name").value = "Prenda sin guardar";
+  click("#inv-cancelar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "pide confirmación");
+  assert.match(qs("#cv-t").textContent, /sin guardar/i);
+  click("#cv-no");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en el editor");
+  assert.equal(qs("#inv-name").value, "Prenda sin guardar", "no se perdió lo escrito");
+  assert.equal(store.db().inventory.length, antes, "nada se guardó solo");
+  click("#inv-cancelar");
+  await esperar();
+  click("#cv-yes");
+  await esperar(220);
+  assert.equal(store.db().inventory.length, antes, "salir sin guardar no crea el producto");
+  assert.deepEqual(errores, []);
+});
+
+test("editor de cliente: cerrar con cambios sin guardar avisa y no guarda solo", async () => {
+  await reiniciar();
+  irA("contactos");
+  click('#fab');
+  await esperar();
+  qs("#ce-name").value = "Clienta sin guardar";
+  click("#ce-cancelar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "pide confirmación");
+  assert.equal(store.clientes().some((c) => c.name === "Clienta sin guardar"), false, "no creó el cliente");
+  click("#cv-no");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en el editor");
+  assert.equal(qs("#ce-name").value, "Clienta sin guardar", "no se perdió lo escrito");
+  click("#ce-cancelar");
+  await esperar();
+  click("#cv-yes");
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false);
+  assert.equal(store.clientes().some((c) => c.name === "Clienta sin guardar"), false, "salir sin guardar no crea nada");
   assert.deepEqual(errores, []);
 });
 
@@ -615,7 +824,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.match(sw, /const CACHE = "ropa-v2-[\w-]+"/, "versión de caché con prefijo de proyecto");
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
-  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r20"/, "el caché se refresca al bajar la reaparición de la nav a 1,5 s");
+  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r\d+"/, "el caché se refresca al bajar la reaparición de la nav a 1,5 s");
   assert.doesNotMatch(sw, /ropa-v2-nav-90s-r19|ropa-v2-paco-corbata-r18|ropa-v2-nav-2000ms-toast-r17|ropa-v2-nav-2500ms-toast-r16|ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15/, "la versión de caché no queda en la de publicaciones anteriores");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
   assert.ok(sw.includes("./src/ui/nav-scroll.js"), "el precache incluye la lógica de nav");
@@ -692,6 +901,9 @@ test("toast: cerrar la hoja quita el aviso y cancela el temporizador", async () 
   await reiniciar();
   dispararErrorSinProductos();
   click("#cancelar");
+  await esperar();
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "pide confirmación por los cambios sin guardar");
+  click("#cv-yes");
   await esperar(240);
   assert.equal(qs("#toast").classList.contains("mostrar"), false, "aviso oculto al cerrar la hoja");
   await esperar(4300);

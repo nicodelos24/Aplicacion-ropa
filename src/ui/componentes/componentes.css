@@ -522,6 +522,11 @@ html[data-theme="light"] .cli-wa.none{color:#4d5168}
 .cuotas-ctrl .btn{min-height:46px; padding:12px 8px; white-space:nowrap; width:100%}
 .cuotas-mid{color:var(--mut); font-size:12.5px; text-align:center; line-height:1.35}
 .cuotas-mid b{display:block; white-space:nowrap; color:var(--txt); font-variant-numeric:tabular-nums; font-size:15px; font-weight:800}
+/* cuotas sin guardar: el contador avisa en pantalla y aparecen Guardar / Descartar */
+.cuotas-ctrl.sin-guardar .cuotas-mid b{color:var(--c-orange-text)}
+.cuotas-pend{display:inline-block; margin-top:2px; font-size:11px; font-weight:800; letter-spacing:.02em; text-transform:uppercase; color:var(--c-orange-text)}
+.cuotas-acciones{margin-top:10px; display:grid; grid-template-columns:1fr; gap:8px}
+.cuotas-acciones .btn{width:100%}
 .wa-btn{
   background:color-mix(in srgb,var(--c-green) 14%,var(--card)); color:var(--c-green-text);
   border:1.5px solid color-mix(in srgb,var(--c-green) 48%,var(--line)); box-shadow:none;

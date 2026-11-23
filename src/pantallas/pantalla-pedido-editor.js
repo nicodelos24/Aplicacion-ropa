@@ -1,5 +1,6 @@
 // pantalla-pedido-editor.js — editor de pedido: cliente conocido, WhatsApp, productos del inventario o a mano,
 // cuotas 2–12 solo en "En cuotas", fecha de entrega, notas; productos a mano entran solos al inventario.
+// Nada se guarda sin «Guardar»: cerrar con ediciones pendientes avisa antes de perderlas.
 // Fixes QA F0F1: precio 0 bloqueado (>0, P2) y cuotas fuera de rango con error inline, sin clamp silencioso (P3).
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
@@ -10,9 +11,10 @@ import { CATEGORIAS } from "../nucleo/catalogo.js";
 import {
   crearPedido, editarPedido, productos, clientes, db,
 } from "../estado/store.js";
-import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
+import { abrirHoja, cerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
 import { mostrarError } from "../ui/componentes/campo.js";
+import { confirmar } from "../ui/componentes/confirmar.js";
 import { comprimirFoto } from "../servicios/fotos.js";
 import { abrirDetallePedido } from "./pantalla-pedido-detalle.js";
 
@@ -90,6 +92,41 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   let estado = base.estado;
   const picked = new Set(selInicial);
   let manuales = [{ nombre: "", precio: "", qty: 1, foto: null }];
+
+  /* ── cambios sin guardar ──
+     El editor no escribe nada en el pedido hasta «Guardar»: se compara lo que
+     hay en pantalla contra lo que abrió el editor y, si difiere, cerrar avisa. */
+  const fotoActual = () => JSON.stringify({
+    cliente: qs("#f-cliente").value.trim(),
+    tel: qs("#f-tel").value.trim(),
+    fecha: qs("#f-fecha")?.value || "",
+    notas: qs("#f-notas").value.trim(),
+    estado,
+    cuotas: estado === "due" ? (qs("#f-cuotas")?.value || "") : "",
+    items: [...picked].sort().map((iid) => [iid, cantidades.get(iid) || 1]),
+    manuales: manuales
+      .map((i) => [i.nombre.trim(), i.precio, i.foto || ""])
+      .filter((x) => x[0] || x[1] || x[2]),
+  });
+  const fotoInicial = JSON.stringify({
+    cliente: base.cliente || "",
+    tel: base.tel || "",
+    fecha: base.fecha || "",
+    notas: base.notas || "",
+    estado: base.estado,
+    cuotas: base.estado === "due" ? String(base.cuotas || CUOTAS_MIN) : "",
+    items: [...qtyInicial.entries()].map(([id, n]) => [id, n]).sort(),
+    manuales: [],
+  });
+  const hayCambios = () => fotoActual() !== fotoInicial;
+  const puedeSalir = async () => hayCambios()
+    ? !!(await confirmar({
+        title: "¿Salir sin guardar el pedido?",
+        msg: "Hay cambios en este pedido que todavía no guardaste.",
+        ok: "Salir sin guardar",
+      }))
+    : true;
+  alCerrarHoja(puedeSalir);
 
   const calc = () => {
     let t = 0;
@@ -182,7 +219,12 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       qs("#client-hint").innerHTML = `<p class="hint">Nuevo cliente · se guardará automáticamente</p>`;
     }
   };
-  qs("#cancelar").onclick = cerrarHoja;
+  /* con el cliente ya escrito, «Cancelar» es descartar: pregunta directo en vez de
+     sumar una confirmación encima de otra */
+  qs("#cancelar").onclick = async () => {
+    if (!(await puedeSalir())) return;
+    cerrarHoja();
+  };
 
   const errorCuotas = () => {
     const inp = qs("#f-cuotas");

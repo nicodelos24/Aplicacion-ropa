@@ -1,13 +1,14 @@
 // pantalla-pedido-detalle.js — detalle: stack seleccionable + lightbox, cambio de estado con confirmación,
-// cuotas con +/− y auto-paso a Pagado, WhatsApp directo; momento premiante al completar cuotas.
+// cuotas con +/− que solo se guardan al confirmar («Guardar cuotas»), WhatsApp directo; momento
+// premiante al completar cuotas. Cerrar con cambios de cuota sin guardar avisa antes de perderlos.
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, fdateShort } from "../nucleo/nucleo.js";
 import {
-  ESTADOS, ORDEN_ESTADOS, total, cuotasDe, cuotasPagadasDe, cuotaStep, nombreItem, precioItem, qtyDe,
+  ESTADOS, ORDEN_ESTADOS, total, cuotasDe, cuotasPagadasDe, cuotasPagadasValidas, nombreItem, precioItem, qtyDe,
 } from "../nucleo/pedidos.js";
 import { setEstadoPedido, cuotaPedido, pedidoPorId, db, eliminarPedido } from "../estado/store.js";
-import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
+import { abrirHoja, cerrarHoja, intentarCerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
 import { confirmar } from "../ui/componentes/confirmar.js";
 import { abrirLightbox } from "../ui/componentes/lightbox.js";
@@ -87,8 +88,8 @@ export function abrirDetallePedido(id) {
     };
   });
 
-  qs("#hClose").onclick = cerrarHoja;
-  qs("#dCerrar").onclick = cerrarHoja;
+  qs("#hClose").onclick = intentarCerrarHoja;
+  qs("#dCerrar").onclick = intentarCerrarHoja;
   qs("#hEdit").onclick = () => abrirEditorPedido(o);
   qs("#hDel").onclick = async () => {
     if (!(await confirmar({ title: "¿Eliminar este pedido?", msg: `El pedido de ${o.cliente || "este cliente"} se quita de la lista. El inventario no cambia.`, ok: "Eliminar pedido" }))) return;
@@ -113,14 +114,46 @@ export function abrirDetallePedido(id) {
     abrirWhatsApp(o.tel, msg, d.prefijo);
   };
 
-  const bump = delta => {
-    const r = cuotaPedido(id, delta);
-    if (!r.ok) return;
-    if (r.pedido.estado === "paid") { cerrarHoja(); celebrar("¡Pedido pagado por completo!"); }
-    else abrirDetallePedido(id);
-  };
-  if (qs("#cq-plus")) qs("#cq-plus").onclick = () => bump(1);
-  if (qs("#cq-minus")) qs("#cq-minus").onclick = () => bump(-1);
+  /* Cuotas: +/− solo mueven un contador en memoria; nada se persiste hasta
+     «Guardar cuotas». «Descartar» vuelve al valor guardado. */
+  if (o.estado === "due" && qs("#cq-plus")) {
+    const barra = qs(".barra-det");
+    const mid = qs(".cuotas-mid");
+    const acciones = qs("#cuotas-acciones");
+    let guardadas = pagadas;
+    let cuenta = pagadas;
+
+    const pintar = () => {
+      const sucio = cuenta !== guardadas;
+      barra.dataset.r = fraccion(cuenta, cuotas);
+      mid.innerHTML = `Pagó <b>${cuenta} de ${cuotas}</b>` + (sucio ? ` <span class="cuotas-pend">sin guardar</span>` : "");
+      acciones.classList.toggle("oculto", !sucio);
+      qs(".cuotas-ctrl").classList.toggle("sin-guardar", sucio);
+      /* el aviso al cerrar solo existe mientras haya algo que perder */
+      alCerrarHoja(sucio ? async () => {
+        const salir = await confirmar({
+          title: "¿Salir sin guardar las cuotas?",
+          msg: `Cambiaste las cuotas de ${o.cliente || "este cliente"} a ${cuenta} de ${cuotas} y no las guardaste.`,
+          ok: "Salir sin guardar",
+        });
+        return !!salir;
+      } : null);
+    };
+
+    const mover = delta => { cuenta = cuotasPagadasValidas(cuenta + delta, cuotas); pintar(); };
+    qs("#cq-plus").onclick = () => mover(1);
+    qs("#cq-minus").onclick = () => mover(-1);
+    qs("#cq-descartar").onclick = () => { cuenta = guardadas; pintar(); };
+    qs("#cq-guardar").onclick = () => {
+      const delta = cuenta - guardadas;
+      if (delta === 0) { pintar(); return; }
+      const r = cuotaPedido(id, delta);
+      if (!r.ok) { toast("No se pudieron guardar las cuotas", "err"); return; }
+      if (r.pedido.estado === "paid") { cerrarHoja(); celebrar("¡Pedido pagado por completo!"); }
+      else { abrirDetallePedido(id); toast(`Cuotas guardadas: ${cuenta} de ${cuotas}`); }
+    };
+    pintar();
+  }
 }
 
 /** Momento premiante: anillos + check dibujado + mensaje. Respeta prefers-reduced-motion. */
@@ -173,6 +206,10 @@ const BLOQUE_CUOTAS = `
         <button class="btn cqbtn" id="cq-minus" aria-label="Quitar una cuota pagada">− Cuota</button>
         <div class="cuotas-mid">Pagó <b>{{pagadas}} de {{cuotas}}</b></div>
         <button class="btn cqbtn" id="cq-plus" aria-label="Agregar una cuota pagada">+ Cuota</button>
+      </div>
+      <div class="cuotas-acciones oculto" id="cuotas-acciones">
+        <button class="btn btn-primario" id="cq-guardar">Guardar cuotas</button>
+        <button class="btn btn-ghost" id="cq-descartar">Descartar</button>
       </div>`;
 
 const CELEBRA = `

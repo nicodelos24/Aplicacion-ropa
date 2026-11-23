@@ -17,7 +17,7 @@ import { abrirDetallePedido } from "./pantallas/pantalla-pedido-detalle.js";
 import { abrirEditorPedido } from "./pantallas/pantalla-pedido-editor.js";
 import { abrirEditorInventario } from "./pantallas/pantalla-inventario-editor.js";
 import { abrirEditorCliente } from "./pantallas/pantalla-cliente-editor.js";
-import { cerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
+import { cerrarHoja, intentarCerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
 import { ocultarToast } from "./ui/componentes/toast.js";
 import {
   estadoInicial, medirScroll, mostrar, mostrarPorPausa, ocultarPorInactividad,
@@ -261,9 +261,13 @@ qs("#fab").onclick = () => {
   else if (v === "agenda") abrirEditorPedido(null, null, vista.diaSel || undefined);
 };
 
-qs("#hoja").onclick = e => { if (e.target.id === "hoja") cerrarHoja(); };
+qs("#hoja").onclick = e => { if (e.target.id === "hoja") intentarCerrarHoja(); };
 window.addEventListener("resize", espacioToast);
-window.addEventListener("keydown", e => { if (e.key === "Escape") cerrarHoja(); });
+/* Escape cierra la hoja, pero si hay una confirmación abierta es de ella */
+window.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || qs("#confirmar").classList.contains("abierta")) return;
+  intentarCerrarHoja();
+});
 
 /* la entrada raíz también lleva la sección, para que "atrás" hasta el inicio sepa volver */
 try { history.replaceState({ seccion: vista.seccion }, "", location.href); } catch (e) { /* sin history */ }
@@ -272,8 +276,13 @@ try { history.replaceState({ seccion: vista.seccion }, "", location.href); } cat
 window.addEventListener("popstate", e => {
   const h = qs("#hoja");
   if (h && h.classList.contains("abierta")) {
+    const entrada = history.state && history.state.hoja;
     marcarCierrePorBack(); /* ya vino del history: no volver a llamar a back() */
-    cerrarHoja();
+    /* cambios sin guardar: si el usuario dice que no, se rearma la entrada de la hoja */
+    intentarCerrarHoja().then((cerrado) => {
+      if (cerrado || !qs("#hoja").classList.contains("abierta")) return;
+      try { history.pushState({ hoja: entrada || 1 }, "", location.href); } catch (e) { /* sin history */ }
+    });
     return;
   }
   /* si no, navega a la sección del estado (o a inicio por defecto) */
