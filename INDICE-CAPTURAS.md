@@ -362,4 +362,8 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | Calendario tras cambiar de mes, sin desborde a 320 | 320 | oscuro | [agenda-anim-calendario-320.png](capturas/2026-11-23/agenda-anim-calendario-320.png) |
 | Chip «Pagados» activo tras filtrar | 320 | oscuro | [agenda-anim-chips-320.png](capturas/2026-11-23/agenda-anim-chips-320.png) |
 
-- Medido en el navegador: `chipOn` 0,22 s y `agendaCambia` 0,2 s / 0,22 s activos (no `none`), `#main` conserva una sola animación (`.vista`, no se relanza), 30 cambios de mes seguidos en 384 ms y sin desborde horizontal a 320 px. Tests 108/108 y `npm run check` OK (sobre master `21ec0a1`, ya con el guardado con confirmación, sin pisarlo). Publicado en master con visto de Nico.
+- Medido en el navegador: `chipOn` 0,22 s y `agendaCambia` 0,2 s / 0,22 s activos (no `none`), `#main` conserva una sola animación (`.vista`, no se relanza), 30 cambios de mes seguidos en 384 ms y sin desborde horizontal a 320 px. Tests 108/108 y `npm run check` OK (sobre master `0178a02`, ya con el guardado con confirmación, sin pisarlo). Push a master `6419213` autorizado por Nico.
+
+### Verificación del vivo · 2026-11-23
+
+- Publicado en master (`6419213`). Verificado en vivo sobre https://nicodelos24.github.io/Aplicacion-ropa/?demo=1: `sw.js` sirve `ropa-v2-nav-1500ms-r23`, `main.css` pide `motion.css?v=3`, y en la agenda real el switch a Semanas devuelve `agendaCambia`, las flechas de semana y de mes dan `agendaCambia` con `data-dir="prox"`, el chip de Pedidos y el de Historial dan `chipOn`, y `#main` sigue con una sola animación. 0 errores de consola.
