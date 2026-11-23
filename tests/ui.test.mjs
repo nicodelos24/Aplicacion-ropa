@@ -395,6 +395,98 @@ test("editor de pedido: sin tocar nada, Cancelar cierra sin preguntar", async ()
   assert.deepEqual(errores, []);
 });
 
+/* ---- decisión Y: selector del pedido en filas compactas por sección ---- */
+const cabeceras = () => qsa("#pick-grupos .pk-cab").map((b) => ({
+  nombre: b.querySelector(".pk-nombre").textContent.trim(),
+  badge: b.querySelector(".pk-badge").textContent.trim(),
+  elegidos: b.querySelector(".pk-badge").classList.contains("on"),
+}));
+const filasVisibles = () => qsa("#pick-grupos .pk-fila .pk-txt b").map((n) => n.textContent.trim());
+const filasElegidas = () => qsa("#pick-grupos .pk-fila.on .pk-txt b").map((n) => n.textContent.trim());
+
+test("pedido: el selector agrupa por sección con badge elegidos/total y filas de 52 px", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d2"]');
+  await esperar();
+  click("#hEdit");
+  await esperar();
+  assert.deepEqual(cabeceras(), [
+    { nombre: "Dama · verano", badge: "2", elegidos: false },
+    { nombre: "Hombre · básicos", badge: "1/2", elegidos: true },
+    { nombre: "Sin sección", badge: "1/2", elegidos: true },
+  ], "cada sección con su badge; el de una sección con elegidos se tiñe");
+  assert.deepEqual(filasElegidas(), ["Camisa blanca", "Corbata"], "lo elegido del pedido arranca marcado");
+  assert.deepEqual(filasVisibles(), ["Vestido floral", "Pantalón negro", "Camisa blanca", "Abrigo largo", "Medias lanas", "Corbata"]);
+  assert.equal(qs("#ftotal").textContent, "$1,250");
+  assert.equal(qs("#ftotal-lbl").textContent, "2 productos elegidos", "el contador dice cuántas prendas lleva");
+  /* la fila mide 52 px y el check tiene objetivo táctil de 44 px (maqueta Y) */
+  const css = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/picker.css"), "utf8");
+  assert.match(css, /\.pk-fila\{[^}]*min-height:52px/, "la fila del selector mide 52 px");
+  assert.match(css, /\.pk-check\{[^}]*width:22px/, "el check visible es de 22 px");
+  assert.match(css, /\.pk-check::after\{[^}]*inset:-11px/, "con objetivo táctil de 44 px");
+  assert.match(css, /prefers-reduced-motion:reduce/, "respeta reduce-motion");
+  assert.deepEqual(errores, []);
+});
+
+test("pedido: buscar filtra dentro de las secciones, no deselecciona y el vacío tiene salida", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d2"]');
+  await esperar();
+  click("#hEdit");
+  await esperar();
+  const input = qs("#pick-buscar");
+  input.value = "vest";
+  input.dispatchEvent(new w.Event("input", { bubbles: true }));
+  await esperar();
+  assert.deepEqual(filasVisibles(), ["Vestido floral", "Camisa blanca", "Corbata"], "aparece la coincidencia y se mantienen los elegidos");
+  assert.deepEqual(filasElegidas(), ["Camisa blanca", "Corbata"], "buscar NO deselecciona");
+  assert.equal(qs("#ftotal").textContent, "$1,250", "el total no cambia al buscar");
+
+  input.value = "zzz";
+  input.dispatchEvent(new w.Event("input", { bubbles: true }));
+  await esperar();
+  assert.match(qs("#pick-grupos .picker-vacio").textContent, /Ninguna prenda dice “zzz”/, "el vacío nombra la búsqueda");
+  assert.equal(qs("#ftotal").textContent, "$1,250", "aunque no haya coincidencias el total sigue");
+  click("#pick-limpiar");
+  await esperar();
+  assert.equal(qs("#pick-buscar").value, "", "el vacío limpia la búsqueda");
+  assert.equal(qsa("#pick-grupos .pk-grupo").length, 3, "vuelven las tres secciones");
+  assert.deepEqual(errores, []);
+});
+
+test("pedido: elegir una fila y plegar la sección no pierde lo elegido ni cambia el total sin guardar", async () => {
+  await reiniciar();
+  irA("pedidos");
+  click('#main .card[data-pedido="d2"]');
+  await esperar();
+  click("#hEdit");
+  await esperar();
+  const vestido = qsa("#pick-grupos .pk-fila").find((f) => f.textContent.includes("Vestido floral"));
+  vestido.click();
+  await esperar();
+  assert.deepEqual(filasElegidas(), ["Vestido floral", "Camisa blanca", "Corbata"]);
+  assert.equal(qs("#ftotal").textContent, "$2,450", "suma el vestido al total");
+  assert.equal(cabeceras()[0].badge, "1/2", "la sección Dama pasa a 1/2 (de 2 prendas)");
+  assert.equal(store.pedidoPorId("d2").items.length, 2, "nada se guardó todavía");
+
+  /* plegar la sección donde está el vestido: lo elegido sigue contando */
+  click("#pick-grupos .pk-cab");
+  await esperar();
+  assert.equal(qs("#pick-grupos .pk-cab").getAttribute("aria-expanded"), "false");
+  assert.equal(qs("#pick-grupos .pk-cuerpo").hidden, true, "el cuerpo queda oculto");
+  assert.equal(qs("#ftotal").textContent, "$2,450", "plegar no toca el total");
+
+  click("#saveBtn");
+  await esperar(220);
+  const despues = store.pedidoPorId("d2");
+  assert.equal(despues.items.length, 3, "guardar sí persiste la prenda elegida");
+  assert.ok(despues.items.some((i) => i.productoId === "di1"), "el vestido queda en el pedido");
+  assert.equal(qs("#hoja").classList.contains("abierta"), false, "el editor se cierra al guardar");
+  assert.deepEqual(errores, []);
+});
+
 test("editor de inventario: cerrar con cambios sin guardar avisa y conserva lo escrito", async () => {
   await reiniciar();
   irA("inventario");
@@ -876,18 +968,21 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r27"/, "el caché sube a r27 al arreglar el salto de generación");
+  assert.match(sw, /const VERSION = "r28"/, "el caché sube a r28 al pasar el selector del pedido a filas por sección");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
-  assert.doesNotMatch(sw, /-r26"/, "la versión de caché no queda en la del incidente");
+  assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
   assert.ok(sw.includes("./src/ui/componentes/secciones.css"), "el precache incluye el CSS de secciones");
   assert.ok(sw.includes("./src/nucleo/secciones.js"), "el precache incluye el módulo de secciones");
   assert.ok(sw.includes("./src/ui/componentes/filtros.css"), "el precache incluye el CSS del buscador con filtros");
   assert.ok(sw.includes("./src/nucleo/orden.js"), "el precache incluye el módulo de filtros y orden");
+  assert.ok(sw.includes("./src/ui/componentes/picker.css"), "el precache incluye el CSS del selector por sección");
+  assert.ok(sw.includes("./src/nucleo/pedido-picker.js"), "el precache incluye el módulo del selector por sección");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
   assert.match(cssMain, /componentes\.css\?v=4/, "los estilos nuevos del inventario por secciones entran con versión propia");
   assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
+  assert.match(cssMain, /picker\.css\?v=1/, "los estilos del selector del pedido por sección entran con versión propia");
   assert.match(cssMain, /motion\.css\?v=3/, "las animaciones nuevas de la agenda entran con versión propia");
   assert.doesNotMatch(sw, /ropa-v2-nav-90s-r19|ropa-v2-paco-corbata-r18|ropa-v2-nav-2000ms-toast-r17|ropa-v2-nav-2500ms-toast-r16|ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15/, "la versión de caché no queda en la de publicaciones anteriores");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
@@ -914,7 +1009,7 @@ test("editor: pedido de Paco abre con Camisa blanca + Corbata ($1,250) y no Medi
   await esperar();
   assert.match(qs("#hoja-in").textContent, /Editar pedido/);
   assert.equal(qs("#ftotal").textContent, "$1,250", "el editor conserva el total del pedido de Paco");
-  const picksOn = qsa("#mode-inv .pick.on h5").map((n) => n.textContent.trim());
+  const picksOn = qsa("#mode-inv .pk-fila.on .pk-txt b").map((n) => n.textContent.trim());
   assert.deepEqual(picksOn, ["Camisa blanca", "Corbata"], "los productos seleccionados son Camisa blanca y Corbata");
   assert.ok(!picksOn.includes("Medias lanas"), "NO aparece Medias lanas");
   // los snapshots por productoId son correctos (Corbata $300, no $250 de Medias)
@@ -939,8 +1034,8 @@ test("editor: pedido de Rosita abre con 2× Medias lanas y Total $500, y guardar
   const stepper = qs("#mode-inv .qtystep b");
   assert.ok(stepper, "la tarjeta seleccionada muestra el stepper de cantidad");
   assert.equal(stepper.textContent.trim(), "2", "muestra la cantidad ×2");
-  const pickOn = qsa("#mode-inv .pick.on");
-  assert.equal(pickOn.length, 1, "una sola tarjeta de producto, con cantidad 2");
+  const pickOn = qsa("#mode-inv .pk-fila.on");
+  assert.equal(pickOn.length, 1, "una sola fila de producto, con cantidad 2");
   // guardar solo el estado: el pedido conserva cantidad y total
   click("#saveBtn");
   await esperar();

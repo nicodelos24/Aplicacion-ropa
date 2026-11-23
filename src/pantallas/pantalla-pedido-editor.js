@@ -2,14 +2,18 @@
 // cuotas 2–12 solo en "En cuotas", fecha de entrega, notas; productos a mano entran solos al inventario.
 // Nada se guarda sin «Guardar»: cerrar con ediciones pendientes avisa antes de perderlas.
 // Fixes QA F0F1: precio 0 bloqueado (>0, P2) y cuotas fuera de rango con error inline, sin clamp silencioso (P3).
+// Selector de productos (decisión Y, 23-nov): filas compactas dentro de cada sección, con badge
+// «elegidos/total» en la cabecera plegable y buscador; filtrar nunca deselecciona ni cambia el total.
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, parseMoneda, esPrecioValido } from "../nucleo/moneda.js";
 import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, estadoAlGuardar, qtyDe, subtotalItem } from "../nucleo/pedidos.js";
 import { maskTel } from "../nucleo/contacto.js";
 import { CATEGORIAS } from "../nucleo/catalogo.js";
+import { gruposParaElegir, hayResultados, contarElegidos } from "../nucleo/pedido-picker.js";
+import { usosPorProducto } from "../nucleo/orden.js";
 import {
-  crearPedido, editarPedido, productos, clientes, db,
+  crearPedido, editarPedido, productos, clientes, db, secciones, pedidos,
 } from "../estado/store.js";
 import { abrirHoja, cerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
@@ -41,24 +45,6 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   const selInicial = new Set(qtyInicial.keys());
   const cantidades = new Map(qtyInicial); // copia de trabajo: el usuario puede cambiar la cantidad al editar
   const totalInicial = (orig?.items || []).reduce((s, i) => s + subtotalItem(i), 0);
-  const invHTML = sel => {
-    const items = inv.slice(0, 60);
-    if (!items.length) return `<p class="nota-vacia">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
-    return `<div class="pick-grid stagger">` + items.map(i => {
-      const n = cantidades.get(i.id) || 1;
-      return `
-      <div class="pick ${sel.has(i.id) ? "on" : ""}" data-iid="${i.id}" role="button" tabindex="0" aria-pressed="${sel.has(i.id)}">
-        <span class="pickcheck">${ICONO.checkSolo}</span>
-        ${sel.has(i.id) ? `<span class="qtystep" data-qty="${i.id}">
-          <button type="button" class="qtyminus" aria-label="Restar ${esc(i.name)}">−</button>
-          <b aria-label="Cantidad ${n}">${n}</b>
-          <button type="button" class="qtyplus" aria-label="Sumar ${esc(i.name)}">+</button>
-        </span>` : ""}
-        ${i.photo ? `<img class="thumb" src="${esc(i.photo)}" alt="">` : `<div class="thumb ph">${svgCategoria(i.cat)}</div>`}
-        <h5 class="contenedor-texto">${esc(i.name)}</h5><p>${fmt(i.price)}</p>
-      </div>`;
-    }).join("") + `</div>`;
-  };
 
   abrirHoja(`<div class="agarre"></div><h2>${esNuevo ? (presetCliente ? `Nuevo pedido · ${esc(presetCliente.name)}` : "Nuevo pedido") : "Editar pedido"}</h2>
     <label class="campo"><span class="campo-label">Cliente</span><input id="f-cliente" value="${esc(base.cliente)}" placeholder="Nombre del cliente" list="clients-dl" autocomplete="off"></label>
@@ -70,13 +56,19 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       <button data-m="inv" class="on">Del inventario</button>
       <button data-m="man">Escribir a mano</button>
     </div>
-    <div id="mode-inv">${invHTML(selInicial)}</div>
+    <div id="mode-inv">
+      <div class="picker-buscar">
+        <span class="picker-lupa">${ICONO.buscar}</span>
+        <input id="pick-buscar" type="search" placeholder="Buscar en el inventario…" aria-label="Buscar prenda en el inventario" autocomplete="off">
+      </div>
+      <div id="pick-grupos"></div>
+    </div>
     <div id="mode-man" class="oculto">
       <input type="file" id="man-photo" accept="image/*" capture="environment" class="oculto">
       <div id="plist"></div>
       <button class="addp" id="addp">Agregar producto</button>
     </div>
-    <div class="totalbar"><span>Total</span><b id="ftotal" class="monto">${fmt(totalInicial)}</b></div>
+    <div class="totalbar"><span id="ftotal-lbl">Total</span><b id="ftotal" class="monto">${fmt(totalInicial)}</b></div>
     <label class="campo campo-est"><span class="campo-label">Estado</span>
       <div class="seg" id="seg-est" role="group" aria-label="Elegir estado">
         ${ORDEN_ESTADOS.map(k => `<button data-k="${k}" class="${base.estado === k ? "on " + ({ paid: "s-green", msg: "s-orange", due: "s-blue" }[k] || "") : ""}" aria-pressed="${base.estado === k}">${ESTADOS[k].l}</button>`).join("")}
@@ -92,6 +84,10 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   let estado = base.estado;
   const picked = new Set(selInicial);
   let manuales = [{ nombre: "", precio: "", qty: 1, foto: null }];
+  /* buscador y secciones plegadas del selector: solo estado de pantalla */
+  let buscar = "";
+  const plegadas = new Set();
+  const usos = usosPorProducto(pedidos());
 
   /* ── cambios sin guardar ──
      El editor no escribe nada en el pedido hasta «Guardar»: se compara lo que
@@ -136,28 +132,91 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     });
     t += manuales.reduce((s, i) => s + (Number(parseMoneda(i.precio)) || 0) * (Number(i.qty) || 1), 0);
     qs("#ftotal").textContent = fmt(t);
+    /* el contador dice cuántas prendas del inventario lleva el pedido */
+    const n = contarElegidos(picked);
+    qs("#ftotal-lbl").textContent = n
+      ? `${n} producto${n > 1 ? "s" : ""} elegido${n > 1 ? "s" : ""}`
+      : "Total";
   };
 
+  /* Un grupo = una sección: cabecera plegable con badge elegidos/total + filas de 52 px.
+     Los grupos los arma el núcleo (gruposParaElegir) y acá solo se cablean. */
+  const filaHTML = (p) => {
+    const on = picked.has(p.id);
+    const n = cantidades.get(p.id) || 1;
+    const qty = on
+      ? `<span class="fila-stepper qtystep" data-qty="${p.id}">
+           <button type="button" class="qtyminus" aria-label="Restar ${esc(p.name)}">−</button>
+           <b aria-label="Cantidad ${n}">${n}</b>
+           <button type="button" class="qtyplus" aria-label="Sumar ${esc(p.name)}">+</button>
+         </span>`
+      : "";
+    return `<div class="pk-fila${on ? " on" : ""}" data-iid="${p.id}" role="button" tabindex="0" aria-pressed="${on}">
+      <span class="pk-mini">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : svgCategoria(p.cat)}</span>
+      <span class="pk-txt"><b>${esc(p.name)}</b><small>${fmt(p.price)}</small></span>
+      ${qty}
+      <span class="pk-check" aria-hidden="true">${ICONO.checkSolo}</span>
+    </div>`;
+  };
+
+  /* Pinta el selector completo en #pick-grupos (se repinta al elegir, buscar o plegar). */
   const drawInv = () => {
-    qs("#mode-inv").innerHTML = invHTML(picked);
-    qsa("#mode-inv .pick").forEach(b => b.onclick = (e) => {
-      // los botones del stepper se manejan aparte: no cambian la selección
+    const cont = qs("#pick-grupos");
+    if (!cont) return;
+    if (!inv.length) {
+      cont.innerHTML = `<p class="nota-vacia">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
+      return;
+    }
+    const grupos = gruposParaElegir(inv, secciones(), { buscar, elegidos: picked, usos });
+    /* sin coincidencias: el vacío explica y sale, y abajo quedan los elegidos
+       que se mantienen a la vista para no perder el hilo del pedido */
+    const vacio = buscar.trim() && !hayResultados(grupos)
+      ? `<div class="picker-vacio">
+          <b>Ninguna prenda dice “${esc(buscar.trim())}”</b>
+          <p>Probá con otra palabra o quitá la búsqueda.</p>
+          <button type="button" class="btn btn-ghost" id="pick-limpiar">Quitar búsqueda</button>
+        </div>`
+      : "";
+    cont.innerHTML = vacio + grupos.map(g => {
+      const clave = g.id || "sin";
+      const abierto = !plegadas.has(clave);
+      const badge = g.hayElegidos
+        ? `<span class="pk-badge on">${g.elegidos}/${g.total}</span>`
+        : `<span class="pk-badge">${g.total}</span>`;
+      const cuerpo = g.productos.length
+        ? `<div class="pk-filas">${g.productos.map(filaHTML).join("")}</div>`
+        : `<p class="pk-vacia">Todavía no hay prendas en esta sección.</p>`;
+      return `<section class="pk-grupo${abierto ? "" : " plegada"}">
+        <button type="button" class="pk-cab" data-pk-toggle="${esc(clave)}" aria-expanded="${abierto}" aria-controls="pk-body-${esc(clave)}">
+          <span class="pk-nombre">${esc(g.nombre)}</span>
+          ${badge}
+          <span class="pk-caret">${ICONO.chevAbajo}</span>
+        </button>
+        <div class="pk-cuerpo" id="pk-body-${esc(clave)}" ${abierto ? "" : "hidden"}>${cuerpo}</div>
+      </section>`;
+    }).join("");
+
+    const limpiar = qs("#pick-limpiar");
+    if (limpiar) limpiar.onclick = () => { buscar = ""; qs("#pick-buscar").value = ""; drawInv(); qs("#pick-buscar").focus(); };
+
+    /* elegir / deseleccionar una prenda */
+    qsa("#pick-grupos .pk-fila").forEach(f => f.onclick = (e) => {
       if (e.target.closest(".qtystep")) return;
-      const iid = b.dataset.iid;
+      const iid = f.dataset.iid;
       if (picked.has(iid)) { picked.delete(iid); cantidades.delete(iid); }
       else { picked.add(iid); cantidades.set(iid, 1); }
       drawInv(); calc();
     });
-    qsa("#mode-inv .pick").forEach(b => b.onkeydown = (e) => {
-      if ((e.key === "Enter" || e.key === " ") && !e.target.closest(".qtystep")) { e.preventDefault(); b.click(); }
+    qsa("#pick-grupos .pk-fila").forEach(f => f.onkeydown = (e) => {
+      if ((e.key === "Enter" || e.key === " ") && !e.target.closest(".qtystep")) { e.preventDefault(); f.click(); }
     });
-    qsa("#mode-inv .qtyplus").forEach(b => b.onclick = (e) => {
+    qsa("#pick-grupos .qtyplus").forEach(b => b.onclick = (e) => {
       e.stopPropagation();
       const iid = b.closest(".qtystep").dataset.qty;
       cantidades.set(iid, Math.min((cantidades.get(iid) || 1) + 1, 99));
       drawInv(); calc();
     });
-    qsa("#mode-inv .qtyminus").forEach(b => b.onclick = (e) => {
+    qsa("#pick-grupos .qtyminus").forEach(b => b.onclick = (e) => {
       e.stopPropagation();
       const iid = b.closest(".qtystep").dataset.qty;
       const n = (cantidades.get(iid) || 1) - 1;
@@ -165,6 +224,21 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       else cantidades.set(iid, n);
       drawInv(); calc();
     });
+    /* plegar/desplegar solo mueve el bloque: no toca la selección */
+    qsa("#pick-grupos .pk-cab").forEach(b => b.onclick = () => {
+      const clave = b.dataset.pkToggle;
+      if (plegadas.has(clave)) plegadas.delete(clave); else plegadas.add(clave);
+      const abierto = !plegadas.has(clave);
+      b.setAttribute("aria-expanded", String(abierto));
+      b.closest(".pk-grupo").classList.toggle("plegada", !abierto);
+      const cuerpo = b.closest(".pk-grupo").querySelector(".pk-cuerpo");
+      if (cuerpo) cuerpo.hidden = !abierto;
+    });
+  };
+
+  qs("#pick-buscar").oninput = (e) => {
+    buscar = e.target.value;
+    drawInv();
   };
 
   const drawMan = () => {
