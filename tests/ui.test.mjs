@@ -875,8 +875,10 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.match(sw, /const CACHE = "ropa-v2-[\w-]+"/, "versión de caché con prefijo de proyecto");
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
-  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r\d+"/, "el caché se refresca al bajar la reaparición de la nav a 1,5 s");
-  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-r26"/, "el caché se refresca al sumar los filtros del inventario");
+  assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
+  assert.match(sw, /const VERSION = "r27"/, "el caché sube a r27 al arreglar el salto de generación");
+  assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
+  assert.doesNotMatch(sw, /-r26"/, "la versión de caché no queda en la del incidente");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
   assert.ok(sw.includes("./src/ui/componentes/secciones.css"), "el precache incluye el CSS de secciones");
   assert.ok(sw.includes("./src/nucleo/secciones.js"), "el precache incluye el módulo de secciones");
