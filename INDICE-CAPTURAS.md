@@ -379,3 +379,11 @@ Misma rama, servida en `http://127.0.0.1:8739/index.html?demo=1` a 320 px con el
 | Deslizo de mes congelado a mitad, sin desborde (medidor en pantalla) | 320 | oscuro | [dino-agenda-320-clip-deslizo-pausado.png](capturas/2026-11-23/dino-agenda-320-clip-deslizo-pausado.png) |
 | Deslizo de semana congelado a mitad, sin desborde | 320 | oscuro | [dino-agenda-320-clip-semana-pausada.png](capturas/2026-11-23/dino-agenda-320-clip-semana-pausada.png) |
 | Deslizo de mes congelado a mitad, tema claro | 320 | claro | [dino-agenda-320-clip-deslizo-claro.png](capturas/2026-11-23/dino-agenda-320-clip-deslizo-claro.png) |
+
+#### Verificación del vivo · 2026-11-23
+
+- Publicado en master (`2e7049a`). Chrome del proyecto sobre https://nicodelos24.github.io/Aplicacion-ropa/?demo=1 a 320 px (viewport útil 305 px): `sw.js` sirve `ropa-v2-nav-1500ms-r24`, `main.css` importa `base.css?v=3` y `#main` computa `overflow-x: clip`. Barrido cada 5 ms durante 320 ms: tres cambios de mes y dos de semana con pico 305 px (0 px de desborde, antes 316); `agendaCambia` 0,22 s con `data-dir="prox"` intacto. 0 errores de consola.
+
+| Escena | Ancho | Tema | Archivo |
+|---|---|---|---|
+| Calendario en el vivo publicado, sin desborde tras los cambios de mes | 320 | oscuro | [dino-agenda-320-clip-vivo.png](capturas/2026-11-23/dino-agenda-320-clip-vivo.png) |
