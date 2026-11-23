@@ -1,0 +1,129 @@
+/* picker.css — selector de productos del pedido en filas compactas por sección
+   (decisión Y aprobada por Nico, 23-nov, maqueta de Blas): buscador fijo,
+   cabecera de sección plegable con badge «elegidos/total» y filas de 52 px con
+   foto mini, nombre, precio, stepper de cantidad y check.
+   Reglas de la maqueta: fila de 52 px, objetivo táctil de 44 px en el check
+   (el círculo visible es de 22) y respeto de prefers-reduced-motion. */
+
+/* ---- buscador del selector ---- */
+.picker-buscar{
+  position:relative; display:flex; align-items:center; gap:9px;
+  min-height:44px; padding:0 12px; margin-bottom:10px;
+  background:var(--card2); border:1px solid var(--line); border-radius:13px;
+  box-shadow:var(--inset-hair);
+  transition:border-color var(--t-fast), box-shadow var(--t-med);
+}
+.picker-buscar:focus-within{border-color:var(--acc); box-shadow:0 0 0 3.5px var(--acc-soft)}
+.picker-lupa{display:flex; color:var(--mut); flex-shrink:0}
+.picker-lupa svg{width:16px; height:16px}
+.picker-buscar input{
+  flex:1; min-width:0; min-height:42px; background:none; border:none; outline:none;
+  color:var(--txt); font-size:13.5px; font-family:inherit;
+}
+.picker-buscar input::placeholder{color:var(--mut)}
+.picker-buscar input::-webkit-search-cancel-button{filter:invert(.6)}
+
+/* ---- grupo = sección ---- */
+.pk-grupo{
+  margin-bottom:10px; background:var(--card); border:1px solid var(--line);
+  border-radius:16px; overflow:hidden; box-shadow:var(--sh-1), var(--inset-hair);
+}
+.pk-cab{
+  width:100%; min-height:48px; display:flex; align-items:center; gap:8px;
+  padding:6px 12px 6px 14px; background:none; text-align:left; color:var(--txt);
+  transition:background var(--t-fast) var(--ease-out);
+}
+.pk-cab:hover{background:color-mix(in srgb,var(--card2) 65%,transparent)}
+.pk-nombre{
+  flex:1; min-width:0; font-size:13px; font-weight:800; letter-spacing:-.1px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.pk-badge{
+  flex-shrink:0; font-size:10px; font-weight:800; padding:3px 8px; border-radius:var(--r-full);
+  background:var(--card3); color:var(--txt-2); font-variant-numeric:tabular-nums;
+  transition:background var(--t-med), color var(--t-med);
+}
+/* con algo elegido el badge se tiñe: es el aviso de «no perdiste el hilo» */
+.pk-badge.on{background:var(--acc-soft); color:var(--acc-text); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 40%,transparent)}
+.pk-caret{
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  width:24px; height:24px; color:var(--mut);
+  transition:transform var(--t-med) var(--ease-out);
+}
+.pk-caret svg{width:15px; height:15px}
+.pk-grupo.plegada .pk-caret{transform:rotate(-90deg)}
+.pk-grupo.plegada .pk-cuerpo{display:none}
+.pk-cuerpo{padding:0 8px 8px}
+.pk-vacia{font-size:12px; color:var(--mut); line-height:1.5; padding:8px 6px 6px; margin:0}
+
+/* ---- fila de producto (52 px) ---- */
+.pk-filas{display:flex; flex-direction:column; gap:2px}
+.pk-fila{
+  position:relative; display:flex; align-items:center; gap:10px; min-height:52px;
+  padding:4px 6px; border-radius:12px; cursor:pointer; text-align:left;
+  border-bottom:1px solid var(--line);
+  transition:background var(--t-fast) var(--ease-out), box-shadow var(--t-med);
+}
+.pk-filas .pk-fila:last-child{border-bottom:none}
+.pk-fila:hover{background:color-mix(in srgb,var(--card2) 70%,transparent)}
+.pk-fila:focus-visible{outline:none; box-shadow:0 0 0 3px var(--acc-soft), inset 0 0 0 1.5px var(--acc)}
+.pk-fila.on{background:var(--acc-soft)}
+.pk-fila.on:hover{background:color-mix(in srgb,var(--acc) 18%,var(--card2))}
+.pk-mini{
+  width:38px; height:38px; flex-shrink:0; border-radius:10px; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--card2); color:var(--mut);
+}
+.pk-mini img{width:100%; height:100%; object-fit:cover; display:block}
+.pk-mini svg{width:20px; height:20px; stroke-width:1.6}
+.pk-txt{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px}
+.pk-txt b{
+  font-size:13px; font-weight:650; letter-spacing:-.1px; color:var(--txt);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.pk-txt small{
+  font-size:11.5px; font-weight:800; color:var(--acc-text);
+  font-variant-numeric:tabular-nums;
+}
+
+/* check: círculo de 22 px con objetivo táctil de 44 px (fila completa) */
+.pk-check{
+  width:22px; height:22px; flex-shrink:0; border-radius:var(--r-full);
+  border:1.6px solid var(--line-strong); background:transparent; color:transparent;
+  display:flex; align-items:center; justify-content:center; position:relative;
+  transition:background var(--t-fast), border-color var(--t-fast), color var(--t-fast), transform var(--t-med) var(--spring);
+}
+.pk-check::after{content:""; position:absolute; inset:-11px}
+.pk-check svg{width:13px; height:13px; stroke-width:2.8}
+.pk-fila.on .pk-check{background:var(--acc); border-color:var(--acc); color:var(--acc-ink); box-shadow:var(--sh-acc)}
+.pk-fila:active .pk-check{transform:scale(.88)}
+
+/* stepper de cantidad dentro de la fila elegida */
+.pk-fila .fila-stepper{
+  flex-shrink:0; display:inline-flex; align-items:center; margin-right:2px;
+  border-radius:var(--r-full); background:var(--acc); color:var(--acc-ink);
+  box-shadow:var(--sh-acc); overflow:hidden; height:32px;
+  animation:pk-step-in var(--t-med) var(--spring);
+}
+.pk-fila .fila-stepper button{
+  border:0; background:transparent; color:inherit; font-weight:800; line-height:1;
+  width:30px; height:32px; padding:0; font-size:16px; cursor:pointer;
+}
+.pk-fila .fila-stepper button:hover{background:color-mix(in srgb,var(--acc-ink) 12%,transparent)}
+.pk-fila .fila-stepper button:active{background:color-mix(in srgb,var(--acc-ink) 20%,transparent)}
+.pk-fila .fila-stepper b{min-width:14px; text-align:center; font-size:12.5px; font-variant-numeric:tabular-nums}
+@keyframes pk-step-in{from{opacity:0; transform:scale(.7)} to{opacity:1; transform:none}}
+
+/* ---- vacío de la búsqueda con salida ---- */
+.picker-vacio{
+  text-align:center; padding:22px 12px; border-radius:16px;
+  background:var(--card); border:1px dashed var(--line-strong);
+}
+.picker-vacio b{display:block; font-size:13.5px; color:var(--txt); margin-bottom:4px}
+.picker-vacio p{font-size:12px; color:var(--mut); margin:0 0 12px}
+.picker-vacio .btn{margin:0 auto}
+
+@media (prefers-reduced-motion:reduce){
+  .pk-fila, .pk-check, .pk-caret, .pk-badge, .picker-buscar{transition:none}
+  .pk-fila .fila-stepper{animation:none}
+}

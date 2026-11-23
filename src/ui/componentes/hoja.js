@@ -1,6 +1,7 @@
 // hoja.js — hoja inferior con agarre, cierre por gesto (drag hacia abajo) y Escape.
 import { qs } from "../dom.js";
 import { espacioToast } from "../dom.js";
+import { ocultarToast } from "./toast.js";
 
 const hoja = () => qs("#hoja");
 const hojaIn = () => qs("#hoja-in");
@@ -10,6 +11,14 @@ let cerrandoPorBack = false;
 /* true mientras la hoja se está cerrando: evita reentrar desde popstate */
 let cerrando = false;
 export function marcarCierrePorBack() { cerrandoPorBack = true; }
+
+/* Guardia de la hoja abierta: una función async que devuelve true si se puede
+   cerrar. La carga la pantalla cuando tiene cambios sin guardar; SÓLO la limpia
+   cerrarHoja (cierre forzado tras confirmar o guardar): abrirHoja la conserva
+   para que reabrir el detalle no borre la guardia de una edición pendiente. */
+let guardia = null;
+/** Registra (o anula con null) la guardia de cambios sin guardar. */
+export function alCerrarHoja(fn) { guardia = fn || null; }
 
 export function abrirHoja(html) {
   const h = hoja(), hi = hojaIn();
@@ -30,10 +39,32 @@ export function abrirHoja(html) {
   (foco || hi).focus({ preventScroll: true });
 }
 
+/* cierre forzado: lo que ya confirmó el usuario (guardado, entrada sin datos) */
 export function cerrarHoja() {
+  guardia = null;
+  cerrarHojaForzado();
+}
+
+/** Cierre que respeta la guardia: avisa antes de perder cambios sin guardar. */
+export async function intentarCerrarHoja() {
+  if (guardia) {
+    let puede = false;
+    try { puede = await guardia(); } catch (e) { puede = false; }
+    if (!puede) return false;
+    guardia = null;
+  }
+  cerrarHojaForzado();
+  return true;
+}
+
+/** ¿Hay cambios sin guardar en la hoja abierta? */
+export function hayCambiosSinGuardar() { return !!guardia; }
+
+function cerrarHojaForzado() {
   const h = hoja();
   if (!h.classList.contains("abierta") || cerrando) return;
   cerrando = true;
+  ocultarToast();
   h.classList.add("cerrando");
   setTimeout(() => {
     h.className = "hoja";
@@ -66,7 +97,7 @@ function engancharGesto() {
   const soltar = () => {
     if (y0 == null) return;
     h.classList.remove("arrastrando");
-    if (dy > 110) { cerrarHoja(); }
+    if (dy > 110) { intentarCerrarHoja(); }
     else hi.style.transform = "";
     y0 = null; dy = 0;
   };

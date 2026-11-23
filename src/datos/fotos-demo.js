@@ -1,6 +1,6 @@
 // fotos-demo.js — fotos ficticias SOLO de muestra, superpuestas en la LECTURA.
 // Viven en este archivo y en /fotos/*.jpg; NUNCA se guardan en localStorage.
-// Se aplican por productoId (di1..di5) tanto en ?demo=1 como en datos viejos ya
+// Se aplican por productoId (di1..di6) tanto en ?demo=1 como en datos viejos ya
 // guardados: la clienta ve las fotos sin que sus datos cambien ni se ensucien.
 // Quitar este módulo y su uso en store.js revierte toda la funcionalidad.
 
@@ -10,6 +10,7 @@ const POR_PRODUCTO = {
   di3: "./fotos/jean.jpg",    // Pantalón negro
   di4: "./fotos/bolso.jpg",   // Abrigo largo
   di5: "./fotos/buzo.jpg",    // Medias lanas
+  di6: "./fotos/remera.jpg",  // Corbata
 };
 
 /** Foto de muestra para un producto, si tiene ID demo; si no, null. */

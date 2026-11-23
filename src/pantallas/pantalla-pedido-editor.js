@@ -1,18 +1,24 @@
 // pantalla-pedido-editor.js — editor de pedido: cliente conocido, WhatsApp, productos del inventario o a mano,
 // cuotas 2–12 solo en "En cuotas", fecha de entrega, notas; productos a mano entran solos al inventario.
+// Nada se guarda sin «Guardar»: cerrar con ediciones pendientes avisa antes de perderlas.
 // Fixes QA F0F1: precio 0 bloqueado (>0, P2) y cuotas fuera de rango con error inline, sin clamp silencioso (P3).
+// Selector de productos (decisión Y, 23-nov): filas compactas dentro de cada sección, con badge
+// «elegidos/total» en la cabecera plegable y buscador; filtrar nunca deselecciona ni cambia el total.
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, parseMoneda, esPrecioValido } from "../nucleo/moneda.js";
-import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, estadoAlGuardar } from "../nucleo/pedidos.js";
+import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, estadoAlGuardar, qtyDe, subtotalItem } from "../nucleo/pedidos.js";
 import { maskTel } from "../nucleo/contacto.js";
 import { CATEGORIAS } from "../nucleo/catalogo.js";
+import { gruposParaElegir, hayResultados, contarElegidos } from "../nucleo/pedido-picker.js";
+import { usosPorProducto } from "../nucleo/orden.js";
 import {
-  crearPedido, editarPedido, productos, clientes, db,
+  crearPedido, editarPedido, productos, clientes, db, secciones, pedidos,
 } from "../estado/store.js";
-import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
+import { abrirHoja, cerrarHoja, alCerrarHoja } from "../ui/componentes/hoja.js";
 import { toast } from "../ui/componentes/toast.js";
 import { mostrarError } from "../ui/componentes/campo.js";
+import { confirmar } from "../ui/componentes/confirmar.js";
 import { comprimirFoto } from "../servicios/fotos.js";
 import { abrirDetallePedido } from "./pantalla-pedido-detalle.js";
 
@@ -27,19 +33,18 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     clienteId: presetCliente ? presetCliente.id : null,
     estado: "new", items: [], cuotas: CUOTAS_MIN, cuotasPagadas: 0, notas: "", fecha: presetDate || "",
   };
+  // Cantidad inicial por producto del inventario, desde el snapshot del pedido.
+  // Un mismo producto puede aparecer en más de un ítem: se suman sus cantidades
+  // (p. ej. 2× Medias lanas = qty 2) para que editar no pierda ni el total ni la cantidad.
+  const qtyInicial = new Map();
+  (orig?.items || []).forEach(i => {
+    if (!i.productoId) return;
+    qtyInicial.set(i.productoId, (qtyInicial.get(i.productoId) || 0) + qtyDe(i));
+  });
   // selección actual: ids del inventario ya en el pedido (edición) o del preset
-  const selInicial = new Set((orig?.items || []).map(i => i.productoId).filter(Boolean));
-
-  const invHTML = sel => {
-    const items = inv.slice(0, 60);
-    if (!items.length) return `<p class="nota-vacia">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
-    return `<div class="pick-grid stagger">` + items.map(i => `
-      <button class="pick ${sel.has(i.id) ? "on" : ""}" data-iid="${i.id}" aria-pressed="${sel.has(i.id)}">
-        <span class="pickcheck">${ICONO.checkSolo}</span>
-        ${i.photo ? `<img class="thumb" src="${esc(i.photo)}" alt="">` : `<div class="thumb ph">${svgCategoria(i.cat)}</div>`}
-        <h5 class="contenedor-texto">${esc(i.name)}</h5><p>${fmt(i.price)}</p>
-      </button>`).join("") + `</div>`;
-  };
+  const selInicial = new Set(qtyInicial.keys());
+  const cantidades = new Map(qtyInicial); // copia de trabajo: el usuario puede cambiar la cantidad al editar
+  const totalInicial = (orig?.items || []).reduce((s, i) => s + subtotalItem(i), 0);
 
   abrirHoja(`<div class="agarre"></div><h2>${esNuevo ? (presetCliente ? `Nuevo pedido · ${esc(presetCliente.name)}` : "Nuevo pedido") : "Editar pedido"}</h2>
     <label class="campo"><span class="campo-label">Cliente</span><input id="f-cliente" value="${esc(base.cliente)}" placeholder="Nombre del cliente" list="clients-dl" autocomplete="off"></label>
@@ -51,13 +56,19 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       <button data-m="inv" class="on">Del inventario</button>
       <button data-m="man">Escribir a mano</button>
     </div>
-    <div id="mode-inv">${invHTML(selInicial)}</div>
+    <div id="mode-inv">
+      <div class="picker-buscar">
+        <span class="picker-lupa">${ICONO.buscar}</span>
+        <input id="pick-buscar" type="search" placeholder="Buscar en el inventario…" aria-label="Buscar prenda en el inventario" autocomplete="off">
+      </div>
+      <div id="pick-grupos"></div>
+    </div>
     <div id="mode-man" class="oculto">
       <input type="file" id="man-photo" accept="image/*" capture="environment" class="oculto">
       <div id="plist"></div>
       <button class="addp" id="addp">Agregar producto</button>
     </div>
-    <div class="totalbar"><span>Total</span><b id="ftotal" class="monto">${fmt(orig ? orig.items.reduce((s, i) => s + (Number(i.precio ?? i.price) || 0) * (Number(i.qty) || 1), 0) : 0)}</b></div>
+    <div class="totalbar"><span id="ftotal-lbl">Total</span><b id="ftotal" class="monto">${fmt(totalInicial)}</b></div>
     <label class="campo campo-est"><span class="campo-label">Estado</span>
       <div class="seg" id="seg-est" role="group" aria-label="Elegir estado">
         ${ORDEN_ESTADOS.map(k => `<button data-k="${k}" class="${base.estado === k ? "on " + ({ paid: "s-green", msg: "s-orange", due: "s-blue" }[k] || "") : ""}" aria-pressed="${base.estado === k}">${ESTADOS[k].l}</button>`).join("")}
@@ -73,21 +84,161 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   let estado = base.estado;
   const picked = new Set(selInicial);
   let manuales = [{ nombre: "", precio: "", qty: 1, foto: null }];
+  /* buscador y secciones plegadas del selector: solo estado de pantalla */
+  let buscar = "";
+  const plegadas = new Set();
+  const usos = usosPorProducto(pedidos());
+
+  /* ── cambios sin guardar ──
+     El editor no escribe nada en el pedido hasta «Guardar»: se compara lo que
+     hay en pantalla contra lo que abrió el editor y, si difiere, cerrar avisa. */
+  const fotoActual = () => JSON.stringify({
+    cliente: qs("#f-cliente").value.trim(),
+    tel: qs("#f-tel").value.trim(),
+    fecha: qs("#f-fecha")?.value || "",
+    notas: qs("#f-notas").value.trim(),
+    estado,
+    cuotas: estado === "due" ? (qs("#f-cuotas")?.value || "") : "",
+    items: [...picked].sort().map((iid) => [iid, cantidades.get(iid) || 1]),
+    manuales: manuales
+      .map((i) => [i.nombre.trim(), i.precio, i.foto || ""])
+      .filter((x) => x[0] || x[1] || x[2]),
+  });
+  const fotoInicial = JSON.stringify({
+    cliente: base.cliente || "",
+    tel: base.tel || "",
+    fecha: base.fecha || "",
+    notas: base.notas || "",
+    estado: base.estado,
+    cuotas: base.estado === "due" ? String(base.cuotas || CUOTAS_MIN) : "",
+    items: [...qtyInicial.entries()].map(([id, n]) => [id, n]).sort(),
+    manuales: [],
+  });
+  const hayCambios = () => fotoActual() !== fotoInicial;
+  const puedeSalir = async () => hayCambios()
+    ? !!(await confirmar({
+        title: "¿Salir sin guardar el pedido?",
+        msg: "Hay cambios en este pedido que todavía no guardaste.",
+        ok: "Salir sin guardar",
+      }))
+    : true;
+  alCerrarHoja(puedeSalir);
 
   const calc = () => {
     let t = 0;
-    picked.forEach(iid => { const p = productos().find(x => x.id === iid); if (p) t += (Number(p.price) || 0); });
-    t += manuales.reduce((s, i) => s + (Number(parseMoneda(i.precio)) || 0), 0);
+    picked.forEach(iid => {
+      const p = productos().find(x => x.id === iid);
+      if (p) t += (Number(p.price) || 0) * (cantidades.get(iid) || 1);
+    });
+    t += manuales.reduce((s, i) => s + (Number(parseMoneda(i.precio)) || 0) * (Number(i.qty) || 1), 0);
     qs("#ftotal").textContent = fmt(t);
+    /* el contador dice cuántas prendas del inventario lleva el pedido */
+    const n = contarElegidos(picked);
+    qs("#ftotal-lbl").textContent = n
+      ? `${n} producto${n > 1 ? "s" : ""} elegido${n > 1 ? "s" : ""}`
+      : "Total";
   };
 
+  /* Un grupo = una sección: cabecera plegable con badge elegidos/total + filas de 52 px.
+     Los grupos los arma el núcleo (gruposParaElegir) y acá solo se cablean. */
+  const filaHTML = (p) => {
+    const on = picked.has(p.id);
+    const n = cantidades.get(p.id) || 1;
+    const qty = on
+      ? `<span class="fila-stepper qtystep" data-qty="${p.id}">
+           <button type="button" class="qtyminus" aria-label="Restar ${esc(p.name)}">−</button>
+           <b aria-label="Cantidad ${n}">${n}</b>
+           <button type="button" class="qtyplus" aria-label="Sumar ${esc(p.name)}">+</button>
+         </span>`
+      : "";
+    return `<div class="pk-fila${on ? " on" : ""}" data-iid="${p.id}" role="button" tabindex="0" aria-pressed="${on}">
+      <span class="pk-mini">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : svgCategoria(p.cat)}</span>
+      <span class="pk-txt"><b>${esc(p.name)}</b><small>${fmt(p.price)}</small></span>
+      ${qty}
+      <span class="pk-check" aria-hidden="true">${ICONO.checkSolo}</span>
+    </div>`;
+  };
+
+  /* Pinta el selector completo en #pick-grupos (se repinta al elegir, buscar o plegar). */
   const drawInv = () => {
-    qs("#mode-inv").innerHTML = invHTML(picked);
-    qsa("#mode-inv button").forEach(b => b.onclick = () => {
-      if (picked.has(b.dataset.iid)) picked.delete(b.dataset.iid);
-      else picked.add(b.dataset.iid);
+    const cont = qs("#pick-grupos");
+    if (!cont) return;
+    if (!inv.length) {
+      cont.innerHTML = `<p class="nota-vacia">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
+      return;
+    }
+    const grupos = gruposParaElegir(inv, secciones(), { buscar, elegidos: picked, usos });
+    /* sin coincidencias: el vacío explica y sale, y abajo quedan los elegidos
+       que se mantienen a la vista para no perder el hilo del pedido */
+    const vacio = buscar.trim() && !hayResultados(grupos)
+      ? `<div class="picker-vacio">
+          <b>Ninguna prenda dice “${esc(buscar.trim())}”</b>
+          <p>Probá con otra palabra o quitá la búsqueda.</p>
+          <button type="button" class="btn btn-ghost" id="pick-limpiar">Quitar búsqueda</button>
+        </div>`
+      : "";
+    cont.innerHTML = vacio + grupos.map(g => {
+      const clave = g.id || "sin";
+      const abierto = !plegadas.has(clave);
+      const badge = g.hayElegidos
+        ? `<span class="pk-badge on">${g.elegidos}/${g.total}</span>`
+        : `<span class="pk-badge">${g.total}</span>`;
+      const cuerpo = g.productos.length
+        ? `<div class="pk-filas">${g.productos.map(filaHTML).join("")}</div>`
+        : `<p class="pk-vacia">Todavía no hay prendas en esta sección.</p>`;
+      return `<section class="pk-grupo${abierto ? "" : " plegada"}">
+        <button type="button" class="pk-cab" data-pk-toggle="${esc(clave)}" aria-expanded="${abierto}" aria-controls="pk-body-${esc(clave)}">
+          <span class="pk-nombre">${esc(g.nombre)}</span>
+          ${badge}
+          <span class="pk-caret">${ICONO.chevAbajo}</span>
+        </button>
+        <div class="pk-cuerpo" id="pk-body-${esc(clave)}" ${abierto ? "" : "hidden"}>${cuerpo}</div>
+      </section>`;
+    }).join("");
+
+    const limpiar = qs("#pick-limpiar");
+    if (limpiar) limpiar.onclick = () => { buscar = ""; qs("#pick-buscar").value = ""; drawInv(); qs("#pick-buscar").focus(); };
+
+    /* elegir / deseleccionar una prenda */
+    qsa("#pick-grupos .pk-fila").forEach(f => f.onclick = (e) => {
+      if (e.target.closest(".qtystep")) return;
+      const iid = f.dataset.iid;
+      if (picked.has(iid)) { picked.delete(iid); cantidades.delete(iid); }
+      else { picked.add(iid); cantidades.set(iid, 1); }
       drawInv(); calc();
     });
+    qsa("#pick-grupos .pk-fila").forEach(f => f.onkeydown = (e) => {
+      if ((e.key === "Enter" || e.key === " ") && !e.target.closest(".qtystep")) { e.preventDefault(); f.click(); }
+    });
+    qsa("#pick-grupos .qtyplus").forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      const iid = b.closest(".qtystep").dataset.qty;
+      cantidades.set(iid, Math.min((cantidades.get(iid) || 1) + 1, 99));
+      drawInv(); calc();
+    });
+    qsa("#pick-grupos .qtyminus").forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      const iid = b.closest(".qtystep").dataset.qty;
+      const n = (cantidades.get(iid) || 1) - 1;
+      if (n < 1) { picked.delete(iid); cantidades.delete(iid); }
+      else cantidades.set(iid, n);
+      drawInv(); calc();
+    });
+    /* plegar/desplegar solo mueve el bloque: no toca la selección */
+    qsa("#pick-grupos .pk-cab").forEach(b => b.onclick = () => {
+      const clave = b.dataset.pkToggle;
+      if (plegadas.has(clave)) plegadas.delete(clave); else plegadas.add(clave);
+      const abierto = !plegadas.has(clave);
+      b.setAttribute("aria-expanded", String(abierto));
+      b.closest(".pk-grupo").classList.toggle("plegada", !abierto);
+      const cuerpo = b.closest(".pk-grupo").querySelector(".pk-cuerpo");
+      if (cuerpo) cuerpo.hidden = !abierto;
+    });
+  };
+
+  qs("#pick-buscar").oninput = (e) => {
+    buscar = e.target.value;
+    drawInv();
   };
 
   const drawMan = () => {
@@ -142,7 +293,12 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       qs("#client-hint").innerHTML = `<p class="hint">Nuevo cliente · se guardará automáticamente</p>`;
     }
   };
-  qs("#cancelar").onclick = cerrarHoja;
+  /* con el cliente ya escrito, «Cancelar» es descartar: pregunta directo en vez de
+     sumar una confirmación encima de otra */
+  qs("#cancelar").onclick = async () => {
+    if (!(await puedeSalir())) return;
+    cerrarHoja();
+  };
 
   const errorCuotas = () => {
     const inp = qs("#f-cuotas");
@@ -166,7 +322,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       }
     }
     const items = [];
-    picked.forEach(iid => { const p = productos().find(x => x.id === iid); if (p) items.push({ productoId: p.id, nombre: p.name, precio: Number(p.price) || 0, foto: p.photo, categoria: p.cat, qty: 1 }); });
+    picked.forEach(iid => { const p = productos().find(x => x.id === iid); if (p) items.push({ productoId: p.id, nombre: p.name, precio: Number(p.price) || 0, foto: p.photo, categoria: p.cat, qty: cantidades.get(iid) || 1 }); });
     const manualesLimpios = manuales.filter(i => i.nombre.trim());
     manualesLimpios.forEach(i => items.push({ productoId: null, nombre: i.nombre.trim(), precio: parseMoneda(i.precio) ?? 0, foto: i.foto, categoria: "otro", qty: 1 }));
     if (!items.length) { toast("Agregá al menos un producto", "warn"); return; }

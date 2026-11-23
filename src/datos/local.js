@@ -5,7 +5,7 @@ import { CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 
 export const KEY = "ropa_v2_data";
 const SIN_DATOS = () => ({
-  orders: [], inventory: [], clients: [], events: [], log: [],
+  orders: [], inventory: [], clients: [], events: [], log: [], secciones: [],
   users: [], usuarioId: "u1", prefijo: "+598", theme: "dark",
 });
 
@@ -14,7 +14,18 @@ function sanitizar(d) {
   const out = SIN_DATOS();
   if (!d || typeof d !== "object") return out;
   out.orders = arr(d.orders);
-  out.inventory = arr(d.inventory).map((p) => ({ ...p, cat: p.cat || CATEGORIA_DEFECTO, photo: p.photo ?? null }));
+  /* secciones personalizadas (decisión B): id + nombre; lo demás se descarta */
+  out.secciones = arr(d.secciones)
+    .filter((s) => s.id && String(s.nombre || "").trim())
+    .map((s) => ({ id: s.id, nombre: String(s.nombre).trim() }));
+  /* un producto cuya sección ya no existe vuelve a "Sin sección" (null) */
+  const idsSeccion = new Set(out.secciones.map((s) => s.id));
+  out.inventory = arr(d.inventory).map((p) => ({
+    ...p,
+    cat: p.cat || CATEGORIA_DEFECTO,
+    photo: p.photo ?? null,
+    seccionId: p.seccionId && idsSeccion.has(p.seccionId) ? p.seccionId : null,
+  }));
   out.clients = arr(d.clients);
   out.events = arr(d.events);
   out.log = arr(d.log).slice(-600);

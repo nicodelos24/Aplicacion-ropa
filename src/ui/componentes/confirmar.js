@@ -35,7 +35,13 @@ export function confirmar(o) {
     si.onclick = () => done(true);
     c.onclick = e => { if (e.target === c) done(false); };
     const onKey = e => {
-      if (e.key === "Escape") done(false);
+      if (e.key === "Escape") {
+        /* el aviso consume su Escape: si subiera a window, el cierre de la hoja
+           de abajo volvería a pedir confirmación en el mismo gesto */
+        e.preventDefault();
+        e.stopPropagation();
+        done(false);
+      }
       else if (e.key === "Tab") {
         const f = [no, si];
         const i = f.indexOf(document.activeElement);

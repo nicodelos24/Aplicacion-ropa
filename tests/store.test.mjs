@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as store from "../src/estado/store.js";
 import { datosDemo } from "../src/datos/demo.js";
+import { total } from "../src/nucleo/pedidos.js";
 
 /** Store en memoria (sin localStorage): base limpia por test. */
 function storeTest() {
@@ -97,6 +98,40 @@ test("crear pedido sin productos se rechaza sin mutar (P1: bloquear sin corrompe
   assert.deepEqual(store.db(), antes, "estado intacto");
 });
 
+test("editar pedido con qty=2 conserva cantidad y total $500 (regresión medias lanas)", () => {
+  storeTest();
+  store.boot(datosDemo());
+  const antes = store.pedidoPorId("d4");
+  // d4 = Rosita, 2× Medias lanas ($250 c/u) → $500
+  assert.equal(antes.items.length, 1);
+  assert.equal(antes.items[0].qty, 2);
+  assert.equal(total(antes), 500);
+
+  // el editor guarda un cambio de estado mandando los mismos ítems con su qty
+  const r = store.editarPedido("d4", {
+    cliente: "Rosita", estado: "new", cuotas: 2, cuotasPagadas: 0,
+    items: antes.items.map((i) => ({ ...i })),
+  }, U);
+  assert.ok(r.ok);
+  const despues = store.pedidoPorId("d4");
+  assert.equal(despues.items.length, 1, "sigue siendo una tarjeta");
+  assert.equal(despues.items[0].qty, 2, "conserva la cantidad ×2");
+  assert.equal(despues.items[0].precio, 250, "conserva el precio unitario");
+  assert.equal(despues.estado, "new", "aplica el cambio pedido");
+  // total calculado con qty sigue siendo $500 (250 × 2)
+  assert.equal(total(despues), 500, "el total NO baja a $250");
+});
+
+test("editar pedido sin mandar items no borra las cantidades (red de seguridad)", () => {
+  storeTest();
+  store.boot(datosDemo());
+  const r = store.editarPedido("d4", { estado: "new", cuotas: 2, cuotasPagadas: 0 }, U);
+  assert.ok(r.ok);
+  const despues = store.pedidoPorId("d4");
+  assert.equal(despues.items[0].qty, 2, "conserva qty aunque el llamador omita items");
+  assert.equal(total(despues), 500);
+});
+
 test("homónimos: dos productos de mismo nombre, total por snapshot (QA v1 $300)", () => {
   storeTest();
   store.boot(datosDemo());
@@ -186,4 +221,39 @@ test("cliente conocido se detecta por nombre al crear pedido", () => {
   store.boot(datosDemo());
   const r = store.crearPedido({ cliente: "lucía", items: [{ productoId: "di3" }] }, U);
   assert.equal(r.pedido.clienteId, "dc3", "case-insensitive");
+});
+
+test("editar pedido vincula el clienteId al nombre de una clienta registrada", () => {
+  storeTest();
+  store.boot(datosDemo());
+  /* d2 es de Paco (dc2); se cambia el nombre a Rosita (dc1). */
+  assert.equal(store.pedidoPorId("d2").clienteId, "dc2");
+  const r = store.editarPedido("d2", { cliente: "Rosita" }, U);
+  assert.ok(r.ok);
+  assert.equal(r.pedido.clienteId, "dc1", "se resuelve por nombre al editar");
+  assert.equal(store.pedidoPorId("d2").clienteId, "dc1", "persistido");
+  assert.equal(store.pedidoPorId("d2").cliente, "Rosita");
+  /* aparece en la hoja de Rosita y ya no en la de Paco (núcleo de contacto). */
+  assert.ok(store.pedidos().filter(p => p.clienteId === "dc1").some(p => p.id === "d2"));
+  assert.equal(store.pedidos().filter(p => p.clienteId === "dc2").some(p => p.id === "d2"), false);
+});
+
+test("editar pedido con nombre nuevo deja el vínculo sin clienta (pedido suelto)", () => {
+  storeTest();
+  store.boot(datosDemo());
+  const r = store.editarPedido("d2", { cliente: "Clienta Nueva Sin Registro" }, U);
+  assert.ok(r.ok);
+  assert.equal(r.pedido.clienteId, null, "nombre nuevo no se vincula");
+  assert.equal(store.pedidoPorId("d2").clienteId, null, "persistido sin vínculo");
+  assert.equal(store.clientePorNombre("Clienta Nueva Sin Registro"), null, "no se crea clienta automáticamente");
+});
+
+test("editar pedido resuelve clienteId con mayúsculas/espacios y conserva el id del pedido", () => {
+  storeTest();
+  store.boot(datosDemo());
+  const r = store.editarPedido("d2", { cliente: "  LUCÍA  " }, U);
+  assert.ok(r.ok);
+  assert.equal(r.pedido.clienteId, "dc3", "case-insensitive y sin espacios");
+  assert.equal(r.pedido.id, "d2", "no cambia la identidad del pedido");
+  assert.ok(r.pedido.created, "conserva la fecha de creación");
 });

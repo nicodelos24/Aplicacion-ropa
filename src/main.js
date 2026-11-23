@@ -17,10 +17,11 @@ import { abrirDetallePedido } from "./pantallas/pantalla-pedido-detalle.js";
 import { abrirEditorPedido } from "./pantallas/pantalla-pedido-editor.js";
 import { abrirEditorInventario } from "./pantallas/pantalla-inventario-editor.js";
 import { abrirEditorCliente } from "./pantallas/pantalla-cliente-editor.js";
-import { cerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
+import { cerrarHoja, intentarCerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
+import { ocultarToast } from "./ui/componentes/toast.js";
 import {
-  estadoInicial, medirScroll, mostrar, ocultarPorInactividad,
-  recorridoRueda, registrarActividad, INACTIVIDAD_MS,
+  estadoInicial, medirScroll, mostrar, mostrarPorPausa, ocultarPorInactividad,
+  recorridoRueda, registrarActividad, INACTIVIDAD_MS, REAPARICION_MS,
 } from "./ui/nav-scroll.js";
 
 /* arranque: modo demo (?demo=1) o datos locales */
@@ -82,11 +83,23 @@ function programarPintado() {
 function reiniciarInactividad(ahora = Date.now()) {
   navEstado = registrarActividad(navEstado, ahora);
   clearTimeout(navTemporizador);
-  navTemporizador = setTimeout(() => {
-    if (capaAbierta()) return;
-    navEstado = ocultarPorInactividad(navEstado, Date.now());
-    programarPintado();
-  }, INACTIVIDAD_MS + 30);
+  /* Un único temporizador, rearmado en cada gesto: mientras se sigue bajando
+     nunca vence, así la nav no "rebota" a mitad del desplazamiento.
+     Visible → se oculta a los 3 s; oculta → vuelve a los 1,5 s; ya vuelta
+     por pausa → no se reprograma hasta un gesto nuevo (no oscila). */
+  if (navEstado.visible && !navEstado.mostradaPorPausa) {
+    navTemporizador = setTimeout(() => {
+      if (capaAbierta()) return;
+      navEstado = ocultarPorInactividad(navEstado, Date.now());
+      programarPintado();
+    }, INACTIVIDAD_MS + 30);
+  } else if (!navEstado.visible) {
+    navTemporizador = setTimeout(() => {
+      if (capaAbierta()) return;
+      navEstado = mostrarPorPausa(navEstado, Date.now());
+      programarPintado();
+    }, REAPARICION_MS + 30);
+  }
 }
 function navMostrar() {
   navEstado = mostrar(navEstado);
@@ -176,17 +189,35 @@ if (typeof MutationObserver !== "undefined") {
 reiniciarInactividad();
 alScrollNav();
 
+let seccionPintada = null;
 function render() {
   const v = vista.seccion;
+  /* La animación de entrada del contenido solo corre al CAMBIAR de sección.
+     Un repintado de la misma sección (tocar una fecha del calendario, pasar
+     de mes, filtrar…) NO debe relanzarla: antes se reiniciaba en cada render
+     y el almanaque parecía abrirse de nuevo cada vez. */
+  const cambioSeccion = seccionPintada !== v;
+  seccionPintada = v;
+  /* ningún aviso queda flotando sobre el header al cambiar de sección */
+  ocultarToast();
   /* cada sección vuelve a arrancar con la nav visible */
   if (typeof navMostrar === "function") navMostrar();
   qs("#subtitle").textContent = SUBTITULOS[v] || "";
   qsa("#nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
 
   const main = qs("#main");
-  main.classList.remove("vista"); void main.offsetWidth; main.classList.add("vista");
+  /* Solo al cambiar de sección: si el contenido se repinta dentro de la misma
+     sección, conservar la clase evita que se repita la animación de entrada. */
+  if (cambioSeccion) {
+    if (typeof main.getAnimations === "function") main.getAnimations().forEach(a => a.cancel());
+    main.classList.remove("vista");
+    void getComputedStyle(main).animationName;
+    main.classList.add("vista");
+  }
 
   qs("#searchrow").style.display = CON_BUSQUEDA.includes(v) ? "flex" : "none";
+  /* el buscador del inventario dice qué busca: nombre de la prenda */
+  qs("#search").placeholder = v === "inventario" ? "Buscar prenda…" : "Buscar…";
   qs("#chips").style.display = v === "pedidos" ? "flex" : "none";
   if (!CON_BUSQUEDA.includes(v) && vista.busqueda) { vista.busqueda = ""; qs("#search").value = ""; }
   const fab = qs("#fab");
@@ -232,9 +263,13 @@ qs("#fab").onclick = () => {
   else if (v === "agenda") abrirEditorPedido(null, null, vista.diaSel || undefined);
 };
 
-qs("#hoja").onclick = e => { if (e.target.id === "hoja") cerrarHoja(); };
+qs("#hoja").onclick = e => { if (e.target.id === "hoja") intentarCerrarHoja(); };
 window.addEventListener("resize", espacioToast);
-window.addEventListener("keydown", e => { if (e.key === "Escape") cerrarHoja(); });
+/* Escape cierra la hoja, pero si hay una confirmación abierta es de ella */
+window.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || qs("#confirmar").classList.contains("abierta")) return;
+  intentarCerrarHoja();
+});
 
 /* la entrada raíz también lleva la sección, para que "atrás" hasta el inicio sepa volver */
 try { history.replaceState({ seccion: vista.seccion }, "", location.href); } catch (e) { /* sin history */ }
@@ -243,8 +278,13 @@ try { history.replaceState({ seccion: vista.seccion }, "", location.href); } cat
 window.addEventListener("popstate", e => {
   const h = qs("#hoja");
   if (h && h.classList.contains("abierta")) {
+    const entrada = history.state && history.state.hoja;
     marcarCierrePorBack(); /* ya vino del history: no volver a llamar a back() */
-    cerrarHoja();
+    /* cambios sin guardar: si el usuario dice que no, se rearma la entrada de la hoja */
+    intentarCerrarHoja().then((cerrado) => {
+      if (cerrado || !qs("#hoja").classList.contains("abierta")) return;
+      try { history.pushState({ hoja: entrada || 1 }, "", location.href); } catch (e) { /* sin history */ }
+    });
     return;
   }
   /* si no, navega a la sección del estado (o a inicio por defecto) */

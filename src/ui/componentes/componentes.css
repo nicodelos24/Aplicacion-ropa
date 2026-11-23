@@ -99,6 +99,22 @@ html:not([data-theme="light"]) .borde-green{box-shadow:var(--sh-1), var(--inset-
 .chip .n{opacity:.7; font-variant-numeric:tabular-nums; font-weight:700}
 .chip.on{background:var(--grad-acc); border-color:transparent; color:var(--acc-ink); box-shadow:var(--sh-acc)}
 .chip.on::before{background:var(--acc-ink); animation:none; transform:scale(.9)}
+/* El estado activo entra, no aparece: mismo tono que el stagger de las tarjetas
+   (sube 2 px, escala .96 → 1, 220 ms) y el punto del chip se enciende. Solo
+   transform/opacity: lo resuelve el compositor, el filtro no se frena. */
+@keyframes chipOn{
+  from{transform:translateY(2px) scale(.96); opacity:.72}
+  to{transform:none; opacity:1}
+}
+.chip.on{animation:chipOn 220ms var(--ease-out) both}
+@keyframes chipDot{
+  from{transform:scale(.3); opacity:.2}
+  to{transform:scale(.9); opacity:1}
+}
+.chip.on::before{animation:chipDot 240ms var(--ease-out) both}
+@media (prefers-reduced-motion:reduce){
+  .chip.on,.chip.on::before{animation:none}
+}
 .chip:active{transform:scale(.93)}
 @keyframes latido{
   0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 45%,transparent)}
@@ -194,6 +210,18 @@ fieldset{border:none}
 .pick .thumb.ph svg{width:22px; height:22px}
 .pick h5{font-size:12px; line-height:1.3; font-weight:650; overflow-wrap:anywhere}
 .pick p{font-size:11.5px; color:var(--acc-text); margin-top:3px; font-weight:800; font-variant-numeric:tabular-nums}
+/* stepper de cantidad dentro de la tarjeta seleccionada del editor */
+.pick .qtystep{
+  position:absolute; left:6px; top:6px; z-index:2; display:inline-flex; align-items:center;
+  border-radius:var(--r-full); background:var(--acc); color:var(--acc-ink);
+  box-shadow:var(--sh-acc); overflow:hidden; height:24px;
+}
+.pick .qtystep button{
+  border:0; background:transparent; color:inherit; font-weight:800; line-height:1;
+  width:22px; height:24px; padding:0; font-size:15px; cursor:pointer;
+}
+.pick .qtystep button:active{background:color-mix(in srgb,var(--acc-ink) 18%,transparent)}
+.pick .qtystep b{min-width:15px; text-align:center; font-size:12px; font-variant-numeric:tabular-nums}
 
 /* ==================== FAB ==================== */
 .fab{
@@ -281,7 +309,7 @@ fieldset{border:none}
 .cal-dia{min-height:44px}
 .cal-grid .dow{font-size:10px; color:var(--mut); padding:4px 0 6px; font-weight:800; letter-spacing:.6px}
 .cal-dia{
-  aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-width:0; aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   font-size:13px; border-radius:12px; position:relative; cursor:pointer; padding-bottom:5px; font-weight:600;
   transition:transform var(--t-fast) var(--spring), background var(--t-fast), box-shadow var(--t-fast), color var(--t-fast);
 }
@@ -346,9 +374,21 @@ fieldset{border:none}
 }
 .sem-dow{font-size:10px; font-weight:800; letter-spacing:.6px; opacity:.85}
 .sem-num{font-size:18px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums}
-.sem-dots{display:flex; gap:2.5px; height:5px; align-items:center; justify-content:center}
-.sem-dots i{width:4px; height:4px; border-radius:50%; display:block}
-.sem-dia.sel .sem-dots i{outline:1px solid rgba(0,0,0,.22)}
+.sem-dots{display:flex; gap:3px; height:9px; align-items:center; justify-content:center}
+.sem-dots i{
+  width:7px; height:7px; border-radius:50%; display:block;
+  box-shadow:0 0 0 1.5px var(--card2);
+}
+/* Indicador de días con contenido: los puntos de la franja deben verse
+   igual de claros que los del calendario (antes no tenían color asignado). */
+.sem-dots i.d-yellow{background:var(--c-yellow)}
+.sem-dots i.d-orange{background:var(--c-orange)}
+.sem-dots i.d-blue{background:var(--c-blue)}
+.sem-dots i.d-green{background:var(--c-green)}
+.sem-dots i.d-red{background:var(--c-red)}
+.sem-dots i.d-neutral{background:var(--mut)}
+.sem-dia.tiene{background:var(--card3)}
+.sem-dia.sel .sem-dots i{box-shadow:0 0 0 1.5px rgba(0,0,0,.28)}
 
 /* Agrupación por día con eje vertical, inspirada en la referencia (estructura, no estilo). */
 .sem-grupo{margin-top:16px}
@@ -392,7 +432,7 @@ fieldset{border:none}
 .inv-cuerpo p{font-size:11.5px; font-weight:750; color:var(--acc-text); margin-top:3px; font-variant-numeric:tabular-nums}
 .inv-acciones{position:absolute; top:6px; right:6px; display:flex; gap:6px; flex-direction:column; z-index:2}
 .inv-acciones button{
-  width:44px; height:44px; border-radius:13px; background:rgba(12,15,24,.7); backdrop-filter:blur(10px);
+  width:44px; height:44px; border-radius:13px; background:rgba(12,15,24,.9);
   color:#fff; border:1px solid rgba(255,255,255,.28); display:flex; align-items:center; justify-content:center;
   box-shadow:0 3px 10px rgba(0,0,0,.3); transition:transform var(--t-fast) var(--spring), background var(--t-med);
 }
@@ -498,6 +538,11 @@ html[data-theme="light"] .cli-wa.none{color:#4d5168}
 .cuotas-ctrl .btn{min-height:46px; padding:12px 8px; white-space:nowrap; width:100%}
 .cuotas-mid{color:var(--mut); font-size:12.5px; text-align:center; line-height:1.35}
 .cuotas-mid b{display:block; white-space:nowrap; color:var(--txt); font-variant-numeric:tabular-nums; font-size:15px; font-weight:800}
+/* cuotas sin guardar: el contador avisa en pantalla y aparecen Guardar / Descartar */
+.cuotas-ctrl.sin-guardar .cuotas-mid b{color:var(--c-orange-text)}
+.cuotas-pend{display:inline-block; margin-top:2px; font-size:11px; font-weight:800; letter-spacing:.02em; text-transform:uppercase; color:var(--c-orange-text)}
+.cuotas-acciones{margin-top:10px; display:grid; grid-template-columns:1fr; gap:8px}
+.cuotas-acciones .btn{width:100%}
 .wa-btn{
   background:color-mix(in srgb,var(--c-green) 14%,var(--card)); color:var(--c-green-text);
   border:1.5px solid color-mix(in srgb,var(--c-green) 48%,var(--line)); box-shadow:none;
@@ -660,20 +705,23 @@ html[data-theme="light"] .cli-wa.none{color:#4d5168}
 nav{
   position:fixed; left:12px; right:12px; bottom:calc(10px + var(--safe-b)); z-index:25;
   height:var(--nav-h); padding:0 6px;
-  background:color-mix(in srgb,var(--bg-elev) 72%,transparent);
-  backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  /* Sin backdrop-filter: al animar transform+opacity, el blur obligaba a
+     repintar lo de detrás en cada frame (jank). Fondo opaco equivalente. */
+  background:color-mix(in srgb,var(--bg-elev) 92%,transparent);
   border:1px solid color-mix(in srgb,var(--line) 100%,transparent);
   border-radius:24px;
   box-shadow:var(--sh-3), var(--inset-hair);
   display:flex; align-items:center; max-width:536px; margin:0 auto;
-  /* auto-ocultable: solo transform + opacidad (compuesto, sin reflow) */
+  /* auto-ocultable: solo transform + opacidad (compuesto, sin reflow).
+     La misma curva en ida y vuelta; ni visibility ni pointer-events con
+     retardos asimétricos: aria-hidden (en JS) + pointer-events bloquean
+     el acceso mientras está oculta, sin romper la animación. */
   transform:translateY(0); opacity:1;
   transition:transform var(--t-med) var(--ease-out), opacity var(--t-med) var(--ease-out);
   will-change:transform, opacity;
 }
 /* oculta al scrollear abajo o tras inactividad; el reservado de main::after no cambia */
 nav.oculta{transform:translateY(calc(100% + 22px + var(--safe-b))); opacity:0; pointer-events:none}
-nav.oculta button{visibility:hidden}
 @media (prefers-reduced-motion:reduce){
   nav{transition:none}
 }
@@ -818,8 +866,80 @@ nav button.on svg{transform:translateY(-1px) scale(1.05); filter:drop-shadow(0 0
   nav{left:8px; right:8px; bottom:calc(8px + var(--safe-b)); padding:0 4px}
 }
 
+/* ==================== ESCRITORIO (>=1024px) ====================
+   A 1280 px la app quedaba como una columna de 560 px centrada, con medio
+   metro de vacío a los costados. Desde acá el ancho útil pasa a 1200 px y lo
+   que se apila en el celular se reparte en columnas: nada de esto toca el
+   layout de 320/390 (todo está dentro de un min-width, y los valores de
+   celular no cambian). La barra inferior auto-ocultable sigue igual.
+   Pegado al final a propósito: dentro de un @media no cambia especificidad,
+   así que estas reglas tienen que venir después de las de móvil para ganar. */
+@media (min-width:1024px){
+  /* --- ancho útil: el contenido deja de ser columna de celular --- */
+  main{max-width:1200px; padding-left:28px; padding-right:28px}
+  .topbar{padding-left:28px; padding-right:28px}
+  .topbar > *{max-width:1200px; margin-left:auto; margin-right:auto}
+  .topbar .stats{margin-top:12px}
+  .topbar .buscar, .topbar .chips{margin-top:12px}
+
+  /* --- Inicio: dinero y medias tarjetas a la izquierda, agenda y cobros a la derecha --- */
+  /* filas automáticas y orden del HTML: no quedan huecos en la grilla */
+  #main:has(.moneycard){
+    display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
+    grid-auto-flow:row dense; column-gap:24px; align-items:start;
+  }
+  #main:has(.moneycard) > .saludo{grid-column:1 / -1}
+  /* los vacíos ("Sin pedidos aquí") ocupan todo el ancho */
+  #main:has(.moneycard) > .vacio{grid-column:1 / -1}
+  #main:has(.moneycard) > .sect-titulo{grid-column:2}
+  #main:has(.moneycard) > .stagger{grid-column:2}
+  #main:has(.moneycard) > .moneycard,
+  #main:has(.moneycard) > .duo,
+  #main:has(.moneycard) > .tiles{grid-column:1}
+  /* la primera sección de la columna derecha arranca a la altura del saludo */
+  #main:has(.moneycard) > .sect-titulo:first-of-type{margin-top:0}
+
+  /* --- Pedidos, Contactos e Historial: grillas que aprovechan el ancho --- */
+  .pantalla-grilla{display:grid; gap:11px; align-items:start}
+  .pantalla-grilla > *{margin-bottom:0}
+  .grilla-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grilla-cli{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grilla-ev{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* el atajo "ver todos los pedidos" cierra la fila sobre las dos columnas */
+  main .grilla-cards > .hlink{grid-column:1 / -1}
+
+  /* --- Inventario: más productos por fila --- */
+  .inv{grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px}
+
+  /* --- Agenda: calendario y entregas uno al lado del otro --- */
+  #main:has(.agenda-switch){
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:auto 1fr; column-gap:24px; align-items:start;
+  }
+  #main:has(.agenda-switch) > .agenda-switch{grid-column:1 / -1}
+  #main:has(.agenda-switch) > .semana{grid-column:1 / -1}
+  #main:has(.agenda-switch) > .cal{grid-column:1; grid-row:2}
+  #main:has(.agenda-switch) > .sect-titulo:not(:first-of-type){grid-column:2; margin-top:16px}
+  #main:has(.agenda-switch) > .nota-vacia,
+  #main:has(.agenda-switch) > .card{grid-column:2; margin-bottom:9px}
+  #main:has(.agenda-switch) > .addp-dia{grid-column:2; justify-self:start; width:auto}
+
+  /* --- Ajustes: fichas en dos columnas --- */
+  #main:has(.sett-card){display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-flow:row dense; gap:12px; align-items:start}
+  #main:has(.sett-card) > .anim-entra{display:contents}
+  #main:has(.sett-card) .sett-card{margin-bottom:0}
+  #main:has(.sett-card) .sett-pie{grid-column:1 / -1}
+
+  /* --- hojas (detalle, editores, ficha de cliente): mismo ancho útil --- */
+  .hoja-in{max-width:720px; padding:14px 26px calc(28px + var(--safe-b))}
+}
+
 /* ---- pantallas compactas (<=360px): etiquetas visibles sin colisión ---- */
 @media (max-width:360px){
   nav{left:4px; right:4px; padding:0}
   nav button .nav-lbl{font-size:8px}
+  /* El FAB flotante tapa el centro de la ayuda del calendario a este ancho.
+     Reservar su columna a la derecha e alinear el texto a la izquierda deja
+     el aviso legible en dos líneas sin mover el botón ni tocar otras vistas. */
+  .ayuda{max-width:calc(100% - 66px); text-align:left; margin-left:2px; margin-right:0}
 }
