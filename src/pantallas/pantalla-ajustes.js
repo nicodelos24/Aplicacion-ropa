@@ -2,7 +2,7 @@
 import { esc, qs } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
 import { fmtTel } from "../nucleo/contacto.js";
-import { setPrefijo, setTema, borrarDatos, exportar, db } from "../estado/store.js";
+import { setPrefijo, setTema, borrarDatos, exportar, db, restaurarDemo } from "../estado/store.js";
 import { toast } from "../ui/componentes/toast.js";
 import { confirmar } from "../ui/componentes/confirmar.js";
 import { nombreArchivo } from "../servicios/respaldo.js";
@@ -60,9 +60,9 @@ export function pintarAjustes(main) {
   };
   if (qs("#reset-btn")) qs("#reset-btn").onclick = async () => {
     if (!(await confirmar({ title: "¿Restaurar datos de demo?", msg: "Vuelve al conjunto de datos de demostración original.", ok: "Restaurar" }))) return;
-    const { boot } = await import("../estado/store.js");
-    const { datosDemo } = await import("../datos/demo.js");
-    boot({ ...datosDemo(), theme: d.theme, prefijo: d.prefijo });
-    toast("Demo restaurado");
+    const r = restaurarDemo();
+    if (r.persistencia.ok) toast("Demo restaurado");
+    /* si el disco rechazó la escritura, `set()` ya dejó el estado intacto y
+       avisó por el canal central: acá no decimos que se restauró. */
   };
 }

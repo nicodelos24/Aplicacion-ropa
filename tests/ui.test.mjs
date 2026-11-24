@@ -1069,8 +1069,11 @@ test("detalle: abanico simétrico, con capas por cercanía sin mover las cartas 
   assert.deepEqual(errores, []);
 });
 
-test("ajustes: restaurar demo pide confirmación y vuelve a los datos originales", async () => {
+test("ajustes: restaurar demo pide confirmación, vuelve a los datos originales y conserva los ajustes", async () => {
   await reiniciar();
+  store.setPrefijo("+54");
+  store.setTema("light");
+  aplicarTema();
   store.crearPedido({ cliente: "Prueba", items: [{ productoId: "di1", qty: 1 }] });
   assert.equal(store.pedidos().length, 6);
   irA("ajustes");
@@ -1079,6 +1082,24 @@ test("ajustes: restaurar demo pide confirmación y vuelve a los datos originales
   click("#cv-yes");
   await esperar();
   assert.equal(store.pedidos().length, 5, "demo restaurada");
+  assert.equal(store.db().prefijo, "+54", "prefijo conservado");
+  assert.equal(store.db().theme, "light", "tema conservado");
+  assert.equal(store.db().usuarioId, "u1", "cuenta conservada");
+  assert.match(qs("#toast").textContent, /Demo restaurado/);
+  assert.deepEqual(errores, []);
+});
+
+test("ajustes: restaurar demo cancelado no toca nada (confirmación en el camino central)", async () => {
+  await reiniciar();
+  store.crearPedido({ cliente: "Prueba", items: [{ productoId: "di1", qty: 1 }] });
+  const antes = store.exportar();
+  irA("ajustes");
+  click("#reset-btn");
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true);
+  click("#cv-no");
+  await esperar();
+  assert.equal(store.exportar(), antes, "cancelar no restauró nada");
+  assert.equal(store.pedidos().length, 6);
   assert.deepEqual(errores, []);
 });
 
@@ -1214,7 +1235,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r45"/, "el caché sube a r45 para refrescar los archivos integrados");
+  assert.match(sw, /const VERSION = "r46"/, "el caché sube a r46 para refrescar restaurar-demo central");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");

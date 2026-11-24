@@ -16,6 +16,7 @@ import {
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, ordenarPedidos } from "../nucleo/filtros.js";
 import { cargar as cargarLocal, guardar as guardarLocal, disponible, SIN_DATOS } from "../datos/local.js";
 import { conFotosDemo } from "../datos/fotos-demo.js";
+import { datosDemo } from "../datos/demo.js";
 import { validarNombreSeccion, seccionNueva, esSeccion, contarEnSeccion } from "../nucleo/secciones.js";
 
 export const ESTADOS_PEDIDO = ESTADOS;
@@ -412,6 +413,26 @@ export function setPrefijo(prefijo, usuario) {
 }
 export function setTema(tema, usuario) {
   const r = set((d) => { d.theme = tema === "light" ? "light" : "dark"; }, { log: null });
+  return { ok: true, persistencia: r };
+}
+
+/* ── Demo ── */
+/* Restaurar demo es una escritura como cualquier otra: viaja por `set()`, con
+   el mismo rollback y el mismo aviso de disco. Antes la pantalla llamaba a
+   `boot(datos)`, que reemplazaba el estado y guardaba sin rollback ni aviso:
+   si el dispositivo rechazaba la escritura, decía «Demo restaurado» y al
+   recargar volvían los datos viejos. Conserva cuenta/prefijo/tema (y la marca
+   `demo`) para no perder los ajustes de la dueña. `boot()` sigue siendo solo
+   el arranque: no se toca. */
+export function restaurarDemo() {
+  const datos = datosDemo();
+  const r = set((d, previo) => {
+    for (const k of Object.keys(d)) delete d[k];
+    Object.assign(d, datos, {
+      users: previo.users, usuarioId: previo.usuarioId,
+      prefijo: previo.prefijo, theme: previo.theme,
+    });
+  }, { log: null });
   return { ok: true, persistencia: r };
 }
 

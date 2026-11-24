@@ -732,3 +732,13 @@ Tarea `task_003a495f248e4a76`. Demo pública `?demo=1`, contexto/pestaña aislad
 | Hallazgo: nombre de clienta como objeto (oscuro) | [08-hallazgo-name-object-dark-390.png](capturas/2026-11-24/seguridad-r42/08-hallazgo-name-object-dark-390.png) |
 | Consola del hallazgo (teléfono como objeto) | [07-localStorage-corrupto-console.log](capturas/2026-11-24/seguridad-r42/07-localStorage-corrupto-console.log) |
 | Consola del hallazgo (nombre como objeto) | [08-hallazgo-name-object-dark-console.log](capturas/2026-11-24/seguridad-r42/08-hallazgo-name-object-dark-console.log) |
+
+## Gala — Restaurar demo por el camino central (24-nov-2026, vivo r46 / rama `fix/restaurar-demo-central`) · Verificado
+
+Tarea `task_e2e9f472fc594b31`. Sin datos de clientas reales: demo `?demo=1`, pedido ficticio «Prueba Restaurar». «Restaurar demo» usaba `store.boot()` directo (carga/guardado sin rollback ni aviso); ahora es la acción `restaurarDemo()` del store, que viaja por `set()` — mismo rollback, mismo `suscribirDisco` — y conserva cuenta/prefijo/tema. El arranque (`boot()`) queda intacto. Verificado: 6 pedidos → restaurar → 5 pedidos con `theme=light` y `prefijo=+54` conservados, toast «Demo restaurado»; con disco que rechaza la escritura, estado intacto y franja roja «No se guardó» sin toast de éxito. Suite 246/246 y `npm run check` OK. Chrome del proyecto tomado y soltado en esta ronda.
+
+| Escena | Captura |
+|---|---|
+| Antes: 6 pedidos, modo claro, prefijo +54 | [antes-6-pedidos-claro-prefijo54.png](capturas/2026-11-24/restaurar-demo/antes-6-pedidos-claro-prefijo54.png) |
+| Después: 5 pedidos demo, ajustes conservados | [despues-5-pedidos-ajustes-conservados.png](capturas/2026-11-24/restaurar-demo/despues-5-pedidos-ajustes-conservados.png) |
+| Disco rechaza: franja «No se guardó», sin toast de éxito | [fallo-disco-aviso-no-se-guardo.png](capturas/2026-11-24/restaurar-demo/fallo-disco-aviso-no-se-guardo.png) |

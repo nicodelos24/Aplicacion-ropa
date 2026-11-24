@@ -326,6 +326,43 @@ test("borrarDatos e importar conservan cuenta y ajustes y emiten por el canal ce
   mem.soltarDisco();
 });
 
+test("restaurarDemo: fallo de disco deja el estado intacto y avisa {ok:false}", () => {
+  const mem = storeConDisco({ fallar: true });
+  const antes = store.exportar();
+  const r = store.restaurarDemo();
+  assert.equal(r.persistencia.ok, false, "la acción informa el fallo");
+  assert.equal(store.exportar(), antes, "memoria intacta: no se restaura sin guardar");
+  assert.deepEqual(JSON.parse(store.exportar()), mem.disco, "la memoria sigue igual que el disco");
+  assert.equal(store.pedidos().length, 5);
+  assert.ok(mem.avisos.some((a) => a.ok === false && a.degradado === true), "suscribirDisco vio el fallo");
+  mem.soltarDisco();
+});
+
+test("restaurarDemo conserva cuenta/prefijo/tema, vuelve a la demo y avisa por el canal central", () => {
+  const mem = storeConDisco();
+  /* ajustes propios, distintos de los de la demo, para comprobar que sobreviven */
+  store.setPrefijo("+54");
+  store.setTema("light");
+  store.crearPedido({ cliente: "Prueba", items: [{ productoId: "di1", qty: 1 }] }, U);
+  assert.equal(store.pedidos().length, 6);
+
+  const r = store.restaurarDemo();
+  assert.ok(r.ok);
+  assert.equal(r.persistencia.ok, true);
+  assert.equal(store.pedidos().length, 5, "vuelve a los 5 pedidos demo");
+  assert.equal(store.db().demo, true, "queda marcado como demo");
+  assert.equal(store.db().prefijo, "+54", "prefijo conservado");
+  assert.equal(store.db().theme, "light", "tema conservado");
+  assert.equal(store.db().usuarioId, "u1", "cuenta conservada");
+  assert.deepEqual(store.db().users, [{ id: "u1", nombre: "Dueña" }], "usuarios conservados");
+  assert.equal(store.log().length, datosDemo().log.length, "restaurar trae el log demo, sin entrada propia");
+  assert.deepEqual(mem.escrituras.at(-1).users, [{ id: "u1", nombre: "Dueña" }], "persiste la cuenta conservada");
+  assert.equal(mem.escrituras.at(-1).prefijo, "+54", "persiste el prefijo conservado");
+  assert.equal(mem.escrituras.at(-1).theme, "light", "persiste el tema conservado");
+  assert.ok(mem.avisos.some((a) => a.ok === true && a.degradado === false), "aviso de escritura correcta");
+  mem.soltarDisco();
+});
+
 test("cliente conocido se detecta por nombre al crear pedido", () => {
   storeTest();
   store.boot(datosDemo());
