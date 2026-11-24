@@ -77,6 +77,31 @@ function click(sel) {
   return el;
 }
 
+/* Editar un artículo del detalle: doble toque sobre su tarjeta → visor →
+   «Editar este artículo». Es el único camino que queda tras quitar los botones
+   de abajo de las tarjetas. */
+function editarArticuloPorDobleToque(indice = null) {
+  const cartas = qsa("#dstack .dcard");
+  const i = indice == null ? cartas.findIndex((c) => c.classList.contains("dcard-frente")) : indice;
+  const carta = cartas[i];
+  assert.ok(carta, "falta la tarjeta " + i);
+  click(carta);                       // primer toque: traer al frente
+  click(carta);                       // segundo toque: abrir el visor
+  assert.ok(qs(".lightbox"), "el doble toque abre el visor");
+  click(".lb-acciones .btn");
+  assert.equal(qs(".lightbox"), null, "el visor se cierra al elegir editar");
+  assert.match(qs("#hoja-in h2").textContent, /Editar este artículo/);
+}
+
+/* Abre el editor de un pedido ya abierto en el detalle y entra al formulario
+   «Nuevo producto» (antes «Escribir a mano»). */
+function abrirFormNuevoProducto() {
+  click("#hEdit");
+  qsa("#mode-seg button").find((b) => b.dataset.m === "man").click();
+  click("#addp");
+  assert.equal(qs("#np-form").classList.contains("oculto"), false, "el formulario se abre");
+}
+
 function irA(seccion) {
   click(`#nav button[data-v="${seccion}"]`);
   assert.equal(qs("#subtitle").textContent, {
@@ -144,10 +169,12 @@ test("detalle: abanico cuadrado, etiquetas por cantidad y frente accesible", asy
   assert.equal(qsa("#dstack .dcard").length, 2, "Paco mantiene sus dos artículos");
   assert.equal(qsa("#dstack .dcard")[1].getAttribute("aria-pressed"), "true");
   assert.equal(qsa("#dstack .dcard")[0].getAttribute("aria-label"), "Seleccionar Camisa blanca, $950");
-  assert.equal(qs("#dItemEditarBtn").dataset.indice, "1");
+  assert.ok(qsa("#dstack .dcard")[1].classList.contains("dcard-frente"), "la carta central está al frente");
+  assert.equal(qs("#dItemEditarBtn"), null, "no hay botón de editar bajo las tarjetas");
+  assert.equal(qs("#dItemNuevoBtn"), null, "no hay botón de nuevo producto bajo las tarjetas");
   click("#dstack .dcard");
   assert.equal(qsa('#dstack .dcard[aria-pressed="true"]').length, 1);
-  assert.equal(qs("#dItemEditarBtn").dataset.indice, "0");
+  assert.ok(qsa("#dstack .dcard")[0].classList.contains("dcard-frente"));
   click("#hClose");
   await esperar(220);
 
@@ -161,12 +188,10 @@ test("detalle: abanico cuadrado, etiquetas por cantidad y frente accesible", asy
   assert.equal(cartas3[1].getAttribute("aria-pressed"), "true");
   assert.ok(cartas3[1].classList.contains("dcard-frente"));
   assert.equal(qsa('#dstack .dcard[aria-pressed="false"]').length, 2);
-  assert.equal(qs("#dItemEditarBtn").dataset.indice, "1");
   click("#dstack .dcard");
   click("#dstack .dcard");
   await esperar(400);
   assert.ok(cartas3[0].classList.contains("dcard-frente"));
-  assert.equal(qs("#dItemEditarBtn").dataset.indice, "0");
   click("#hClose");
   await esperar(220);
 
@@ -198,9 +223,7 @@ test("hoja: el modal atrapa Tab e inert el fondo sin romper confirmaciones anida
   assert.ok(hi.contains(d.activeElement), "Tab desde el último vuelve al primero");
 
   /* Cambiar de hoja hija no vuelve a capturar el foco ni a habilitar el fondo. */
-  const abrirArticulo = qs("#dItemEditarBtn");
-  abrirArticulo.focus();
-  click("#dItemEditarBtn");
+  editarArticuloPorDobleToque(0);
   assert.ok(hi.contains(d.activeElement), "la edición hija también queda dentro de la hoja");
   assert.ok(fondo.every(el => el.inert));
   click("#it-cancelar");
@@ -757,7 +780,9 @@ test("detalle: el primer toque selecciona y solo el segundo con foto abre el vis
   click(sinFoto);
   click(sinFoto);
   assert.equal(sinFoto.getAttribute("aria-pressed"), "true");
-  assert.equal(qs(".lightbox"), null, "sin foto no hay lightbox");
+  assert.ok(qs(".lightbox"), "sin foto abre el visor con el avatar, para poder editar igual");
+  assert.match(qs(".lightbox img").getAttribute("src"), /^data:image\/svg\+xml,/, "el avatar es un SVG generado");
+  click(".lbx");
   click(conFoto);
   assert.equal(sinFoto.getAttribute("aria-pressed"), "false");
   assert.equal(conFoto.getAttribute("aria-pressed"), "true");
@@ -785,15 +810,15 @@ test("detalle: «Editar este artículo» guarda el cambio en el pedido y vuelve 
   irA("pedidos");
   click('#main .card[data-pedido="editar"]');
   const cartas = qsa("#dstack .dcard");
-  /* la barra de acciones edita la selección inicial: la carta central */
-  assert.equal(qs("#dItemEditarBtn").dataset.indice, "1");
+  /* sin botones bajo las tarjetas: el doble toque abre el visor y desde ahí se edita */
+  assert.equal(qs("#dItemEditarBtn"), null, "sin botón de editar bajo las tarjetas");
   click(cartas[0]);
-  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Vestido floral/, "el lápiz sigue al artículo al frente");
 
   /* segundo toque → visor con la acción → abre la hoja del artículo */
   click(cartas[1]);
   click(cartas[1]);
-  assert.equal(qs(".lightbox"), null, "el artículo sin foto no tiene visor");
+  assert.ok(qs(".lightbox"), "el artículo sin foto también abre el visor (avatar) para poder editarlo");
+  click(".lbx");
   click(cartas[0]);
   click(cartas[0]);
   assert.ok(qs(".lightbox"), "segundo toque sobre la tarjeta con foto abre el visor");
@@ -851,7 +876,7 @@ test("detalle: cerrar la hoja del artículo sin guardar avisa y no toca el pedid
   store.boot({ ...store.db(), orders: [{ id: "cancelar", cliente: "Prueba cancelar", estado: "new", items }] });
   irA("pedidos");
   click('#main .card[data-pedido="cancelar"]');
-  click("#dItemEditarBtn");
+  editarArticuloPorDobleToque(0);
   assert.equal(qs("#it-name").value, "Camisa blanca");
   qs("#it-price").value = "1100";
   click("#it-cancelar");
@@ -1236,7 +1261,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r47"/, "el caché sube a r47 para refrescar el editor con snapshot");
+  assert.match(sw, /const VERSION = "r47"/, "el caché sube a r47 para refrescar editor con snapshot, tarjetas redondeadas y botones del pedido");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -1249,7 +1274,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
   assert.match(cssMain, /capas\.css\?v=6/, "el aviso de guardado, el visor y el gesto de cierre entran con versión propia");
-  assert.match(cssMain, /componentes\.css\?v=9/, "los estilos de usabilidad y fotos de contacto entran con versión propia");
+  assert.match(cssMain, /componentes\.css\?v=10/, "los estilos de usabilidad y fotos de contacto entran con versión propia");
   assert.match(cssMain, /secciones\.css\?v=4/, "los estilos de secciones entran con versión propia");
   assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
   assert.match(cssMain, /picker\.css\?v=1/, "los estilos del selector del pedido por sección entran con versión propia");
@@ -2149,9 +2174,8 @@ test("detalle: «Editar este artículo» guarda nombre y precio con decimales y 
   await reiniciar();
   await abrirDetallePaco();
   const antes = store.pedidoPorId("d2");
-  click(qsa("#dstack .dcard")[0]);
-  click("#dItemEditarBtn");
-  assert.equal(qs("#hoja").classList.contains("abierta"), true, "la barra de acciones abre la hoja");
+  editarArticuloPorDobleToque(0);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "el doble toque abre la hoja de edición");
   qs("#it-price").value = "1250.50";
   qs("#it-price").dispatchEvent(new w.Event("input"));
   click("#it-save");
@@ -2172,7 +2196,7 @@ test("detalle: precio en $0 no guarda, marca el campo y deja la hoja abierta", a
   await reiniciar();
   await abrirDetallePaco();
   const antes = store.pedidoPorId("d2").items[0].precio;
-  click("#dItemEditarBtn");
+  editarArticuloPorDobleToque(0);
   qs("#it-price").value = "0";
   click("#it-save");
   await esperar();
@@ -2191,7 +2215,7 @@ test("detalle: cerrar la edición con cambios avisa y cancelar no los pierde", a
   await reiniciar();
   await abrirDetallePaco();
   const antes = store.pedidoPorId("d2").items[0].precio;
-  click("#dItemEditarBtn");
+  editarArticuloPorDobleToque(0);
   qs("#it-price").value = "999";
   click("#it-cancelar");
   await esperar();
@@ -2268,40 +2292,53 @@ test("hoja: la cabecera también cierra al arrastrar, pero sus botones siguen fu
   assert.deepEqual(errores, []);
 });
 
-test("detalle: la barra de acciones nombra el artículo al frente y edita ese", async () => {
+test("detalle: sin botones bajo las tarjetas, el doble toque edita el artículo al frente", async () => {
   await reiniciar();
   await abrirDetallePaco();
-  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Corbata/, "la selección inicial es la carta central");
-  click(qsa("#dstack .dcard")[1]);
-  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Corbata/, "el lápiz sigue a la tarjeta al frente");
-  assert.equal(qs("#dItemEditarBtn").dataset.indice, "1", "edita el de la tarjeta al frente");
-  click("#dItemEditarBtn");
+  assert.equal(qs("#dItemEditarBtn"), null, "no hay «Editar» bajo las tarjetas");
+  assert.equal(qs("#dItemNuevoBtn"), null, "no hay «Nuevo producto» bajo las tarjetas");
+  assert.ok(qs(".dcards-pie .ayuda-q"), "la ayuda «?» se conserva");
+  /* la selección inicial es la carta central (Corbata) y el doble toque la edita */
+  assert.ok(qsa("#dstack .dcard")[1].classList.contains("dcard-frente"));
+  editarArticuloPorDobleToque(1);
   assert.equal(qs("#it-name").value, "Corbata");
   assert.deepEqual(errores, []);
 });
 
-test("detalle: «Nuevo producto» sin foto agrega artículo al pedido y avatar por categoría", async () => {
+test("editor: «Nuevo producto» sin foto guarda en inventario y vincula al pedido con total exacto", async () => {
   await reiniciar();
   await abrirDetallePaco();
   const antes = store.db().orders.find((p) => p.id === "d2").items.length;
   const inventarioAntes = store.db().inventory.length;
-  assert.ok(qs("#dItemNuevoBtn"), "el botón vive en la barra de acciones");
-  click("#dItemNuevoBtn");
-  assert.equal(qs("#hoja-in h2").textContent, "Nuevo producto");
-  assert.match(qs("#hoja-in .hint").textContent, /Paco/);
+  abrirFormNuevoProducto();
+  assert.match(qs("#mode-man .np-intro").textContent, /inventario/, "explica que se guarda en inventario y pedido");
 
-  /* nombre vacío no guarda: error inline y la hoja sigue */
-  click("#np-save");
+  /* nombre vacío no guarda: error inline y el formulario sigue abierto */
+  click("#np-agregar");
   await esperar();
   assert.equal(store.db().inventory.length, inventarioAntes, "no se creó producto sin nombre");
-  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en la hoja con el error");
 
   /* alta real, sin foto: precio con decimales (regla V2) */
   qs("#np-name").value = "Bufanda lila";
   qs("#np-price").value = "730.25";
   click('#np-cat button[data-k="otro"]');
-  click("#np-save");
+  click("#np-agregar");
+  await esperar();
+  /* pide confirmación clara de que se guarda en inventario + pedido */
+  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "pide confirmación");
+  assert.match(qs("#cv-p").textContent, /inventario/, "la confirmación menciona el inventario");
+  click("#cv-yes");
+  await esperar();
+  assert.equal(qs("#np-form").classList.contains("oculto"), true, "el formulario se cierra solo");
+  assert.match(qs("#plist").textContent, /Bufanda lila/, "el producto queda en la lista del editor");
+
+  /* todavía no se escribe nada hasta «Guardar cambios» */
+  assert.equal(store.db().inventory.length, inventarioAntes, "nada se guarda antes de Guardar");
+  click("#saveBtn");
   await esperar(240);
+  /* el editor cierra la hoja al guardar: se reabre el detalle para ver la tarjeta */
+  click('#main .card[data-pedido="d2"]');
+  await esperar();
 
   const inventario = store.db().inventory;
   assert.equal(inventario.length, inventarioAntes + 1, "el producto entra al inventario");
@@ -2319,27 +2356,19 @@ test("detalle: «Nuevo producto» sin foto agrega artículo al pedido y avatar p
   assert.equal(item.productoId, creado.id, "el artículo apunta al producto nuevo");
   assert.equal(item.foto ?? null, null, "el artículo nace sin foto");
 
-  /* se vuelve al detalle: la tarjeta nueva muestra el avatar por categoría
-     (el mismo fallback SVG que el resto de los artículos sin foto) y el total sube */
+  /* se vuelve al detalle: la tarjeta nueva muestra el avatar por categoría */
   assert.equal(qs("#hoja").classList.contains("abierta"), true, "el pedido vuelve a estar al frente");
-  const detalle = qs("#hoja-in");
   const carta = qsa("#dstack .dcard").find((c) => c.textContent.includes("Bufanda lila"));
   assert.ok(carta, "la tarjeta del producto nuevo está en el detalle");
   assert.ok(carta.querySelector(".dthumb svg"), "sin foto muestra el avatar SVG por categoría");
   assert.match(carta.querySelector(".dprecio").textContent, /\$730/, "el subtotal del artículo nuevo");
-
-  /* cerrar el detalle no pregunta nada: lo guardado está guardado */
-  click("#hClose");
-  await esperar(220);
-  assert.equal(qs("#hoja").classList.contains("abierta"), false);
-  assert.equal(store.db().inventory.length, inventarioAntes + 1);
   assert.deepEqual(errores, []);
 });
 
-test("detalle: «Nuevo producto» con foto guarda la foto en producto y artículo", async () => {
+test("editor: «Nuevo producto» con foto guarda la foto en producto y artículo", async () => {
   await reiniciar();
   await abrirDetallePaco();
-  click("#dItemNuevoBtn");
+  abrirFormNuevoProducto();
   const foto = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E";
   qs("#np-name").value = "Sombrero de paja";
   qs("#np-price").value = "1500";
@@ -2348,9 +2377,14 @@ test("detalle: «Nuevo producto» con foto guarda la foto en producto y artícul
   window.__testFoto = foto;
   qs("#np-prev").innerHTML = `<img class="inv-previa" src="${foto}" alt="Foto del producto">`;
   qs("#np-photo-del").classList.remove("oculto");
-  qs("#np-name").dispatchEvent(new w.Event("input"));
-  click("#np-save");
+  click("#np-agregar");
+  await esperar();
+  click("#cv-yes");
+  await esperar();
+  click("#saveBtn");
   await esperar(240);
+  click('#main .card[data-pedido="d2"]');
+  await esperar();
 
   const creado = store.db().inventory[store.db().inventory.length - 1];
   const item = store.db().orders.find((p) => p.id === "d2").items.at(-1);
@@ -2362,25 +2396,24 @@ test("detalle: «Nuevo producto» con foto guarda la foto en producto y artícul
   assert.deepEqual(errores, []);
 });
 
-test("detalle: cerrar la hoja de «Nuevo producto» sin guardar avisa y no crea nada", async () => {
+test("editor: el formulario de «Nuevo producto» se abre y se cierra sin guardar nada", async () => {
   await reiniciar();
   await abrirDetallePaco();
   const inventarioAntes = store.db().inventory.length;
-  click("#dItemNuevoBtn");
+  abrirFormNuevoProducto();
   qs("#np-name").value = "Producto a medias";
   qs("#np-price").value = "900";
-  click("#np-cancelar");
-  await esperar();
-  assert.equal(qs("#confirmar").classList.contains("abierta"), true, "avisa antes de perder lo escrito");
-  click("#cv-no");
+  click("#np-cerrar");
   await esperar(220);
-  assert.equal(qs("#hoja").classList.contains("abierta"), true, "sigue en la hoja");
-  assert.equal(qs("#np-name").value, "Producto a medias", "no se perdió lo escrito");
-  click("#np-cancelar");
+  assert.equal(qs("#np-form").classList.contains("oculto"), true, "el formulario se cierra");
+  assert.equal(qs("#confirmar").classList.contains("abierta"), false, "cerrar el formulario no interrumpe");
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "segue en el editor");
+  assert.equal(qs("#plist").textContent.trim(), "", "nada agregado al pedido");
+  click("#cancelar");
   await esperar();
-  click("#cv-yes");
+  /* Salir del editor con cambios sin guardar avisa (el nombre escrito se descarta) */
+  if (qs("#confirmar").classList.contains("abierta")) click("#cv-yes");
   await esperar(220);
-  assert.equal(qs("#hoja").classList.contains("abierta"), false);
   assert.equal(store.db().inventory.length, inventarioAntes, "ningún producto creado");
   assert.deepEqual(errores, []);
 });

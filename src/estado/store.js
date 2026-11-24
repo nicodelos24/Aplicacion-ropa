@@ -11,7 +11,7 @@ import {
 import { CATEGORIAS_IDS, CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import {
   itemDesdeProducto, itemAMano, pedidoNuevo, pedidoDesdeDatos, productoNuevo, clienteNuevo,
-  eventoNuevo, entradaLog, LOG_MAX, normalizarItem,
+  eventoNuevo, entradaLog, LOG_MAX,
 } from "../nucleo/entidades.js";
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, ordenarPedidos } from "../nucleo/filtros.js";
 import { cargar as cargarLocal, guardar as guardarLocal, disponible, SIN_DATOS } from "../datos/local.js";
@@ -125,25 +125,51 @@ function set(mutador, { log: accion, detail, usuario } = {}) {
 }
 
 /* ── Acciones de pedidos ── */
-/* Alta atómica: los productos nuevos y el pedido entran en UN solo `set`.
-   Nada se escribe en `estado` antes de saber que el pedido tiene ítems: si el
-   alta falla, el inventario no queda con productos huérfanos. */
-export function crearPedido(datos, usuario) {
-  const items = datos.items || [];
-  const nuevas = [];                                  // productos a mano que faltan del inventario
-  const pedido = pedidoNuevo({ ...datos, estado: datos.estado || "new" });
-  pedido.items = items.map((i) => {
-    if (i.productoId) return itemDesdeProducto(productoPorId(i.productoId) || { id: i.productoId, name: i.nombre, price: i.precio, photo: i.foto, cat: i.categoria }, i.qty);
-    // a mano: nombre → entra solo al inventario si no existe
+/* Resuelve los ítems de un pedido a inventario: los del inventario conservan su
+   vínculo y los «Nuevo producto» (sin productoId) que no existen aún se crean
+   como productos con precio con decimales. Devuelve `{ items, nuevas }` para que
+   el alta sea atómica: inventario y pedido se escriben en el MISMO `set`.
+   Se usa tanto al crear como al editar, para que un producto nuevo escrito en
+   el editor siempre quede vinculado al pedido y guardado en el inventario. */
+function resolverItemsAInventario(items) {
+  const nuevas = [];
+  const resueltos = items.map((i) => {
+    if (i.productoId) {
+      // Ítem del inventario: si trae snapshot propio (nombre/precio acordados,
+      // p. ej. tras «Editar este artículo») se conserva; si sólo trae el id se
+      // rellena desde el producto, como hacía el alta original.
+      const prod = productoPorId(i.productoId);
+      const base = prod ? itemDesdeProducto(prod, i.qty) : { nombre: "", precio: 0, foto: null, categoria: CATEGORIA_DEFECTO };
+      return {
+        ...base,
+        nombre: i.nombre !== undefined ? String(i.nombre) : base.nombre,
+        precio: i.precio !== undefined ? Number(i.precio) || 0 : base.precio,
+        foto: i.foto !== undefined ? i.foto : base.foto,
+        categoria: i.categoria || base.categoria,
+        qty: Math.max(1, Math.floor(Number(i.qty) || 1)),
+      };
+    }
+    // producto nuevo a mano: se crea en inventario si no existe un nombre igual
     const nm = String(i.nombre || "").trim();
     const existente = clienteProductoPorNombre(nm) || nuevas.find((p) => p.name.trim().toLowerCase() === nm.toLowerCase());
     if (!existente) {
-      const producto = productoNuevo({ name: nm, price: i.precio, photo: i.foto });
+      const producto = productoNuevo({ name: nm, price: i.precio, photo: i.foto, cat: i.categoria });
       nuevas.push(producto);
       return itemDesdeProducto(producto, i.qty);
     }
     return { ...itemDesdeProducto(existente, i.qty), foto: i.foto || existente.photo || null };
   });
+  return { items: resueltos, nuevas };
+}
+
+/* Alta atómica: los productos nuevos y el pedido entran en UN solo `set`.
+   Nada se escribe en `estado` antes de saber que el pedido tiene ítems: si el
+   alta falla, el inventario no queda con productos huérfanos. */
+export function crearPedido(datos, usuario) {
+  const items = datos.items || [];
+  const pedido = pedidoNuevo({ ...datos, estado: datos.estado || "new" });
+  const { items: resueltos, nuevas } = resolverItemsAInventario(items);
+  pedido.items = resueltos;
   if (!pedido.items.length) return { ok: false, error: "Agrega al menos un producto" };
   vincularCliente(pedido);
   const { estado: fin, cuotasPagadas } = aplicarDatosPedido(null, pedido);
@@ -169,8 +195,12 @@ export function editarPedido(id, datos, usuario) {
   // Red de seguridad: si el llamador no mandó ítems, se conservan los originales;
   // si los mandó, se normaliza cada uno para no perder su cantidad (qty >= 1).
   const items = Array.isArray(datos.items) && datos.items.length ? datos.items : original.items;
+  /* Los productos nuevos escritos en el editor también entran al inventario,
+     con el mismo camino atómico que al crear: el pedido queda vinculado y no
+     hay productos huérfanos si falla la escritura. */
+  const { items: resueltos, nuevas } = resolverItemsAInventario(items);
   const actualizado = {
-    ...original, ...datos, items: items.map((i) => normalizarItem(i, estado.inventory)),
+    ...original, ...datos, items: resueltos,
     id: original.id, created: original.created,
   };
   // El vínculo con la clienta se resuelve por el nombre final (fix clienteId).
@@ -180,10 +210,13 @@ export function editarPedido(id, datos, usuario) {
   const { estado: fin, cuotasPagadas } = aplicarDatosPedido(original, actualizado);
   actualizado.estado = fin;
   actualizado.cuotasPagadas = cuotasPagadas;
-  const r = set((d) => { d.orders = d.orders.map((p) => (p.id === id ? actualizado : p)); }, {
+  const r = set((d) => {
+    if (nuevas.length) d.inventory = [...d.inventory, ...nuevas];
+    d.orders = d.orders.map((p) => (p.id === id ? actualizado : p));
+  }, {
     log: "order_edit", detail: `${actualizado.cliente} · ${fmt(total(actualizado))}`, usuario,
   });
-  return { ok: r.ok, error: r.ok ? undefined : "No se pudo guardar en el dispositivo", pedido: actualizado, persistencia: r };
+  return { ok: r.ok, error: r.ok ? undefined : "No se pudo guardar en el dispositivo", pedido: actualizado, nuevosProductos: nuevas.length, persistencia: r };
 }
 
 /* Editar UN artículo del pedido (doble toque → «Editar este artículo»).

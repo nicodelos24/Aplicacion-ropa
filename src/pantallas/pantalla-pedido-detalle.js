@@ -1,6 +1,6 @@
 // pantalla-pedido-detalle.js — detalle: stack seleccionable + lightbox, cambio de estado con confirmación,
-// artículo al frente: el segundo toque amplía su foto y desde ahí (o desde la barra de acciones)
-// se abre «Editar este artículo», que guarda el cambio en el pedido,
+// artículo al frente: el segundo toque amplía su foto y desde el visor se abre
+// «Editar este artículo» (único lugar para editar un artículo), que guarda el cambio en el pedido,
 // cuotas con +/− que solo se guardan al confirmar («Guardar cuotas»), WhatsApp directo; momento
 // premiante al completar cuotas. Cerrar con cambios de cuota sin guardar avisa antes de perderlos.
 import { esc, qs, qsa } from "../ui/dom.js";
@@ -18,7 +18,6 @@ import { stackHTML } from "../ui/componentes/stack.js";
 import { abrirWhatsApp } from "../servicios/whatsapp.js";
 import { abrirEditorPedido } from "./pantalla-pedido-editor.js";
 import { abrirEditorArticulo } from "./pantalla-pedido-item-editor.js";
-import { abrirNuevoProductoEnPedido } from "./pantalla-pedido-nuevo-producto.js";
 import { plantilla } from "../ui/plantilla.js";
 import { ayudaHTML, cablearAyudas } from "../ui/componentes/ayuda.js";
 
@@ -27,6 +26,16 @@ function fraccion(pagadas, cuotas, pasos = 24) {
   const p = Math.max(0, Math.min(1, pagadas / cuotas));
   const n = Math.round(p * pasos);
   return n === 0 ? "" : `${n}/24`;
+}
+
+/* Visor sin foto: un SVG autocontenido con el avatar de la categoría, para que
+   el doble toque SIEMPRE abra el visor y desde ahí se pueda editar el artículo
+   (incluso los productos que no tienen foto). */
+function avatarDataURL(item) {
+  const letra = ((nombreItem(item) || "?").trim().charAt(0).toUpperCase() || "?")
+    .replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" }[c]));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><rect width="240" height="240" fill="#eef0f4"/><text x="120" y="120" font-family="sans-serif" font-size="120" font-weight="700" fill="#64748b" text-anchor="middle" dominant-baseline="central">${letra}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 export function abrirDetallePedido(id) {
@@ -69,7 +78,7 @@ export function abrirDetallePedido(id) {
       cuotas,
     }) : "",
     wa: o.tel ? `<button class="btn btn-wa" id="waBtn">${ICONO.wa} Escribir por WhatsApp</button>` : "",
-    icPencil: ICONO.pencil, icTrash: ICONO.trash, icX: ICONO.x, icPlus: ICONO.plus,
+    icPencil: ICONO.pencil, icTrash: ICONO.trash, icX: ICONO.x,
   }));
 
   cablearAyudas(qs("#hoja-in") || document);
@@ -77,7 +86,6 @@ export function abrirDetallePedido(id) {
   const cartas = qsa(".dcard", dstack);
   const huecos = cartas.length - 1;
   let activa = cartas.length ? Math.floor(cartas.length / 2) : -1;
-  const indiceAlFrente = () => activa;
   const actualizarFrente = () => {
     cartas.forEach((carta, i) => {
       carta.style.setProperty("--nivel", carta === cartas[activa] ? cartas.length + 1 : cartas.length - Math.abs(i - activa));
@@ -85,22 +93,11 @@ export function abrirDetallePedido(id) {
     });
   };
   actualizarFrente();
-  /* barra de acciones del artículo al frente: edita el que está al frente (con
-     uno solo, ese; sin elegir, el primero que muestra el abanico) */
-  const btnItem = qs("#dItemEditarBtn");
-  const pintarAccionItem = () => {
-    if (!btnItem) return;
-    const i = indiceAlFrente();
-    btnItem.classList.toggle("oculto", i < 0);
-    btnItem.dataset.indice = String(i);
-    const nombre = i >= 0 ? (nombreItem(items[i]) || "este artículo") : "";
-    btnItem.setAttribute("aria-label", `Editar ${nombre}`);
-  };
   /* foto ampliada: el visor conocido, con la acción que abre la edición del
-     artículo, así no hay que volver a la tarjeta para editarlo */
+     artículo. Es el ÚNICO lugar para editar un artículo (a doble toque). */
   const ampliar = (i) => {
-    const foto = items[i] && (items[i].foto ?? items[i].photo);
-    if (!foto) return;                        /* sin foto no hay nada que ampliar */
+    if (!items[i]) return;
+    const foto = items[i].foto ?? items[i].photo ?? avatarDataURL(items[i]);
     abrirLightbox(foto, {
       acciones: [{
         label: "Editar este artículo", icono: ICONO.pencil,
@@ -121,19 +118,8 @@ export function abrirDetallePedido(id) {
       activa = i;
       c.setAttribute("aria-pressed", "true");
       actualizarFrente();
-      pintarAccionItem();
     };
   });
-
-  if (btnItem) btnItem.onclick = () => {
-    const i = indiceAlFrente();
-    if (i >= 0) abrirEditorArticulo(id, i);
-  };
-  pintarAccionItem();
-
-  /* alta de producto nuevo desde el pedido: el botón vive en la misma barra */
-  const btnNuevo = qs("#dItemNuevoBtn");
-  if (btnNuevo) btnNuevo.onclick = () => abrirNuevoProductoEnPedido(id);
 
   qs("#hClose").onclick = intentarCerrarHoja;
   qs("#dCerrar").onclick = intentarCerrarHoja;
@@ -233,9 +219,7 @@ const HOJA = `
     </div>
     <div class="dcards" id="dstack">{{dcards}}</div>
     <div class="dcards-pie">
-      <button type="button" class="dcard-editar" id="dItemEditarBtn" aria-label="Editar este artículo">{{icPencil}}<span class="ditem-lbl">Editar</span></button>
-      <button type="button" class="dcard-editar" id="dItemNuevoBtn" aria-label="Nuevo producto">{{icPlus}}<span class="ditem-lbl">Nuevo producto</span></button>
-      ${ayudaHTML("Tocá una tarjeta para traerla al frente; tocá dos veces para ampliar su foto. El lápiz edita el artículo que está al frente.", "Cómo usar las tarjetas")}
+      ${ayudaHTML("Tocá una tarjeta para traerla al frente; tocá dos veces para ampliar el artículo y desde el visor podés editarlo.", "Cómo usar las tarjetas")}
     </div>
     <div class="totalbar"><span>Total</span><b class="monto">{{total}}</b></div>
     {{cuotasHtml}}

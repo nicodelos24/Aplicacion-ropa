@@ -1,5 +1,5 @@
-// pantalla-pedido-editor.js — editor de pedido: cliente conocido, WhatsApp, productos del inventario o a mano,
-// cuotas 2–12 solo en "En cuotas", fecha de entrega, notas; productos a mano entran solos al inventario.
+// pantalla-pedido-editor.js — editor de pedido: cliente conocido, WhatsApp, productos del inventario o nuevos,
+// cuotas 2–12 solo en "En cuotas", fecha de entrega, notas; los productos nuevos entran al inventario y al pedido.
 // Nada se guarda sin «Guardar»: cerrar con ediciones pendientes avisa antes de perderlas.
 // Fixes QA F0F1: precio 0 bloqueado (>0, P2) y cuotas fuera de rango con error inline, sin clamp silencioso (P3).
 // Selector de productos (decisión Y, 23-nov): filas compactas dentro de cada sección, con badge
@@ -10,7 +10,7 @@ import { fmt, parseMoneda, esPrecioValido } from "../nucleo/moneda.js";
 import { esFotoDemo } from "../datos/fotos-demo.js";
 import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, qtyDe, subtotalItem, totalItems } from "../nucleo/pedidos.js";
 import { maskTel } from "../nucleo/contacto.js";
-import { CATEGORIAS } from "../nucleo/catalogo.js";
+import { CATEGORIA_DEFECTO } from "../nucleo/catalogo.js";
 import { gruposParaElegir, hayResultados, contarElegidos } from "../nucleo/pedido-picker.js";
 import { usosPorProducto } from "../nucleo/orden.js";
 import {
@@ -21,6 +21,9 @@ import { toast } from "../ui/componentes/toast.js";
 import { mostrarError } from "../ui/componentes/campo.js";
 import { confirmar } from "../ui/componentes/confirmar.js";
 import { fotoPickerHTML, conectarFotoPicker } from "../ui/componentes/foto-picker.js";
+import {
+  camposArticuloHTML, conectarCamposArticulo, previaArticuloHTML, ICONOS_FOTO,
+} from "../ui/componentes/campos-articulo.js";
 import { abrirDetallePedido } from "./pantalla-pedido-detalle.js";
 
 export function abrirEditorPedido(orig, presetCliente, presetDate) {
@@ -63,7 +66,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     <span class="campo-label campo-label-solo">Productos</span>
     <div class="seg seg-modo" id="mode-seg" role="group" aria-label="Modo de productos">
       <button data-m="inv" class="on">Del inventario</button>
-      <button data-m="man">Escribir a mano</button>
+      <button data-m="man">Nuevo producto</button>
     </div>
     <div id="mode-inv">
       <div class="picker-buscar">
@@ -73,9 +76,24 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       <div id="pick-grupos"></div>
     </div>
     <div id="mode-man" class="oculto">
-      ${fotoPickerHTML({ camara: "man-photo", galeria: null })}
+      <p class="hint np-intro">Los productos nuevos se guardan en el inventario y quedan agregados a este pedido.</p>
       <div id="plist"></div>
-      <button class="addp" id="addp">Agregar producto</button>
+      <button class="addp" id="addp">${ICONO.plus} Nuevo producto</button>
+      <div class="np-form oculto" id="np-form">
+        <div class="np-form-cab">
+          <b>Datos del producto</b>
+          <button type="button" class="btn-mini" id="np-cerrar" aria-label="Cerrar formulario de producto">${ICONO.x}</button>
+        </div>
+        <div id="np-prev"></div>
+        ${fotoPickerHTML({ camara: "np-cam", galeria: "np-photo" })}
+        <div class="foto-acciones">
+          <button class="btn btn-ghost" id="np-camBtn">${ICONOS_FOTO.camara} Tomar foto</button>
+          <button class="btn btn-ghost" id="np-photoBtn">${ICONOS_FOTO.imagen} Galería</button>
+          <button class="btn btn-ghost oculto" id="np-photo-del">${ICONOS_FOTO.basura} Quitar</button>
+        </div>
+        ${camposArticuloHTML({ prefijo: "np", nombre: "", precio: "", cat: CATEGORIA_DEFECTO })}
+        <button class="btn btn-primario" id="np-agregar">Agregar al pedido</button>
+      </div>
     </div>
     <div class="totalbar"><span id="ftotal-lbl">Total</span><b id="ftotal" class="monto">${fmt(totalInicial)}</b></div>
     ${base.estado === "paid"
@@ -96,7 +114,9 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
 
   let estado = base.estado;
   const picked = new Set(selInicial);
-  let manuales = [{ nombre: "", precio: "", qty: 1, foto: null }];
+  /* productos nuevos del pedido: se agregan desde el formulario «Nuevo producto»
+     (con confirmación) y se guardan en inventario + pedido al tocar «Guardar». */
+  let manuales = [];
   /* buscador y secciones plegadas del selector: solo estado de pantalla */
   let buscar = "";
   const plegadas = new Set();
@@ -114,8 +134,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     cuotas: estado === "due" ? (qs("#f-cuotas")?.value || "") : "",
     items: [...picked].sort().map((iid) => [iid, cantidades.get(iid) || 1]),
     manuales: manuales
-      .map((i) => [i.nombre.trim(), i.precio, i.foto || ""])
-      .filter((x) => x[0] || x[1] || x[2]),
+      .map((i) => [i.nombre.trim(), i.precio, i.cat || CATEGORIA_DEFECTO, i.foto || ""]),
   });
   const fotoInicial = JSON.stringify({
     cliente: base.cliente || "",
@@ -265,32 +284,69 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     drawInv();
   };
 
+  /* Productos nuevos ya agregados: lista de solo lectura con su foto (o avatar
+     por categoría), nombre, precio y un botón para quitarlos del pedido. */
   const drawMan = () => {
-    qs("#plist").innerHTML = manuales.map((it, i) => `
-      <div class="prow">
-        <input class="pn" data-i="${i}" value="${esc(it.nombre)}" placeholder="Producto" aria-label="Nombre del producto ${i + 1}">
-        <input class="pp precio" data-i="${i}" value="${it.precio}" inputmode="numeric" placeholder="$" aria-label="Precio del producto ${i + 1}">
-        <button class="foto mpic ${it.foto ? "tiene" : ""}" data-i="${i}" title="Foto" aria-label="Agregar foto al producto">${ICONO.camera}</button>
-        <button class="quitar" data-i="${i}" aria-label="Quitar producto ${i + 1}">×</button>
-      </div>`).join("") + (manuales.some(i => i.foto) ? `<div class="mini-previa">${manuales.filter(i => i.foto).map((i, k) => `<img src="${esc(i.foto)}" alt="">`).join("")}<span>Foto${manuales.filter(i => i.foto).length > 1 ? "s" : ""} listas: se guardan al confirmar</span></div>` : "");
-    qsa(".pn").forEach(el => el.oninput = () => { manuales[el.dataset.i].nombre = el.value; });
-    qsa(".pp").forEach(el => el.oninput = () => { manuales[el.dataset.i].precio = el.value; calc(); });
-    qsa(".prow .quitar").forEach(el => el.onclick = () => { manuales.splice(el.dataset.i, 1); if (!manuales.length) manuales = [{ nombre: "", precio: "", qty: 1, foto: null }]; drawMan(); calc(); });
-    qsa(".mpic").forEach(el => el.onclick = () => { manPhotoIdx = Number(el.dataset.i); picker.elegir(); });
+    const lista = qs("#plist");
+    lista.innerHTML = manuales.length
+      ? `<div class="np-lista">${manuales.map((it, i) => `
+          <div class="np-item">
+            <span class="pk-mini">${it.foto ? `<img src="${esc(it.foto)}" alt="">` : svgCategoria(it.categoria || CATEGORIA_DEFECTO)}</span>
+            <span class="pk-txt"><b>${esc(it.nombre)}</b><small>${fmt(parseMoneda(it.precio) ?? 0)}</small></span>
+            <button type="button" class="quitar" data-i="${i}" aria-label="Quitar ${esc(it.nombre)} del pedido">×</button>
+          </div>`).join("")}</div>`
+      : "";
+    qsa(".np-item .quitar", lista).forEach(el => el.onclick = () => {
+      manuales.splice(Number(el.dataset.i), 1);
+      drawMan(); calc();
+    });
   };
 
-  /* elegir foto: un solo flujo compartido (ui/componentes/foto-picker.js).
-     El editor de pedido ya usaba la cámara para el producto a mano; se mantiene. */
-  let manPhotoIdx = null;
-  const picker = conectarFotoPicker({
-    camara: "man-photo", galeria: null,
-    alElegir: (url) => {
-      if (manPhotoIdx == null) return;
-      manuales[manPhotoIdx].foto = url;
-      manPhotoIdx = null;
-      drawMan();
-    },
+  /* Formulario «Nuevo producto»: se abre y se cierra sin tocar el pedido. Los
+     campos son los compartidos con «Editar este artículo» (precio con decimales,
+     cero bloqueado); la foto es opcional (avatar por categoría si no hay). */
+  const npForm = qs("#np-form");
+  const npCampos = conectarCamposArticulo({
+    prefijo: "np", cat: CATEGORIA_DEFECTO, nombre: "", precio: "",
   });
+  let npFoto = null;
+  const pintarNPFoto = (d) => {
+    npFoto = d || null;
+    qs("#np-prev").innerHTML = previaArticuloHTML(npFoto);
+    qs("#np-photo-del").classList.toggle("oculto", !npFoto);
+  };
+  pintarNPFoto(null);
+  const npPicker = conectarFotoPicker({ camara: "np-cam", galeria: "np-photo", alElegir: pintarNPFoto });
+  qs("#np-camBtn").onclick = () => npPicker.elegir();
+  qs("#np-photoBtn").onclick = () => npPicker.galeria();
+  qs("#np-photo-del").onclick = () => pintarNPFoto(null);
+
+  const abrirNPForm = () => {
+    npForm.classList.remove("oculto");
+    qs("#np-name").focus({ preventScroll: true });
+  };
+  const cerrarNPForm = () => npForm.classList.add("oculto");
+  qs("#addp").onclick = abrirNPForm;
+  qs("#np-cerrar").onclick = cerrarNPForm;
+
+  qs("#np-agregar").onclick = async () => {
+    const leido = npCampos.leer();
+    if (!leido.ok) return;
+    const ok = await confirmar({
+      title: "¿Agregar este producto?",
+      msg: `“${leido.nombre}” (${fmt(leido.precio)}) se guardará en el inventario y quedará agregado al pedido de ${qs("#f-cliente").value.trim() || "este cliente"}.`,
+      ok: "Guardar en inventario y pedido",
+      danger: false,
+    });
+    if (!ok) return;
+    manuales.push({ nombre: leido.nombre, precio: leido.textoPrecio, cat: leido.cat, foto: npFoto, qty: 1 });
+    /* deja el formulario limpio y cerrado para el próximo producto */
+    qs("#np-name").value = "";
+    qs("#np-price").value = "";
+    pintarNPFoto(null);
+    cerrarNPForm();
+    drawMan(); calc();
+  };
 
   drawInv(); drawMan(); calc();
   qsa("#mode-seg button").forEach(x => x.classList.toggle("on", x.dataset.m === "inv"));
@@ -301,10 +357,9 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     qsa("#mode-seg button").forEach(x => x.classList.toggle("on", x === b));
     qs("#mode-inv").classList.toggle("oculto", b.dataset.m !== "inv");
     qs("#mode-man").classList.toggle("oculto", b.dataset.m !== "man");
+    if (b.dataset.m !== "man") cerrarNPForm();
     calc();
   });
-
-  qs("#addp").onclick = () => { manuales.push({ nombre: "", precio: "", qty: 1, foto: null }); drawMan(); };
   qsa("#seg-est button").forEach(b => b.onclick = () => {
     estado = b.dataset.k;
     qsa("#seg-est button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
@@ -338,27 +393,23 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   qs("#saveBtn").onclick = () => {
     const cliente = qs("#f-cliente").value.trim();
     if (!cliente) { mostrarError(qs("#f-cliente"), "Escribí el nombre del cliente"); return; }
+    /* Los productos nuevos ya vienen validados del formulario; se revisa igual
+       antes de escribir para no guardar nunca un precio inválido o $0. */
     for (const i of manuales) {
-      if (i.nombre.trim() && !esPrecioValido(i.precio)) {
-        mostrarError(qs("#saveBtn"), "Hay un precio inválido en los productos a mano");
+      if (!esPrecioValido(i.precio) || (parseMoneda(i.precio) ?? 0) <= 0) {
+        mostrarError(qs("#saveBtn"), "Hay un precio inválido en los productos nuevos");
         toast("Precio inválido en un producto", "warn");
-        return;
-      }
-      if (i.nombre.trim() && i.precio.trim() !== "" && (parseMoneda(i.precio) ?? 0) <= 0) {
-        mostrarError(qs(".pp[data-i='" + manuales.indexOf(i) + "']"), "El precio debe ser mayor a $0");
-        toast("El precio no puede ser $0", "warn");
         return;
       }
     }
     const items = [];
+    /* Productos del inventario: se toma SOLO la existencia del producto; nombre/
+       precio/foto/categoría vienen del snapshot del pedido (precio acordado),
+       salvo que «Editar este artículo» ya haya actualizado ese snapshot. */
     picked.forEach(iid => {
       const p = productos().find(x => x.id === iid);
       if (!p) return;
       const snap = snapPorId.get(iid);
-      /* Del inventario se toma SOLO la existencia del producto: precio/nombre/
-         foto/categoría vienen del snapshot del pedido, salvo que la persona
-         haya cambiado el precio con «Editar este artículo» (ese cambio ya está
-         en el snapshot que abrió esta hoja). */
       const base = snap
         ? { productoId: p.id, nombre: snap.nombre, precio: snap.precio, foto: snap.foto, categoria: snap.categoria, qty: cantidades.get(iid) || 1 }
         : { productoId: p.id, nombre: p.name, precio: Number(p.price) || 0, foto: p.photo, categoria: p.cat, qty: cantidades.get(iid) || 1 };
@@ -366,8 +417,12 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
          jamás se guardan como propias al editar el pedido. */
       items.push(esFotoDemo(base.foto) ? { ...base, foto: null } : base);
     });
-    const manualesLimpios = manuales.filter(i => i.nombre.trim());
-    manualesLimpios.forEach(i => items.push({ productoId: null, nombre: i.nombre.trim(), precio: parseMoneda(i.precio) ?? 0, foto: i.foto, categoria: "otro", qty: 1 }));
+    /* «Nuevo producto»: entra con la categoría elegida (o la por defecto) y se
+       vincula al inventario en un solo write desde store.js. */
+    manuales.forEach(i => items.push({
+      productoId: null, nombre: i.nombre.trim(), precio: parseMoneda(i.precio) ?? 0,
+      foto: i.foto, categoria: i.cat || CATEGORIA_DEFECTO, qty: 1,
+    }));
     if (!items.length) { toast("Agregá al menos un producto", "warn"); return; }
 
     const cuotasEntrada = Number(qs("#f-cuotas")?.value) || CUOTAS_MIN;
