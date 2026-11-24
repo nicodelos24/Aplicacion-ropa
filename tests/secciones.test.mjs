@@ -56,10 +56,21 @@ test("agrupar por sección: la búsqueda filtra dentro de cada cajón y oculta l
   assert.equal(agruparPorSeccion(inv, secs, { buscar: "zzz" }).length, 0);
 });
 
-test("validar nombre: vacío, duplicado (sin distinguir mayúsculas) y largo máximo", () => {
+test("agrupar por sección: la búsqueda ignora tildes y mayúsculas", () => {
+  const secs = [{ id: "a", nombre: "Dama" }];
+  const inv = [{ id: "1", name: "Pantalón negro", seccionId: "a" }];
+  for (const q of ["pantalon", "PANTALÓN", "  Pantalón  "]) {
+    const g = agruparPorSeccion(inv, secs, { buscar: q });
+    assert.deepEqual(g.map((x) => x.productos.map((p) => p.id)), [["1"]], q);
+  }
+});
+
+test("validar nombre: vacío, duplicado (sin distinguir mayúsculas ni tildes) y largo máximo", () => {
   const secs = [{ id: "a", nombre: "Dama · verano" }];
   assert.equal(validarNombreSeccion("   ", secs).ok, false);
   assert.equal(validarNombreSeccion("dama · VERANO", secs).error, "Ya tenés una sección con ese nombre");
+  assert.equal(validarNombreSeccion("Básicos de hombre", secs).ok, true);
+  assert.equal(validarNombreSeccion("BASICOS DE HOMBRE", [{ id: "b", nombre: "Básicos de hombre" }]).ok, false);
   assert.equal(validarNombreSeccion("x".repeat(SECCION_NOMBRE_MAX + 1), secs).ok, false);
   /* el mismo nombre sobre sí misma (renombrar) no choca */
   assert.equal(validarNombreSeccion("Dama · verano", secs, { exceptoId: "a" }).ok, true);

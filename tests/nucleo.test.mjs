@@ -12,6 +12,7 @@ import {
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, resumenGeneral, ordenarPedidos } from "../src/nucleo/filtros.js";
 import { itemDesdeProducto, normalizarItem, pedidoDesdeDatos, productoNuevo } from "../src/nucleo/entidades.js";
 import { waTel, maskTel, fmtTel, linkWhatsApp } from "../src/nucleo/contacto.js";
+import { normalizar, coincidePedido, coincideProducto, coincideCliente } from "../src/nucleo/buscador.js";
 import { celdasMes, desplazarDias, fdate, lunesDe, sumarDias, diasSemana } from "../src/nucleo/fechas.js";
 import { uid } from "../src/nucleo/ids.js";
 import { CATEGORIAS_IDS, iconoCategoria } from "../src/nucleo/catalogo.js";
@@ -79,6 +80,17 @@ test("filtros: conteo, filtrado y orden (flechas + contador de QA v1)", () => {
   assert.equal(filtrarPorEstado(pedidos, "paid").length, 2);
   assert.equal(filtrarPorEstado(pedidos, "all").length, 4);
   assert.deepEqual(ordenarPedidos(pedidos).map((p) => p.created), [4, 3, 2, 1]);
+});
+
+test("búsqueda: coincidePedido, coincideProducto y coincideCliente ignoran tildes", () => {
+  const pedido = { cliente: "Lucía", items: [{ name: "Pantalón negro" }] };
+  assert.equal(coincidePedido(pedido, "lucia"), true);
+  assert.equal(coincidePedido(pedido, "LUCÍA"), true);
+  assert.equal(coincidePedido(pedido, "pantalon"), true);
+  assert.equal(coincideProducto({ name: "Pantalón" }, "pantalón"), true);
+  assert.equal(coincideCliente({ name: "Lucía" }, "lucia"), true);
+  assert.equal(normalizar("  BÁSICOS  "), "basicos");
+  assert.equal(coincideProducto({ name: "Pantalón" }, "zzz"), false);
 });
 
 test("búsqueda por clienta y producto, no-match → vacío (QA v1)", () => {

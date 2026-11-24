@@ -1,5 +1,8 @@
 // buscador.js — filtro compartido por sección (búsqueda 90/no-match del QA v1).
-export function normalizar(s) { return (s || "").toLowerCase().trim(); }
+// Texto listo para comparar: minúsculas, espacios recortados y sin tildes.
+export function normalizar(s) {
+  return (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
 
 import { nombreItem } from "./pedidos.js";
 export function coincidePedido(o, q) {

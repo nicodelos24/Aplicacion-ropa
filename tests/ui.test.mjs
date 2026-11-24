@@ -1124,7 +1124,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r38"/, "el caché sube a r38 con la sección inicial tomada de la URL");
+  assert.match(sw, /const VERSION = "r39"/, "el caché sube a r39 con la búsqueda sin tildes");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -1746,6 +1746,33 @@ test("filtros: «más usados» pone arriba la prenda que entra en más pedidos",
   const hombre = qs('#main .sec[data-sec-grupo="ds2"]');
   assert.deepEqual([...hombre.querySelectorAll(".inv-card")].map((c) => c.dataset.id), ["di4", "di2"]);
   assert.equal(ids.length, 6);
+  assert.deepEqual(errores, []);
+});
+
+test("inventario: el filtro final ignora tildes y coincide con lo que muestran los cajones", async () => {
+  await reiniciar();
+  irA("inventario");
+  const buscar = async (texto) => {
+    qs("#search").value = texto;
+    qs("#search").dispatchEvent(new w.Event("input"));
+    await esperar();
+  };
+  await buscar("pantalon");
+  assert.equal(qsa("#main .inv-card").length, 1, "encuentra Pantalón escrito sin tilde");
+  assert.equal(qsa("#main .inv-card").at(-1).getAttribute("data-id"), "di3");
+  assert.match(qs("#inv-resumen").textContent, /^Resultados para “pantalon”$/,
+    "el resumen final no cuenta prendas que la búsqueda oculta");
+
+  await buscar("PANTALÓN");
+  assert.equal(qsa("#main .inv-card").length, 1, "mayúsculas y tilde también encuentran");
+  assert.equal(qsa("#main .inv-card").at(-1).getAttribute("data-id"), "di3");
+  assert.equal(qs("#inv-resumen").textContent, "Resultados para “PANTALÓN”",
+    "el resumen no cuenta prendas ocultas");
+
+  await buscar("zzz");
+  assert.equal(qsa("#main .inv-card").length, 0);
+  assert.equal(qs("#inv-resumen").textContent, "Resultados para “zzz”");
+  assert.match(qs("#main .vacio").textContent, /Sin resultados/);
   assert.deepEqual(errores, []);
 });
 

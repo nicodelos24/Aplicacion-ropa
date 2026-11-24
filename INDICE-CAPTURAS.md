@@ -666,3 +666,14 @@ Chrome del proyecto `kaia_chrome_ropaapp`: tomado 04:33 y soltado 04:41 (hora UT
 | `#inventarioo` cae en Inicio | 390×844 · oscuro | [olga-hash-390-inexistente-inicio-oscuro.png](capturas/2026-11-24/olga-hash-390-inexistente-inicio-oscuro.png) |
 | Recarga con `#inventario` mantiene Inventario | 320×720 · claro | [olga-hash-320-inventario-recarga-claro.png](capturas/2026-11-24/olga-hash-320-inventario-recarga-claro.png) |
 | Recarga con `#inventario` mantiene Inventario | 320×720 · oscuro | [olga-hash-320-inventario-recarga-oscuro.png](capturas/2026-11-24/olga-hash-320-inventario-recarga-oscuro.png) |
+
+## Dino — buscador de Inventario sin tildes (24-nov-2026, `fix/buscador-sin-tildes`) · Verificado
+
+[Tarea `task_2dba147f8c3244f7`](apx:tasks/task_2dba147f8c3244f7). Verificación local con `?demo=1` en Inventario, sin datos reales. `pantalon` y `PANTALÓN` muestran únicamente el producto `di3` (Pantalón); `zzz` deja 0 tarjetas y muestra «Sin resultados». Resumen coherente con las prendas visibles. Consola: 0 errores. Suite completa 228/228 y `npm run check` OK (72 archivos).
+
+Chrome del proyecto `kaia_chrome_ropaapp`: turno coordinado con Amber, tomado 09:06 y liberado 09:07 UTC. Contexto aislado y pestaña cerrados al terminar; servidor local detenido.
+
+| Escena | Captura |
+|---|---|
+| Búsqueda `PANTALÓN`: una coincidencia | [dino-buscador-con-tilde.png](capturas/2026-11-24/dino-buscador-con-tilde.png) |
+| Búsqueda `zzz`: sin coincidencias | [dino-buscador-sin-tildes.png](capturas/2026-11-24/dino-buscador-sin-tildes.png) |
