@@ -20,9 +20,40 @@ let guardia = null;
 /** Registra (o anula con null) la guardia de cambios sin guardar. */
 export function alCerrarHoja(fn) { guardia = fn || null; }
 
+let retornoFoco = null;
+let inertAntes = [];
+let overflowAntes = "";
+const fondoHoja = () => [...document.querySelectorAll(".topbar, #main, #nav, #fab, #aviso-disco")];
+
+function enfocablesHoja() {
+  return [...hojaIn().querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.closest("[hidden]") && getComputedStyle(el).display !== "none" && getComputedStyle(el).visibility !== "hidden");
+}
+
+/* La hoja se anuncia como modal: el foco y la interacción deben quedar dentro.
+   Se conserva el estado previo de cada fondo para convivir con confirmación y
+   lightbox, que también son modales y restauran exactamente lo que recibieron. */
+document.addEventListener("keydown", e => {
+  const h = hoja();
+  if (e.key !== "Tab" || !h?.classList.contains("abierta")) return;
+  if (qs("#confirmar.abierta") || document.querySelector(".lightbox")) return;
+  const f = enfocablesHoja();
+  if (!f.length) { e.preventDefault(); hojaIn().focus({ preventScroll: true }); return; }
+  const i = f.indexOf(document.activeElement);
+  if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+  else if (!e.shiftKey && (i < 0 || i === f.length - 1)) { e.preventDefault(); f[0].focus(); }
+});
+
 export function abrirHoja(html) {
   const h = hoja(), hi = hojaIn();
   const yaAbierta = h.classList.contains("abierta");
+  if (!yaAbierta) {
+    retornoFoco = document.activeElement;
+    overflowAntes = document.body.style.overflow;
+    inertAntes = fondoHoja().map(el => el.inert);
+    fondoHoja().forEach(el => (el.inert = true));
+    document.body.style.overflow = "hidden";
+  }
   hi.innerHTML = html;
   hi.scrollTop = 0;
   h.className = "hoja abierta";
@@ -69,6 +100,12 @@ function cerrarHojaForzado() {
   setTimeout(() => {
     h.className = "hoja";
     hojaIn().innerHTML = "";
+    fondoHoja().forEach((el, i) => (el.inert = !!inertAntes[i]));
+    document.body.style.overflow = overflowAntes;
+    const volver = retornoFoco;
+    retornoFoco = null;
+    inertAntes = [];
+    if (volver?.isConnected) volver.focus({ preventScroll: true });
     espacioToast();
     cerrando = false;
   }, 180);

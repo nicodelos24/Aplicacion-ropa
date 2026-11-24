@@ -37,14 +37,15 @@ export function abrirDetallePedido(id) {
   const items = o.items || [];
   const hero = items.find(i => i.foto || i.photo);
 
-  const dcards = items.map(i => {
+  const dcards = items.map((i, indice) => {
     const foto = i.foto ?? i.photo;
     return plantilla(DCARD, {
       ph: esc(foto ?? ""),
       thumb: foto ? `<img class="dthumb" src="${esc(foto)}" alt="">` : `<span class="dthumb" aria-hidden="true">${svgCategoria(i.categoria)}</span>`,
       precio: fmt(subtotalItem(i)),
       nombre: esc(nombreItem(i)) || "Producto",
-      label: esc(nombreItem(i)) || "producto",
+      label: `${esc(nombreItem(i)) || "producto"}, ${esc(fmt(subtotalItem(i)))}`,
+      seleccionada: indice === Math.floor(items.length / 2) ? "true" : "false",
     });
   }).join("");
 
@@ -75,11 +76,18 @@ export function abrirDetallePedido(id) {
   const dstack = qs("#dstack");
   const cartas = qsa(".dcard", dstack);
   const huecos = cartas.length - 1;
-  let activa = -1;
+  let activa = cartas.length ? Math.floor(cartas.length / 2) : -1;
+  const indiceAlFrente = () => activa;
+  const actualizarFrente = () => {
+    cartas.forEach((carta, i) => {
+      carta.style.setProperty("--nivel", carta === cartas[activa] ? cartas.length + 1 : cartas.length - Math.abs(i - activa));
+      carta.classList.toggle("dcard-frente", i === activa);
+    });
+  };
+  actualizarFrente();
   /* barra de acciones del artículo al frente: edita el que está al frente (con
      uno solo, ese; sin elegir, el primero que muestra el abanico) */
   const btnItem = qs("#dItemEditarBtn");
-  const indiceAlFrente = () => (activa >= 0 ? activa : (cartas.length ? 0 : -1));
   const pintarAccionItem = () => {
     if (!btnItem) return;
     const i = indiceAlFrente();
@@ -105,7 +113,6 @@ export function abrirDetallePedido(id) {
     const lado = i - huecos / 2;
     c.style.setProperty("--lado", lado);
     c.style.setProperty("--giro", `${huecos > 0 ? 8 * lado / huecos : 0}deg`);
-    c.style.setProperty("--nivel", i + 1);
     c.onclick = () => {
       c.focus({ preventScroll: true });
       /* segundo toque sobre la tarjeta que está al frente: amplía su foto */
@@ -113,7 +120,7 @@ export function abrirDetallePedido(id) {
       cartas[activa]?.setAttribute("aria-pressed", "false");
       activa = i;
       c.setAttribute("aria-pressed", "true");
-      cartas.forEach((carta, j) => carta.style.setProperty("--nivel", cartas.length - Math.abs(j - activa)));
+      actualizarFrente();
       pintarAccionItem();
     };
   });
@@ -237,7 +244,7 @@ const HOJA = `
   </div>`;
 
 const DCARD = `
-    <button type="button" class="dcard" aria-pressed="false" aria-label="Seleccionar {{label}}, {{precio}}" data-ph="{{ph}}">
+    <button type="button" class="dcard" aria-pressed="{{seleccionada}}" aria-label="Seleccionar {{label}}" data-ph="{{ph}}">
       {{thumb}}
       <span class="dcard-txt">
         <span class="dprecio monto">{{precio}}</span>

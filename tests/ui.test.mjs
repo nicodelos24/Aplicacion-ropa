@@ -67,6 +67,7 @@ globalThis.fetch = fetchOriginal;
 const qs = (s) => d.querySelector(s);
 const qsa = (s) => [...d.querySelectorAll(s)];
 const esperar = (ms = 0) => new Promise((r) => setTimeout(r, ms));
+const pulsarTecla = (nodo, key, shiftKey = false) => nodo.dispatchEvent(new w.KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true }));
 
 function click(sel) {
   const el = typeof sel === "string" ? qs(sel) : sel;
@@ -129,6 +130,93 @@ test("arranque demo: Inicio renderizado con los pedidos y la navegación activa"
   assert.ok(qsa("#main .card[data-pedido]").length > 0, "Inicio lista pedidos");
   assert.equal(qs('#nav button[data-v="inicio"]').classList.contains("on"), true);
   assert.deepEqual(errores, []);
+});
+
+test("detalle: abanico cuadrado, etiquetas por cantidad y frente accesible", async () => {
+  await reiniciar();
+  irA("pedidos");
+  const cliente = (name) => store.pedidos().find((o) => o.cliente === name);
+  const original = structuredClone(cliente("Paco"));
+
+  /* Dos productos: ambas etiquetas y la selección inicial explícita. */
+  click('[data-pedido="d2"]');
+  assert.equal(qsa("#dstack .dcard").length, 2, "Paco mantiene sus dos artículos");
+  assert.equal(qsa("#dstack .dcard")[1].getAttribute("aria-pressed"), "true");
+  assert.equal(qsa("#dstack .dcard")[0].getAttribute("aria-label"), "Seleccionar Camisa blanca, $950");
+  assert.equal(qs("#dItemEditarBtn").dataset.indice, "1");
+  click("#dstack .dcard");
+  assert.equal(qsa('#dstack .dcard[aria-pressed="true"]').length, 1);
+  assert.equal(qs("#dItemEditarBtn").dataset.indice, "0");
+  click("#hClose");
+  await esperar(220);
+
+  /* Tres productos: una etiqueta visible por estado y frente consistente. */
+  original.items.splice(1, 0, { nombre: "Corbata extra", precio: 100, qty: 1 });
+  store.editarPedido("d2", original);
+  emitirVista();
+  click('[data-pedido="d2"]');
+  const cartas3 = qsa("#dstack .dcard");
+  assert.equal(cartas3.length, 3);
+  assert.equal(cartas3[1].getAttribute("aria-pressed"), "true");
+  assert.ok(cartas3[1].classList.contains("dcard-frente"));
+  assert.equal(qsa('#dstack .dcard[aria-pressed="false"]').length, 2);
+  assert.equal(qs("#dItemEditarBtn").dataset.indice, "1");
+  click("#dstack .dcard");
+  click("#dstack .dcard");
+  await esperar(400);
+  assert.ok(cartas3[0].classList.contains("dcard-frente"));
+  assert.equal(qs("#dItemEditarBtn").dataset.indice, "0");
+  click("#hClose");
+  await esperar(220);
+
+  store.editarPedido("d2", { ...original, items: original.items.slice(0, 2) });
+  await esperar();
+  emitirVista();
+  await reiniciar();
+  assert.deepEqual(errores, []);
+});
+
+test("hoja: el modal atrapa Tab e inert el fondo sin romper confirmaciones anidadas", async () => {
+  await reiniciar();
+  irA("pedidos");
+  const disparador = qs('[data-pedido="d2"]');
+  disparador.focus();
+  click(disparador);  const hi = qs("#hoja-in");
+  const fondo = [...document.querySelectorAll(".topbar, #main, #nav, #fab, #aviso-disco")];
+  assert.ok(fondo.every(el => el.inert), "el fondo queda fuera de interacción y del árbol de foco");
+  assert.equal(hi.getAttribute("aria-modal"), "true");
+  assert.equal(d.body.style.overflow, "hidden");
+
+  /* Va desde el título hacia atrás: vuelve al último control, no al fondo. */
+  hi.querySelector("h2").focus();
+  pulsarTecla(d, "Tab", true);
+  assert.ok(hi.contains(d.activeElement), "Shift+Tab queda dentro de la hoja");
+  const ultimo = [...hi.querySelectorAll("button:not([disabled]), [tabindex]:not([tabindex='-1'])")].at(-1);
+  assert.equal(d.activeElement, ultimo);
+  pulsarTecla(d, "Tab");
+  assert.ok(hi.contains(d.activeElement), "Tab desde el último vuelve al primero");
+
+  /* Cambiar de hoja hija no vuelve a capturar el foco ni a habilitar el fondo. */
+  const abrirArticulo = qs("#dItemEditarBtn");
+  abrirArticulo.focus();
+  click("#dItemEditarBtn");
+  assert.ok(hi.contains(d.activeElement), "la edición hija también queda dentro de la hoja");
+  assert.ok(fondo.every(el => el.inert));
+  click("#it-cancelar");
+  await esperar(220);
+  assert.ok(fondo.every(el => !el.inert), "al cerrar se restaura el estado previo");
+  assert.equal(d.body.style.overflow, "");
+  assert.equal(d.activeElement, disparador, "el foco vuelve a la tarjeta que abrió el detalle");
+  assert.deepEqual(errores, []);
+});
+
+test("accesibilidad: el viewport permite zoom y la PWA usa la meta vigente", () => {
+  const html = fs.readFileSync(path.join(RAIZ, "index.html"), "utf8");
+  const viewport = /<meta name="viewport" content="([^"]+)">/.exec(html)?.[1] || "";
+  assert.doesNotMatch(viewport, /user-scalable\s*=\s*no|maximum-scale\s*=\s*1/, "no se bloquea el zoom de baja visión");
+  assert.match(viewport, /viewport-fit=cover/);
+  assert.match(html, /<meta name="mobile-web-app-capable" content="yes">/);
+  assert.doesNotMatch(html, /apple-mobile-web-app-capable/, "sin la meta deprecada que generaba warning");
 });
 
 test("navegación: las 7 secciones pintan su pantalla y mueven la pestaña activa", async () => {
@@ -696,10 +784,10 @@ test("detalle: «Editar este artículo» guarda el cambio en el pedido y vuelve 
   irA("pedidos");
   click('#main .card[data-pedido="editar"]');
   const cartas = qsa("#dstack .dcard");
-  /* la barra de acciones edita el que está al frente: sin elegir, el primero */
-  assert.equal(qs("#dItemEditarBtn").dataset.indice, "0");
-  click(cartas[1]);
-  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Artículo a mano/, "el lápiz sigue al artículo al frente");
+  /* la barra de acciones edita la selección inicial: la carta central */
+  assert.equal(qs("#dItemEditarBtn").dataset.indice, "1");
+  click(cartas[0]);
+  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Vestido floral/, "el lápiz sigue al artículo al frente");
 
   /* segundo toque → visor con la acción → abre la hoja del artículo */
   click(cartas[1]);
@@ -962,8 +1050,10 @@ test("detalle: abanico simétrico, con capas por cercanía sin mover las cartas 
   assert.equal(qs("#dstack").style.getPropertyValue("--huecos"), "4");
   assert.deepEqual(valores("--lado"), ["-2", "-1", "0", "1", "2"]);
   assert.deepEqual(valores("--giro"), ["-4deg", "-2deg", "0deg", "2deg", "4deg"]);
-  assert.deepEqual(valores("--nivel").map(Number), [1, 2, 3, 4, 5]);
-  for (const [i, esperados] of [[0, [5, 4, 3, 2, 1]], [2, [3, 4, 5, 4, 3]], [4, [1, 2, 3, 4, 5]]]) {
+  assert.deepEqual(valores("--nivel").map(Number), [3, 4, 6, 4, 3], "la central ya está al frente");
+  assert.equal(cards[2].getAttribute("aria-pressed"), "true");
+  assert.equal(cards[2].classList.contains("dcard-frente"), true);
+  for (const [i, esperados] of [[0, [6, 4, 3, 2, 1]], [2, [3, 4, 6, 4, 3]], [4, [1, 2, 3, 4, 6]]]) {
     click(cards[i]);
     assert.deepEqual(valores("--nivel").map(Number), esperados);
     assert.deepEqual(qsa('#dstack .dcard[aria-pressed="true"]'), [cards[i]]);
@@ -1124,7 +1214,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r39"/, "el caché sube a r39 con la búsqueda sin tildes");
+  assert.match(sw, /const VERSION = "r40"/, "el caché sube a r40 con el abanico cuadrado real");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -1137,7 +1227,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
   assert.match(cssMain, /capas\.css\?v=6/, "el aviso de guardado, el visor y el gesto de cierre entran con versión propia");
-  assert.match(cssMain, /componentes\.css\?v=8/, "los estilos de usabilidad y fotos de contacto entran con versión propia");
+  assert.match(cssMain, /componentes\.css\?v=9/, "los estilos de usabilidad y fotos de contacto entran con versión propia");
   assert.match(cssMain, /secciones\.css\?v=4/, "los estilos de secciones entran con versión propia");
   assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
   assert.match(cssMain, /picker\.css\?v=1/, "los estilos del selector del pedido por sección entran con versión propia");
@@ -1954,6 +2044,7 @@ test("detalle: «Editar este artículo» guarda nombre y precio con decimales y 
   await reiniciar();
   await abrirDetallePaco();
   const antes = store.pedidoPorId("d2");
+  click(qsa("#dstack .dcard")[0]);
   click("#dItemEditarBtn");
   assert.equal(qs("#hoja").classList.contains("abierta"), true, "la barra de acciones abre la hoja");
   qs("#it-price").value = "1250.50";
@@ -2075,7 +2166,7 @@ test("hoja: la cabecera también cierra al arrastrar, pero sus botones siguen fu
 test("detalle: la barra de acciones nombra el artículo al frente y edita ese", async () => {
   await reiniciar();
   await abrirDetallePaco();
-  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Camisa blanca/, "sin elegir, el primero del abanico");
+  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Corbata/, "la selección inicial es la carta central");
   click(qsa("#dstack .dcard")[1]);
   assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Corbata/, "el lápiz sigue a la tarjeta al frente");
   assert.equal(qs("#dItemEditarBtn").dataset.indice, "1", "edita el de la tarjeta al frente");
