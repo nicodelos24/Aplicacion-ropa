@@ -742,3 +742,6 @@ Tarea `task_e2e9f472fc594b31`. Sin datos de clientas reales: demo `?demo=1`, ped
 | Antes: 6 pedidos, modo claro, prefijo +54 | [antes-6-pedidos-claro-prefijo54.png](capturas/2026-11-24/restaurar-demo/antes-6-pedidos-claro-prefijo54.png) |
 | Después: 5 pedidos demo, ajustes conservados | [despues-5-pedidos-ajustes-conservados.png](capturas/2026-11-24/restaurar-demo/despues-5-pedidos-ajustes-conservados.png) |
 | Disco rechaza: franja «No se guardó», sin toast de éxito | [fallo-disco-aviso-no-se-guardo.png](capturas/2026-11-24/restaurar-demo/fallo-disco-aviso-no-se-guardo.png) |
+| Vivo r46: 6→5 pedidos, tema claro y prefijo +54 conservados, 0 errores | [vivo-r46-restaurar-demo-ajustes-conservados.png](capturas/2026-11-24/restaurar-demo/vivo-r46-restaurar-demo-ajustes-conservados.png) |
+
+Confirmado en el vivo `https://nicodelos24.github.io/Aplicacion-ropa/?demo=1&gen=r46` desde contexto limpio: sw.js en r46, store servido con `restaurarDemo`, flujo completo 6→5 pedidos conservando `theme=light` y `prefijo=+54`, consola 0 errores. La pestaña vieja mostró una generación mixta al transitionar r45→r46; al recargar en contexto limpio quedó coherente.
