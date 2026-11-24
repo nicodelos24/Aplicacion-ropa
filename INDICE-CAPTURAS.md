@@ -646,3 +646,23 @@ Informe completo en **[QA-Flor-Nuevo-Producto-23nov.md](QA-Flor-Nuevo-Producto-2
 | Hoja vacía 390 claro (real) | [nuevo-producto-09-hoja-vacia-claro-390-real.png](capturas/2026-11-24/nuevo-producto-09-hoja-vacia-claro-390-real.png) |
 
 Verificación post-merge (Dino, 24-nov): lápiz compacto de la usabilidad r35 y «Nuevo producto» conviven en `.dcards-pie`, alta en vivo OK a 390 oscuro: [verif-merge-pedido-390-oscuro.png](capturas/2026-11-24/verificacion-merge/verif-merge-pedido-390-oscuro.png). Publicado en master (`cd3ac5d`) y verificado en el vivo (`?demo=1`, r35 con ambas cosas juntas, alta completa con «Chal en vivo» $600 → total $1,850): [verif-vivo-pedido-390-oscuro.png](capturas/2026-11-24/verificacion-merge/verif-vivo-pedido-390-oscuro.png). Nota: visitantes con la pestaña vieja abierta siguen viendo la generación r35 cacheada hasta recargar con el SW actualizado (cache-first por diseño).
+
+## Olga — entrada por URL con sección y navegación (24-nov-2026, vivo r38 / master `1cc1762`) · APROBADO
+
+[Tarea `task_c5b84c5172fa4017`](apx:tasks/task_c5b84c5172fa4017). Verificación en el vivo con `?demo=1`, sin datos de clientas reales. Apertura directa de `#inventario`, `#pedidos`, `#contactos` y `#agenda`: cada una abrió su pantalla. `#inventarioo` abrió Inicio sin error visible. Barra → Inventario → Agenda y atrás → Inventario: correctos. Recarga manteniendo `#inventario`: correcta a 320×720, claro y oscuro. 390×844 claro/oscuro: sin desbordes ni anomalías visuales. Consola: **0 errores** en toda la sesión (1 warning habitual de arranque).
+
+Chrome del proyecto `kaia_chrome_ropaapp`: tomado 04:33 y soltado 04:41 (hora UTC del servidor), sin uso simultáneo. La primera toma quedó bloqueada por la caída previa del Chrome; tras reiniciarse APX el server reconectó y la revisión se completó.
+
+| Escena | Viewport / tema | Captura |
+|---|---|---|
+| `#inventario` abre Inventario | 390×844 · claro | [olga-hash-390-inventario-claro.png](capturas/2026-11-24/olga-hash-390-inventario-claro.png) |
+| `#pedidos` abre Pedidos | 390×844 · claro | [olga-hash-390-pedidos-claro.png](capturas/2026-11-24/olga-hash-390-pedidos-claro.png) |
+| `#contactos` abre Contactos | 390×844 · claro | [olga-hash-390-contactos-claro.png](capturas/2026-11-24/olga-hash-390-contactos-claro.png) |
+| `#agenda` abre Agenda | 390×844 · claro | [olga-hash-390-agenda-claro.png](capturas/2026-11-24/olga-hash-390-agenda-claro.png) |
+| `#pedidos` en oscuro | 390×844 · oscuro | [olga-hash-390-pedidos-oscuro.png](capturas/2026-11-24/olga-hash-390-pedidos-oscuro.png) |
+| `#contactos` en oscuro | 390×844 · oscuro | [olga-hash-390-contactos-oscuro.png](capturas/2026-11-24/olga-hash-390-contactos-oscuro.png) |
+| `#agenda` en oscuro | 390×844 · oscuro | [olga-hash-390-agenda-oscuro.png](capturas/2026-11-24/olga-hash-390-agenda-oscuro.png) |
+| `#inventarioo` cae en Inicio | 390×844 · claro | [olga-hash-390-inexistente-inicio-claro.png](capturas/2026-11-24/olga-hash-390-inexistente-inicio-claro.png) |
+| `#inventarioo` cae en Inicio | 390×844 · oscuro | [olga-hash-390-inexistente-inicio-oscuro.png](capturas/2026-11-24/olga-hash-390-inexistente-inicio-oscuro.png) |
+| Recarga con `#inventario` mantiene Inventario | 320×720 · claro | [olga-hash-320-inventario-recarga-claro.png](capturas/2026-11-24/olga-hash-320-inventario-recarga-claro.png) |
+| Recarga con `#inventario` mantiene Inventario | 320×720 · oscuro | [olga-hash-320-inventario-recarga-oscuro.png](capturas/2026-11-24/olga-hash-320-inventario-recarga-oscuro.png) |
