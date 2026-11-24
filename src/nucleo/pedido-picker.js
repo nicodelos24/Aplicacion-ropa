@@ -48,7 +48,7 @@ export function ordenarParaElegir(productos = [], { usos = new Map() } = {}) {
  * coinciden con la búsqueda, sin contar los elegidos que se mantienen a la
  * vista) y `hayElegidos`.
  */
-export function gruposParaElegir(inventario = [], secciones = [], { buscar = "", elegidos = new Set(), usos = new Map() } = {}) {
+export function gruposParaElegir(inventario = [], secciones = [], { buscar = "", elegidos = new Set(), usos = new Map(), snapshots = new Map() } = {}) {
   const el = elegidos instanceof Set ? elegidos : new Set(elegidos || []);
   const q = plano(buscar);
   const inv = [...(inventario || [])];
@@ -66,11 +66,27 @@ export function gruposParaElegir(inventario = [], secciones = [], { buscar = "",
     .map((g) => {
       const elegidosN = g.productos.filter((p) => el.has(p.id)).length;
       /* lo elegido se ve siempre: si no, filtrar parecería haber borrado el pedido */
-      const visibles = g.productos.filter((p) => !q || plano(p.name).includes(q) || el.has(p.id));
+      const visibles = g.productos.filter((p) => !q
+        || plano(p.name).includes(q)
+        || plano((snapshots.get(p.id) || {}).nombre || "").includes(q)
+        || el.has(p.id));
+      /* Los productos ya elegidos se pintan con su snapshot del pedido: el
+         buscador y el orden siguen usando el nombre del inventario (para no
+         cambiar la posición de las filas bajo el dedo). */
+      const pintados = visibles.map((p) => {
+        const snap = el.has(p.id) ? snapshots.get(p.id) : null;
+        return snap ? {
+          ...p,
+          name: snap.nombre || p.name,
+          price: snap.precio ?? p.price,
+          photo: snap.foto ?? p.photo,
+          cat: snap.categoria || p.cat,
+        } : p;
+      });
       return {
         id: g.id,
         nombre: g.nombre,
-        productos: ordenarParaElegir(visibles, { usos }),
+        productos: ordenarParaElegir(pintados, { usos }),
         elegidos: elegidosN,
         total: g.productos.length,
         coincide: q ? g.productos.filter((p) => plano(p.name).includes(q)).length : g.productos.length,

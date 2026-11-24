@@ -7,6 +7,7 @@
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO, svgCategoria } from "../ui/iconos.js";
 import { fmt, parseMoneda, esPrecioValido } from "../nucleo/moneda.js";
+import { esFotoDemo } from "../datos/fotos-demo.js";
 import { ESTADOS, ORDEN_ESTADOS, CUOTAS_MIN, CUOTAS_MAX, cuotasValidas, qtyDe, subtotalItem, totalItems } from "../nucleo/pedidos.js";
 import { maskTel } from "../nucleo/contacto.js";
 import { CATEGORIAS } from "../nucleo/catalogo.js";
@@ -37,9 +38,17 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   // Un mismo producto puede aparecer en más de un ítem: se suman sus cantidades
   // (p. ej. 2× Medias lanas = qty 2) para que editar no pierda ni el total ni la cantidad.
   const qtyInicial = new Map();
+  /* Snapshot del pedido por productoId: nombre, precio acordado, foto y tipo
+     guardados en el momento de la venta. El inventario puede haber cambiado
+     después; editar el pedido NO debe reprocesar esos precios. */
+  const snapPorId = new Map();
   (orig?.items || []).forEach(i => {
     if (!i.productoId) return;
     qtyInicial.set(i.productoId, (qtyInicial.get(i.productoId) || 0) + qtyDe(i));
+    if (!snapPorId.has(i.productoId)) snapPorId.set(i.productoId, {
+      nombre: i.nombre ?? i.name ?? "", precio: Number(i.precio ?? i.price) || 0,
+      foto: i.foto ?? i.photo ?? null, categoria: i.categoria || null,
+    });
   });
   // selección actual: ids del inventario ya en el pedido (edición) o del preset
   const selInicial = new Set(qtyInicial.keys());
@@ -133,7 +142,10 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
     const delInventario = [...picked]
       .map(iid => productos().find(x => x.id === iid))
       .filter(Boolean)
-      .map(p => ({ precio: p.price, qty: cantidades.get(p.id) || 1 }));
+      .map(p => ({
+        precio: snapPorId.has(p.id) ? snapPorId.get(p.id).precio : p.price,
+        qty: cantidades.get(p.id) || 1,
+      }));
     const aMano = manuales.map(i => ({ precio: parseMoneda(i.precio), qty: i.qty }));
     const t = totalItems([...delInventario, ...aMano]);
     qs("#ftotal").textContent = fmt(t);
@@ -149,6 +161,13 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
   const filaHTML = (p) => {
     const on = picked.has(p.id);
     const n = cantidades.get(p.id) || 1;
+    /* La fila de un producto ya incluido en el pedido muestra su snapshot:
+       precio/nombre/foto acordados, no los del inventario actual. */
+    const snap = on ? snapPorId.get(p.id) : null;
+    const nombre = snap ? snap.nombre : p.name;
+    const precio = snap ? snap.precio : p.price;
+    const foto = snap ? snap.foto : p.photo;
+    const cat = snap ? snap.categoria : p.cat;
     const qty = on
       ? `<span class="fila-stepper qtystep" data-qty="${p.id}">
            <button type="button" class="qtyminus" aria-label="Restar ${esc(p.name)}">−</button>
@@ -157,8 +176,8 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
          </span>`
       : "";
     return `<div class="pk-fila${on ? " on" : ""}" data-iid="${p.id}" role="button" tabindex="0" aria-pressed="${on}">
-      <span class="pk-mini">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : svgCategoria(p.cat)}</span>
-      <span class="pk-txt"><b>${esc(p.name)}</b><small>${fmt(p.price)}</small></span>
+      <span class="pk-mini">${foto ? `<img src="${esc(foto)}" alt="">` : svgCategoria(cat)}</span>
+      <span class="pk-txt"><b>${esc(nombre)}</b><small>${fmt(precio)}</small></span>
       ${qty}
       <span class="pk-check" aria-hidden="true">${ICONO.checkSolo}</span>
     </div>`;
@@ -172,7 +191,7 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       cont.innerHTML = `<p class="nota-vacia">Tu inventario está vacío. Agregá productos en la pestaña Inventario.</p>`;
       return;
     }
-    const grupos = gruposParaElegir(inv, secciones(), { buscar, elegidos: picked, usos });
+    const grupos = gruposParaElegir(inv, secciones(), { buscar, elegidos: picked, usos, snapshots: snapPorId });
     /* sin coincidencias: el vacío explica y sale, y abajo quedan los elegidos
        que se mantienen a la vista para no perder el hilo del pedido */
     const vacio = buscar.trim() && !hayResultados(grupos)
@@ -332,7 +351,21 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
       }
     }
     const items = [];
-    picked.forEach(iid => { const p = productos().find(x => x.id === iid); if (p) items.push({ productoId: p.id, nombre: p.name, precio: Number(p.price) || 0, foto: p.photo, categoria: p.cat, qty: cantidades.get(iid) || 1 }); });
+    picked.forEach(iid => {
+      const p = productos().find(x => x.id === iid);
+      if (!p) return;
+      const snap = snapPorId.get(iid);
+      /* Del inventario se toma SOLO la existencia del producto: precio/nombre/
+         foto/categoría vienen del snapshot del pedido, salvo que la persona
+         haya cambiado el precio con «Editar este artículo» (ese cambio ya está
+         en el snapshot que abrió esta hoja). */
+      const base = snap
+        ? { productoId: p.id, nombre: snap.nombre, precio: snap.precio, foto: snap.foto, categoria: snap.categoria, qty: cantidades.get(iid) || 1 }
+        : { productoId: p.id, nombre: p.name, precio: Number(p.price) || 0, foto: p.photo, categoria: p.cat, qty: cantidades.get(iid) || 1 };
+      /* Las fotos de muestra se superponen solo en la lectura (store.db());
+         jamás se guardan como propias al editar el pedido. */
+      items.push(esFotoDemo(base.foto) ? { ...base, foto: null } : base);
+    });
     const manualesLimpios = manuales.filter(i => i.nombre.trim());
     manualesLimpios.forEach(i => items.push({ productoId: null, nombre: i.nombre.trim(), precio: parseMoneda(i.precio) ?? 0, foto: i.foto, categoria: "otro", qty: 1 }));
     if (!items.length) { toast("Agregá al menos un producto", "warn"); return; }

@@ -15,6 +15,7 @@ import { pathToFileURL } from "node:url";
 import { JSDOM, VirtualConsole } from "jsdom";
 import * as store from "../src/estado/store.js";
 import { datosDemo } from "../src/datos/demo.js";
+import { total } from "../src/nucleo/pedidos.js";
 import { vista, emitirVista } from "../src/estado/vista.js";
 import { aplicarTema } from "../src/pantallas/pantalla-ajustes.js";
 
@@ -1313,6 +1314,89 @@ test("editor: pedido de Rosita abre con 2× Medias lanas y Total $500, y guardar
   assert.equal(despues.items.length, 1);
   assert.equal(despues.items[0].qty, 2, "qty conservado tras guardar");
   assert.equal(despues.items[0].precio, 250);
+  assert.deepEqual(errores, []);
+});
+
+test("editor: guardar sin cambios conserva el snapshot de precio $1200 x2 aunque el inventario diga $1500", async () => {
+  /* Caso sintético de QA (sin datos reales): el precio acordado del pedido es
+     el snapshot del ítem, no el precio que tenga hoy el inventario. */
+  await reiniciar();
+  store.boot({
+    ...datosDemo(),
+    orders: [{
+      id: "o-snap", cliente: "Cliente Sintético", clienteId: null, tel: "", estado: "new",
+      cuotas: 2, cuotasPagadas: 0, fecha: "", notas: "", created: 1,
+      items: [{
+        productoId: "i-vestido", nombre: "Vestido", precio: 1200, qty: 2,
+        categoria: "vestido", foto: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E",
+      }],
+    }],
+    inventory: [{ id: "i-vestido", name: "Vestido Actualizado", price: 1500, cat: "otro", photo: null }],
+  });
+  emitirVista();
+  await esperar();
+  click('#main .card[data-pedido="o-snap"]');
+  await esperar();
+  click("#hEdit");
+  await esperar();
+  assert.equal(qs("#ftotal").textContent, "$2,400", "el editor abre con el precio acordado, no con el del inventario");
+  const fila = qs("#pick-grupos .pk-fila.on");
+  assert.equal(fila.querySelector(".pk-txt b").textContent, "Vestido", "la fila muestra el nombre del snapshot, no 'Vestido Actualizado'");
+  assert.equal(fila.querySelector(".pk-txt small").textContent, "$1,200", "la fila muestra el precio acordado, no $1500");
+  assert.ok(fila.querySelector(".pk-mini img"), "la fila conserva la foto del snapshot");
+  const item = () => store.pedidoPorId("o-snap").items[0];
+  click("#saveBtn");
+  await esperar();
+  assert.equal(item().precio, 1200, "guardar sin tocar nada NO sobrescribe el precio del snapshot");
+  assert.equal(item().nombre, "Vestido", "conserva el nombre del snapshot");
+  assert.equal(item().categoria, "vestido", "conserva la categoría del snapshot");
+  assert.ok(item().foto, "conserva la foto del snapshot");
+  assert.equal(total(store.pedidoPorId("o-snap")), 2400, "el total sigue siendo $2400");
+  assert.deepEqual(errores, []);
+});
+
+test("editor: cambio explícito de precio a $1300 desde el detalle se conserva al guardar el pedido", async () => {
+  /* El precio acordado se cambia con «Editar este artículo»; al abrir después
+     «Editar pedido» y guardar sin tocar nada, NO debe volver al precio del
+     inventario ($1500): debe rodar con el snapshot ya editado ($1300). */
+  await reiniciar();
+  store.boot({
+    ...datosDemo(),
+    orders: [{
+      id: "o-snap2", cliente: "Cliente Sintético", clienteId: null, tel: "", estado: "new",
+      cuotas: 2, cuotasPagadas: 0, fecha: "", notas: "", created: 1,
+      items: [{
+        productoId: "i-vestido", nombre: "Vestido", precio: 1200, qty: 2, categoria: "vestido",
+        foto: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'/%3E",
+      }],
+    }],
+    inventory: [{ id: "i-vestido", name: "Vestido", price: 1500, cat: "vestido", photo: null }],
+  });
+  emitirVista();
+  await esperar();
+  click('#main .card[data-pedido="o-snap2"]');
+  await esperar();
+  /* desde el detalle: doble toque sobre la tarjeta con foto → visor → editar */
+  const tarjeta = qs("#dstack .dcard[data-indice='0']") || qs("#dstack .dcard");
+  click(tarjeta);
+  click(tarjeta);
+  click(".lb-acciones .btn");
+  await esperar();
+  assert.equal(qs("#hoja-in h2").textContent, "Editar este artículo");
+  qs("#it-price").value = "1300";
+  qs("#it-price").dispatchEvent(new w.Event("input", { bubbles: true }));
+  click("#it-save");
+  await esperar(240);
+  assert.equal(store.pedidoPorId("o-snap2").items[0].precio, 1300, "la edición explícita se aplicó al ítem");
+  assert.equal(total(store.pedidoPorId("o-snap2")), 2600, "2 × $1300 = $2600");
+  /* el editor del pedido debe mostrar y conservar el precio recién acordado */
+  click("#hEdit");
+  await esperar();
+  assert.equal(qs("#ftotal").textContent, "$2,600", "el editor abre con el precio acordado");
+  click("#saveBtn");
+  await esperar();
+  assert.equal(store.pedidoPorId("o-snap2").items[0].precio, 1300, "guardar sin cambios no lo vuelve a $1500");
+  assert.equal(total(store.pedidoPorId("o-snap2")), 2600, "sigue $2600");
   assert.deepEqual(errores, []);
 });
 
