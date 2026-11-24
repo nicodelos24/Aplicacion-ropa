@@ -1,0 +1,15 @@
+028467fc1f72ae07d2768f34bb56c984802d9bb729a55cb44a703d324cd4706a  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-agenda-320-dark.png
+fefec2104f5eb329009864cca2465fd327fe38b0eb3e658af729496655ee6a2b  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-ajustes-1280-dark.png
+46e78946a6bee7cbe33ec348bb8724e081e93ee7455c39f5c8995edb0b5ff2ef  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-ajustes-320-dark-r38.png
+4a6e173040a46881518d3f7af195911d98e362a08936cdf48916ec355feefa33  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-cambiar-estado-confirmar-320-dark.png
+83d1717e91a66dc67776a29ecf73483df3a6e9a305a11ea8887998c4ad07c4df  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-contactos-320-dark.png
+b1ebec87eb933711664c020b3a08287b29a564fe30ca67e62eb5bef0a8d07449  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-cuotas-confirmar-salir-320-dark.png
+611fd5b154fd2e822e56b869b0e1096bb5f819fc6331fe36a3e7104446cf7bde  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-detalle-320-dark-tres-productos-r38.png
+4b5cd22dff3da62944ca1a42b9ab1462be2fb227e393faf94edcd2ae1d5cd6e0  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-historial-320-dark.png
+d12fe461ec17b56da999a71b251f9ab35cb35a273f192fb04b57e719070a491e  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-inicio-320-dark-r38.png
+50ec63a94162d981d427fa6bdb51681042d5818e311df60dd02311de7360f1b0  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-inicio-320-light.png
+14ff4167b34c7f526cd1ffd959ddac6e0f5b535340341c24c939b673bbbb38f3  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-inventario-320-dark.png
+5e26316746027853661ed7db47611d21b8c859d59755d919e592a54be44d5936  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-pedido-pagado-320-dark.png
+e7f7313e269ba5249221457c4efa0370ca61eaaef84120a5e1eae43d9abc60ff  capturas/2026-11-24/auditoria-real-2026-11-24/audit-real-pedidos-320-light.png
+b5058442d692e72740eecf0b71fda46ac7a07f9ed0464c766b4effa344c4198f  capturas/2026-11-24/auditoria-real-2026-11-24/audit-npm-check.log
+284d9b4e1d947f2adcf2196da50037ffcba8a5715361204b09b28d6fc1633eae  capturas/2026-11-24/auditoria-real-2026-11-24/audit-npm-test.log

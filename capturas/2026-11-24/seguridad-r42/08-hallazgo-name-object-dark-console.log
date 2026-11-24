@@ -1,0 +1,6 @@
+[  257925ms] [ERROR] render contactos TypeError: Cannot read properties of undefined (reading 'toUpperCase')
+    at https://nicodelos24.github.io/Aplicacion-ropa/src/pantallas/pantalla-contactos.js:30:105
+    at Array.map (<anonymous>)
+    at pintarContactos (https://nicodelos24.github.io/Aplicacion-ropa/src/pantallas/pantalla-contactos.js:24:79)
+    at render (https://nicodelos24.github.io/Aplicacion-ropa/src/main.js:253:33)
+    at https://nicodelos24.github.io/Aplicacion-ropa/src/main.js:266:1 @ https://nicodelos24.github.io/Aplicacion-ropa/src/main.js:257

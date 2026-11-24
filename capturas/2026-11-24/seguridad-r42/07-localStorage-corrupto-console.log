@@ -1,0 +1,8 @@
+[      11ms] [ERROR] render contactos TypeError: (t || "").replace is not a function
+    at fmtTel (https://nicodelos24.github.io/Aplicacion-ropa/src/nucleo/contacto.js:53:21)
+    at https://nicodelos24.github.io/Aplicacion-ropa/src/pantallas/pantalla-contactos.js:33:84
+    at Array.map (<anonymous>)
+    at pintarContactos (https://nicodelos24.github.io/Aplicacion-ropa/src/pantallas/pantalla-contactos.js:24:79)
+    at render (https://nicodelos24.github.io/Aplicacion-ropa/src/main.js:253:33)
+    at emitirVista (https://nicodelos24.github.io/Aplicacion-ropa/src/estado/vista.js:32:67)
+    at https://nicodelos24.github.io/Aplicacion-ropa/src/main.js:324:5 @ https://nicodelos24.github.io/Aplicacion-ropa/src/main.js:257

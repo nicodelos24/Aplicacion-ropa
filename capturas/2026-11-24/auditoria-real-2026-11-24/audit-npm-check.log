@@ -1,0 +1,5 @@
+
+> check
+> node tests/check-syntax.cjs
+
+Sintaxis OK: 72 archivos (src/**, sw.js, tests/*.test.mjs).

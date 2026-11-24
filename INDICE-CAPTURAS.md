@@ -678,6 +678,31 @@ Chrome del proyecto `kaia_chrome_ropaapp`: turno coordinado con Amber, tomado 09
 | Búsqueda `PANTALÓN`: una coincidencia | [dino-buscador-con-tilde.png](capturas/2026-11-24/dino-buscador-con-tilde.png) |
 | Búsqueda `zzz`: sin coincidencias | [dino-buscador-sin-tildes.png](capturas/2026-11-24/dino-buscador-sin-tildes.png) |
 
+## Flor — «romper y pulir»: persistencia, sin red, respaldo y barrido 390 (24-nov-2026, vivo r41) · NEEDS WORK
+
+Tarea `task_f6b782df70874b1e`. Demo pública `?demo=1` (datos ficticios) en el Chrome del proyecto, contexto aislado, 390×844 (viewport CSS 375×844), claro/oscuro. `npm test` 231/231 y `npm run check` OK (72 archivos); 0 errores de consola. Chrome tomado 11:06 UTC y soltado 11:15 UTC; sin pestañas ajenas ni publicación.
+
+- **Hallazgo 1 (bloquea la prueba de persistencia en demo):** cargar `?demo=1`, cambiar tema o agregar producto, recargar → vuelve todo al estado sembrado (tema `dark`, 5 pedidos / 6 productos / 4 clientas). `localStorage` sí guardó el cambio antes de recargar; `boot(datosDemo())` lo pisa. Propuesta: [task_b87662b6d7ba4f1c](apx:tasks/task_b87662b6d7ba4f1c). Persistencia real sin el flag NO verificada en esta ronda.
+- **Sin red:** con SW r41 activo y `navigator.onLine=false`, recargar `#inicio` abre la app completa (no pantalla en blanco); reconectar y recargar también abre bien. Los cambios previos no sobreviven por el hallazgo 1, no por el SW. Captura: [sin red, recarga 390 claro](capturas/2026-11-24/flor-romper-pulir/sin-red-recarga-390-claro.png).
+- **Respaldo:** botón «Descargar respaldo» en Ajustes descargó `respaldo-ropa-2026-11-24.json` (5,382 bytes), JSON válido con `orders/inventory/secciones/clients/events/log/users/usuarioId/prefijo/theme/demo`, 5/6/4/2/5 elementos respectivamente. Sin restaurar ni abrir archivos del sistema.
+- **Barrido visual 390:** Inicio, Pedidos, Ajustes e Historial, claro y oscuro, sin desbordes de página (`scrollWidth == clientWidth == 375`), botones de nav visibles y textos legibles. Los chips de filtros de Pedidos desbordan su contenedor `.chips` pero el contenedor es horizontal-scroll y el ancho se recupera deslizando; no bloquea. El contador «Por cobrar» se capturó a mitad de animación ($3,560.83 en claro, $3,563.58 en oscuro, siendo el final $3,850); propuesta menor: [task_9a67fb4ef4524cf7](apx:tasks/task_9a67fb4ef4524cf7).
+
+| Escena | Viewport / tema | Captura |
+|---|---|---|
+| Recarga sin red, app abierta | 390×844 · oscuro (flag demo) | [sin-red-recarga-390-claro.png](capturas/2026-11-24/flor-romper-pulir/sin-red-recarga-390-claro.png) |
+| Inicio con el contador a mitad de animación | 390×844 · claro | [moneycard-light-390.png](capturas/2026-11-24/flor-romper-pulir/moneycard-light-390.png) |
+| Inicio con el contador a mitad de animación | 390×844 · oscuro | [moneycard-dark-390.png](capturas/2026-11-24/flor-romper-pulir/moneycard-dark-390.png) |
+| Inicio estabilizado | 390×844 · claro | [inicio-390-light.png](capturas/2026-11-24/flor-romper-pulir/inicio-390-light.png) |
+| Inicio estabilizado | 390×844 · oscuro | [inicio-390-dark.png](capturas/2026-11-24/flor-romper-pulir/inicio-390-dark.png) |
+| Pedidos (filtros con scroll horizontal) | 390×844 · claro | [pedidos-390-light.png](capturas/2026-11-24/flor-romper-pulir/pedidos-390-light.png) |
+| Pedidos (filtros con scroll horizontal) | 390×844 · oscuro | [pedidos-390-dark.png](capturas/2026-11-24/flor-romper-pulir/pedidos-390-dark.png) |
+| Filtros deslizados al final | 390×844 · claro | [filtros-light-390.png](capturas/2026-11-24/flor-romper-pulir/filtros-light-390.png) |
+| Filtros deslizados al final | 390×844 · oscuro | [filtros-dark-390.png](capturas/2026-11-24/flor-romper-pulir/filtros-dark-390.png) |
+| Ajustes con «Descargar respaldo» | 390×844 · claro | [ajustes-390-light.png](capturas/2026-11-24/flor-romper-pulir/ajustes-390-light.png) |
+| Ajustes con «Descargar respaldo» | 390×844 · oscuro | [ajustes-390-dark.png](capturas/2026-11-24/flor-romper-pulir/ajustes-390-dark.png) |
+| Historial | 390×844 · claro | [historial-390-light.png](capturas/2026-11-24/flor-romper-pulir/historial-390-light.png) |
+| Historial | 390×844 · oscuro | [historial-390-dark.png](capturas/2026-11-24/flor-romper-pulir/historial-390-dark.png) |
+
 ## Dino — integración foco/zoom/abanico cuadrado (24-nov-2026, vivo r41 / master `027e9ce`) · Verificado
 
 Sin datos de clientas reales: demo `?demo=1`, pedido de Paco. Correcciones integradas: el foco queda dentro de la hoja del detalle (Tab y Shift+Tab, fondo `inert`, retorno al control que abrió), el viewport permite zoom (sin `user-scalable=no`, `main.css?v=10`, meta `mobile-web-app-capable`) y las tarjetas cuadradas del abanico se seleccionan a 320 con 3 artículos. Se subió la generación del SW de r39 a r41: con r40 el vivo seguía sirviendo módulos viejos por la caché; r41fuerza la regeneración. Verificado en el vivo a 320 y 390: 17 Tabs seguidos dentro de la hoja, fondo con `inert=true`, `overflow=hidden`, clic en ambas tarjetas laterales cambia la selección, 0 errores de consola. Hubo 503 transitorios de GitHub Pages al recargar (`manifest.json`/`orden.js`) que no se reprodujeron en reintentos. Suite 231/231 y `npm run check` OK (72 archivos). Chrome del proyecto: tomado a las 09:37 y liberado a las 10:12 UTC.
@@ -686,3 +711,24 @@ Sin datos de clientas reales: demo `?demo=1`, pedido de Paco. Correcciones integ
 |---|---|
 | Detalle con abanico cuadrado, local 320 oscuro | [dino-abanico-320-oscuro.png](capturas/2026-11-24/verificacion-integracion/dino-abanico-320-oscuro.png) |
 | Detalle en vivo r41, 320 claro | [vivo-r41-320-claro-detalle.png](capturas/2026-11-24/verificacion-integracion/vivo-r41-320-claro-detalle.png) |
+
+## Tito — «romper y pulir» seguridad: XSS, WhatsApp y localStorage (24-nov-2026, vivo r42) · NEEDS WORK
+
+Tarea `task_003a495f248e4a76`. Demo pública `?demo=1`, contexto/pestaña aislada del Chrome del proyecto, datos ficticios. 390×844 (viewport CSS 375×844), claro/oscuro. Sin publicar ni tocar datos reales. Chrome tomado y soltado en esta ronda; evidencias en `capturas/2026-11-24/seguridad-r42/`.
+
+- **XSS:** payloads `<img src=x onerror=…>`, `<script>…</script>`, `"'><svg onload=…>` en clienta, producto, notas de pedido, sección e Historial. Se renderizan como texto (`esc()`), 0 elementos inyectados, `window.__PWN` nunca se activó. Inicio, Pedidos (lista y detalle), Contactos (lista y perfil), Inventario e Historial sin ruptura. El respaldo exportado contiene los strings dentro de JSON (`JSON.stringify`), no HTML ejecutable.
+- **WhatsApp:** teléfonos con `javascript:…`, `?text=…&api_url=…` y prefijo malicioso se reducen a dígitos; `window.open` recibió únicamente `https://wa.me/<dígitos>` con `noopener,noreferrer`. Un teléfono internacional `+1…` se mantuvo sin prefijar `598`.
+- **localStorage:** JSON inválido, string raíz y array raíz degradan a estado vacío con nav intacta. **Hallazgo MEDIO:** un campo interno con tipo inesperado (`clients[0].name={x:1}` o `clients[0].tel={x:1}`) pasa `sanitizar()` y rompe Contactos (`TypeError` en `fmtTel`/`toUpperCase`), mostrando «Algo falló al abrir esta sección». Propuesta: [task_4f1df60ccac44e69](apx:tasks/task_4f1df60ccac44e69).
+- **Prolijidad 390:** Inicio, Contactos, Pedidos, Inventario e Historial con datos inventados, claro/oscuro, sin overflow horizontal de página (`scrollWidth == clientWidth == 375`) ni errores de render. Los scrolls internos de chips no bloquean.
+
+| Escena | Captura / evidencia |
+|---|---|
+| Inicio con textos de prueba (claro) | [01-inicio-light-390.png](capturas/2026-11-24/seguridad-r42/01-inicio-light-390.png) |
+| Contactos con payload como texto (claro) | [02-contactos-light-390.png](capturas/2026-11-24/seguridad-r42/02-contactos-light-390.png) |
+| Pedidos con payload como texto (claro) | [03-pedidos-light-390.png](capturas/2026-11-24/seguridad-r42/03-pedidos-light-390.png) |
+| Inventario con payload como texto (claro) | [04-inventario-light-390.png](capturas/2026-11-24/seguridad-r42/04-inventario-light-390.png) |
+| Historial con payload como texto (claro) | [05-historial-light-390.png](capturas/2026-11-24/seguridad-r42/05-historial-light-390.png) |
+| Historial con payload como texto (oscuro) | [06-historial-dark-390.png](capturas/2026-11-24/seguridad-r42/06-historial-dark-390.png) |
+| Hallazgo: nombre de clienta como objeto (oscuro) | [08-hallazgo-name-object-dark-390.png](capturas/2026-11-24/seguridad-r42/08-hallazgo-name-object-dark-390.png) |
+| Consola del hallazgo (teléfono como objeto) | [07-localStorage-corrupto-console.log](capturas/2026-11-24/seguridad-r42/07-localStorage-corrupto-console.log) |
+| Consola del hallazgo (nombre como objeto) | [08-hallazgo-name-object-dark-console.log](capturas/2026-11-24/seguridad-r42/08-hallazgo-name-object-dark-console.log) |
