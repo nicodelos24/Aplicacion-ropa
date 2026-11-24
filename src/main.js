@@ -4,7 +4,7 @@ import { qs, qsa, espacioToast } from "./ui/dom.js";
 import { ICONO } from "./ui/iconos.js";
 import { boot, db, suscribir, setTema, suscribirDisco, enSoloMemoria } from "./estado/store.js";
 import { datosDemo } from "./datos/demo.js";
-import { vista, emitirVista, suscribirVista, irA } from "./estado/vista.js";
+import { vista, emitirVista, suscribirVista, irA, seccionDelHash } from "./estado/vista.js";
 import { aplicarTema } from "./pantallas/pantalla-ajustes.js";
 import { pintarInicio } from "./pantallas/pantalla-inicio.js";
 import { pintarPedidos } from "./pantallas/pantalla-pedidos.js";
@@ -30,6 +30,12 @@ import {
 /* arranque: modo demo (?demo=1) o datos locales */
 const DEMO = /[?&]demo=1/.test(location.search);
 boot(DEMO ? datosDemo() : null);
+
+/* La URL nombra la sección (`#inventario`): al abrir la app, o al recargar,
+   se respeta. Antes arrancaba siempre en Inicio aunque el hash dijera otra cosa,
+   así que recargar el inventario lo perdía. Un hash desconocido deja inicio. */
+const seccionURL = seccionDelHash(location.hash);
+if (seccionURL && seccionURL !== vista.seccion) vista.seccion = seccionURL;
 
 /* Persistencia: si el dispositivo rechaza la escritura (o la acepta sin fotos)
    se avisa en pantalla. Antes la app seguía como si nada y el cambio se perdía
@@ -284,8 +290,10 @@ window.addEventListener("keydown", e => {
   intentarCerrarHoja();
 });
 
-/* la entrada raíz también lleva la sección, para que "atrás" hasta el inicio sepa volver */
-try { history.replaceState({ seccion: vista.seccion }, "", location.href); } catch (e) { /* sin history */ }
+/* la entrada raíz también lleva la sección, para que "atrás" hasta el inicio sepa volver.
+   Si la URL traía `#inventario` y la app abrió ahí, la entrada queda con inventario:
+   así el atrás vuelve a Inicio dentro de la app y no se queda sin efecto visible. */
+try { history.replaceState({ seccion: vista.seccion }, "", seccionURL ? "#" + vista.seccion : location.href); } catch (e) { /* sin history */ }
 
 /* botón atrás del navegador: cierra la hoja o vuelve a la sección anterior */
 window.addEventListener("popstate", e => {
@@ -307,8 +315,17 @@ window.addEventListener("popstate", e => {
     return;
   }
   /* si no, navega a la sección del estado (o a inicio por defecto) */
-  const destino = (e.state && e.state.seccion) || (location.hash || "").replace("#", "") || "inicio";
+  const destino = (e.state && e.state.seccion) || seccionDelHash(location.hash) || "inicio";
   if (destino !== vista.seccion) {
+    vista.seccion = destino;
+    emitirVista();
+  }
+});
+
+/* cambiar el hash a mano (un enlace que apunta a una sección) abre esa sección */
+window.addEventListener("hashchange", () => {
+  const destino = seccionDelHash(location.hash);
+  if (destino && destino !== vista.seccion) {
     vista.seccion = destino;
     emitirVista();
   }
