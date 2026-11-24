@@ -6,6 +6,14 @@ import { ICONO } from "../iconos.js";
 import { esc } from "../dom.js";
 import { esFotoDemo } from "../../datos/fotos-demo.js";
 
+/* cierre programático (lo usa el botón atrás del celular: primero se va la foto
+   ampliada, sin cerrar la hoja que está debajo ni salir de la app) */
+export function cerrarLightbox() {
+  const lb = document.querySelector(".lightbox .lbx");
+  if (lb) lb.click();
+  return !!lb;
+}
+
 /**
  * @param {string} src dataURL o URL de la foto
  * @param {{ acciones?: {label: string, icono?: string, alTocar: () => void}[] }} opciones

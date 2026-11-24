@@ -614,3 +614,17 @@ Aprobado. Capturas en `capturas/2026-11-23/`: [visor con «Editar este artículo
 - Persistencia real verificada recargando **sin** `?demo=1` (con el flag, `boot()` siempre re-siembra `datosDemo()` y pisa el localStorage — comportamiento esperado del modo demo, no un bug): el nombre y precio editados sobrevivieron al reload.
 - Foco: dentro del visor, Tab cicla entre «Editar este artículo» y «Cerrar imagen ampliada» (trap correcto, sin fuga). Cerrando el visor con su botón X el foco vuelve a la tarjeta del artículo en el detalle, como se pidió. (Nota aparte, no pedida: Escape cierra el visor y el detalle en cascada hasta Inicio, no solo el visor — mencionar si en algún momento se quiere Escape de a un nivel por vez.)
 - Alturas táctiles, contraste y ausencia de desborde horizontal: OK a simple vista en oscuro a 390 px.
+
+## Ropa v2 · bloque de usabilidad (Nico 23-nov-2026 vía Nova) · Amber · r35
+
+Capturas del worktree `fix/usabilidad-secciones-fotos-ruido`, servidor local con `?demo=1` (sin datos de clientas), Playwright 320/390 px × claro/oscuro, 0 errores de página. `npm test` 211/211, `npm run check` OK.
+
+| Escena | Ancho / tema | Archivo |
+|---|---|---|
+| Inventario: secciones sin flechas, rótulo «Ocultar» y botón «Organizar» | 320 claro | [inventario-320-light.png](capturas/2026-11-23/usabilidad-r35/inventario-320-light.png) |
+| Inventario | 390 oscuro | [inventario-390-dark.png](capturas/2026-11-23/usabilidad-r35/inventario-390-dark.png) |
+| Hoja «Organizar»: foto de cada prenda junto a nombre y precio | 390 claro | [organizar-390-light.png](capturas/2026-11-23/usabilidad-r35/organizar-390-light.png) |
+| Hoja «Organizar» | 320 oscuro | [organizar-320-dark.png](capturas/2026-11-23/usabilidad-r35/organizar-320-dark.png) |
+| Detalle del pedido: lápiz compacto «Editar» + burbuja «?», sin botón gigante | 390 oscuro | [pedido-390-dark.png](capturas/2026-11-23/usabilidad-r35/pedido-390-dark.png) |
+
+Serie completa (12 capturas: inventario/organizar/pedido × 320/390 × claro/oscuro) en `capturas/2026-11-23/usabilidad-r35/`.

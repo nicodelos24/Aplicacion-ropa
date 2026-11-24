@@ -1,0 +1,24 @@
+/* ayuda.css — burbujas de ayuda contextual «?». La info sigue disponible pero
+   no ocupa línea ni distrae: un globo chico junto al título, se abre al tocar. */
+.ayuda-q{position:relative; display:inline-flex; vertical-align:middle; margin-left:5px}
+.ayuda-q-btn{
+  width:32px; height:32px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;
+  border-radius:var(--r-full); border:1px solid var(--line); background:var(--card2); color:var(--mut);
+  font-size:14px; font-weight:800; line-height:1; cursor:pointer;
+  transition:background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.ayuda-q-btn:hover,.ayuda-q.abierta .ayuda-q-btn{color:var(--acc-text); border-color:var(--acc)}
+.ayuda-q-btn:focus-visible{outline:2px solid var(--acc-text); outline-offset:2px}
+.ayuda-q-globo{
+  position:absolute; z-index:60; top:calc(100% + 6px); left:0; width:max-content; max-width:min(250px, 78vw);
+  padding:10px 12px; border-radius:12px; background:var(--card2); color:var(--txt);
+  border:1px solid var(--line-strong); box-shadow:var(--sh-3);
+  font-size:12px; font-weight:500; line-height:1.45; text-align:left; white-space:normal;
+}
+.ayuda-q-globo::before{
+  content:""; position:absolute; top:-6px; left:12px; width:10px; height:10px;
+  background:var(--card2); border-left:1px solid var(--line-strong); border-top:1px solid var(--line-strong);
+  transform:rotate(45deg);
+}
+.ayuda-q-globo[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.ayuda-q-btn{transition:none}}

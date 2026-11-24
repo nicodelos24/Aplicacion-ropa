@@ -662,7 +662,7 @@ test("detalle: «Editar este artículo» guarda el cambio en el pedido y vuelve 
   /* la barra de acciones edita el que está al frente: sin elegir, el primero */
   assert.equal(qs("#dItemEditarBtn").dataset.indice, "0");
   click(cartas[1]);
-  assert.match(qs("#dItemEditarBtn .ditem-lbl").textContent, /Artículo a mano/, "sigue al artículo al frente");
+  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Artículo a mano/, "el lápiz sigue al artículo al frente");
 
   /* segundo toque → visor con la acción → abre la hoja del artículo */
   click(cartas[1]);
@@ -1087,7 +1087,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r34"/, "el caché sube a r34 con la edición del artículo desde el pedido");
+  assert.match(sw, /const VERSION = "r35"/, "el caché sube a r35 con el bloque de usabilidad");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -1100,9 +1100,11 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
   assert.match(cssMain, /capas\.css\?v=5/, "el aviso de guardado y las acciones del visor entran con versión propia");
-  assert.match(cssMain, /componentes\.css\?v=6/, "los estilos de la edición del artículo entran con versión propia");
+  assert.match(cssMain, /componentes\.css\?v=7/, "los estilos del bloque de usabilidad entran con versión propia");
+  assert.match(cssMain, /secciones\.css\?v=4/, "los estilos de secciones entran con versión propia");
   assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
   assert.match(cssMain, /picker\.css\?v=1/, "los estilos del selector del pedido por sección entran con versión propia");
+  assert.match(cssMain, /ayuda\.css\?v=1/, "las burbujas de ayuda entran con versión propia");
   assert.match(cssMain, /motion\.css\?v=3/, "las animaciones nuevas de la agenda entran con versión propia");
   assert.doesNotMatch(sw, /ropa-v2-nav-90s-r19|ropa-v2-paco-corbata-r18|ropa-v2-nav-2000ms-toast-r17|ropa-v2-nav-2500ms-toast-r16|ropa-v2-pedido-cantidad-r14|ropa-v2-toast-r15|ropa-v2-nav-reaparicion-2500ms-r15/, "la versión de caché no queda en la de publicaciones anteriores");
   assert.doesNotMatch(sw, /ropa-v2-nav-pausa-r11/, "la caché publicada debe cambiar para servir el CSS del calendario");
@@ -1493,6 +1495,51 @@ test("secciones: asignar prendas desde la hoja mueve solo las marcadas", async (
   assert.deepEqual(errores, []);
 });
 
+test("usabilidad: los cajones se abren con palabras, sin flechas sueltas", async () => {
+  await reiniciar();
+  irA("inventario");
+  const cajones = qsa("#main .sec");
+  assert.equal(qs("#main .sec-caret"), null, "ya no hay glifo de flecha en las secciones");
+  assert.equal(cajones[0].querySelector(".sec-ver").textContent, "Ocultar", "el estado se dice con palabras");
+  assert.ok(cajones[0].querySelector(".sec-organizar"), "hay una acción «Organizar» explícita");
+  assert.match(cajones[0].querySelector(".sec-organizar").getAttribute("aria-label"), /Organizar la sección/);
+  const toggle = cajones[0].querySelector(".sec-toggle");
+  click(toggle);
+  assert.equal(cajones[0].querySelector(".sec-ver").textContent, "Ver", "el rótulo sigue al estado");
+  assert.match(toggle.getAttribute("aria-label"), /Ver las prendas/);
+  click(cajones[0].querySelector(".sec-organizar"));
+  await esperar();
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "«Organizar» abre la hoja de asignación");
+  assert.deepEqual(errores, []);
+});
+
+test("usabilidad: al organizar una sección se ve la foto de cada prenda", async () => {
+  await reiniciar();
+  irA("inventario");
+  /* una prenda sin foto, para probar el avatar por categoría */
+  const inv = store.db().inventory;
+  store.boot({ ...store.db(), inventory: [...inv, { id: "sinfoto", name: "Sin foto", price: 100, qty: 1, categoria: "ropa", seccionId: "ds1" }] });
+  click('[data-acc="secciones"]');
+  await esperar();
+  click('#hoja-in .sec-fila[data-id="ds1"] [data-sec="abrir"]');
+  await esperar();
+  const filas = qsa("#hoja-in .sec-pick-fila");
+  assert.equal(filas.length, 7);
+  for (const fila of filas) {
+    const mini = fila.querySelector(".mini-foto");
+    assert.ok(mini, "cada fila muestra una miniatura");
+    assert.ok(mini.querySelector("img, svg"), "foto o avatar por categoría");
+  }
+  assert.ok(qsa("#hoja-in .mini-foto img").length > 0, "las prendas con foto muestran su imagen");
+  assert.ok(qsa("#hoja-in .mini-foto svg").length > 0, "las que no tienen foto muestran el avatar");
+  /* los textos informativos pasaron a burbujas «?» */
+  assert.ok(qs("#hoja-in .ayuda-q-btn"), "hay ayuda contextual");
+  assert.equal(qs("#hoja-in .ayuda-q-globo").hidden, true, "el globo arranca cerrado");
+  click(qs("#hoja-in .ayuda-q-btn"));
+  assert.equal(qs("#hoja-in .ayuda-q-globo").hidden, false, "se abre al tocar");
+  assert.deepEqual(errores, []);
+});
+
 test("secciones: el editor de la prenda deja elegir la sección y la guarda", async () => {
   await reiniciar();
   irA("inventario");
@@ -1535,7 +1582,7 @@ test("secciones: los blancos táctiles del inventario por secciones llegan a 44 
   const css = fs.readFileSync(path.join(RAIZ, "src/ui/componentes/secciones.css"), "utf8");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.ok(cssMain.includes("secciones.css"), "la hoja de secciones entra en main.css");
-  for (const regla of [".sec-toggle{", ".sec-acc{", ".hoja-cab .hbtn{", ".sec-fila-abre{"]) {
+  for (const regla of [".sec-toggle{", ".sec-organizar{", ".sec-acc{", ".hoja-cab .hbtn{", ".sec-fila-abre{"]) {
     const bloque = new RegExp(regla.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^}]*)").exec(css);
     assert.ok(bloque, "existe la regla " + regla);
     const alto = /(?:min-)?height:(\d+)px/.exec(bloque[1]);
@@ -1862,9 +1909,10 @@ test("detalle: cerrar la edición con cambios avisa y cancelar no los pierde", a
 test("detalle: la barra de acciones nombra el artículo al frente y edita ese", async () => {
   await reiniciar();
   await abrirDetallePaco();
-  assert.match(qs("#dItemEditarBtn").textContent, /Editar «Camisa blanca»/, "sin elegir, el primero del abanico");
+  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Camisa blanca/, "sin elegir, el primero del abanico");
   click(qsa("#dstack .dcard")[1]);
-  assert.match(qs("#dItemEditarBtn").textContent, /Editar «Corbata»/, "sigue a la tarjeta al frente");
+  assert.match(qs("#dItemEditarBtn").getAttribute("aria-label"), /Corbata/, "el lápiz sigue a la tarjeta al frente");
+  assert.equal(qs("#dItemEditarBtn").dataset.indice, "1", "edita el de la tarjeta al frente");
   click("#dItemEditarBtn");
   assert.equal(qs("#it-name").value, "Corbata");
   assert.deepEqual(errores, []);

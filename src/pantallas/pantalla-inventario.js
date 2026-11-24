@@ -16,6 +16,7 @@ import { pintarStats } from "./pantalla-pedidos.js";
 import { categoria } from "../nucleo/catalogo.js";
 import { ICONO, VACIO_SVG, svgCategoria } from "../ui/iconos.js";
 import { esFotoDemo } from "../datos/fotos-demo.js";
+import { ayudaHTML, cablearAyudas } from "../ui/componentes/ayuda.js";
 import { agruparPorSeccion } from "../nucleo/secciones.js";
 import { normalizar } from "../nucleo/buscador.js";
 import {
@@ -62,27 +63,25 @@ function filaHTML(i, { seccionNombre, usos }) {
   </div>`;
 }
 
-/** Un cajón: cabecera-botón que pliega/despliega + grilla o lista. */
+/** Un cajón: nombre + acción «Organizar» con palabras (nada de flechas sueltas).
+    Tocar el nombre abre/cierra las prendas; el estado se dice con «Ver/Ocultar». */
 function cajonHTML(grupo, { conAcciones, modo = "grilla", usos = new Map() }) {
   const abierto = !plegadas.has(grupo.id ?? "__sin");
   const id = grupo.id || "sin";
   const n = grupo.productos.length;
+  const verbo = abierto ? "Ocultar" : "Ver";
   const cab = conAcciones
-    ? `<span class="sec-mas" role="group" aria-label="Opciones de ${esc(grupo.nombre)}">
-         <button class="sec-acc" data-sec-act="mover" data-sec="${esc(id)}" aria-label="Mover productos de ${esc(grupo.nombre)}">${ICONO.flecha}</button>
-         <button class="sec-acc" data-sec-act="renombrar" data-sec="${esc(id)}" aria-label="Cambiar el nombre de ${esc(grupo.nombre)}">${ICONO.pencil}</button>
-         <button class="sec-acc danger" data-sec-act="borrar" data-sec="${esc(id)}" aria-label="Eliminar la sección ${esc(grupo.nombre)}">${ICONO.trash}</button>
-       </span>`
+    ? `<button class="sec-organizar" data-sec-act="mover" data-sec="${esc(id)}" aria-label="Organizar la sección ${esc(grupo.nombre)}">${ICONO.pencil}<span>Organizar</span></button>`
     : "";
   const cuerpo = modo === "lista"
     ? `<div class="inv-lista stagger">${grupo.productos.map(i => filaHTML(i, { seccionNombre: grupo.nombre, usos })).join("")}</div>`
     : `<div class="inv stagger">${grupo.productos.map(cardHTML).join("")}</div>`;
   return `<section class="sec${abierto ? "" : " plegada"}" data-sec-grupo="${esc(id)}">
     <div class="sec-cab">
-      <button class="sec-toggle" data-sec-toggle="${esc(id)}" aria-expanded="${abierto}" aria-controls="sec-body-${esc(id)}">
+      <button class="sec-toggle" data-sec-toggle="${esc(id)}" aria-expanded="${abierto}" aria-controls="sec-body-${esc(id)}" aria-label="${verbo} las prendas de ${esc(grupo.nombre)}">
         <span class="sec-nombre">${esc(grupo.nombre)}</span>
         <span class="sec-cnt">${n}</span>
-        <span class="sec-caret">${ICONO.chevAbajo}</span>
+        <span class="sec-ver">${verbo}</span>
       </button>
       ${cab}
     </div>
@@ -182,13 +181,16 @@ export function pintarInventario(main) {
   main.innerHTML = `${barra}
     ${grupos.map(g => cajonHTML(g, { conAcciones: !vista.busqueda && (!!g.id), modo, usos })).join("")}
     <div class="sec-pie">
-      <button class="btn sec-nueva" data-acc="secciones">${ICONO.lista}<span>Secciones</span></button>
-      <p class="sec-nota">Los productos siguen en el inventario: cambia dónde se guardan, no se borra nada.</p>
+      <div class="sec-pie-fila">
+        <button class="btn sec-nueva" data-acc="secciones">${ICONO.lista}<span>Organizar secciones</span></button>
+        ${ayudaHTML("Las secciones son cajones para ordenar tus prendas. Tocar «Organizar» no borra nada: solo cambia en qué cajón se guarda cada producto.", "Para qué sirven las secciones")}
+      </div>
     </div>`;
 
   cablearBarra(main);
   cablearGrilla(main);
   cablearCajones(main);
+  cablearAyudas(main);
   main.querySelectorAll("[data-acc='secciones']").forEach(b => b.onclick = () => abrirHojaSecciones());
   main.querySelectorAll("[data-acc='nuevo']").forEach(b => b.onclick = () => abrirEditorInventario(null));
 }
@@ -249,6 +251,11 @@ function cablearCajones(main) {
       const sec = btn.closest(".sec");
       const abierto = !plegadas.has(clave);
       btn.setAttribute("aria-expanded", String(abierto));
+      const nombre = btn.querySelector(".sec-nombre").textContent;
+      const verbo = abierto ? "Ocultar" : "Ver";
+      btn.setAttribute("aria-label", `${verbo} las prendas de ${nombre}`);
+      const etiqueta = btn.querySelector(".sec-ver");
+      if (etiqueta) etiqueta.textContent = verbo;
       sec.classList.toggle("plegada", !abierto);
       const cuerpo = sec.querySelector(".sec-body");
       if (cuerpo) cuerpo.hidden = !abierto;

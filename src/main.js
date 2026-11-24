@@ -18,6 +18,7 @@ import { abrirEditorPedido } from "./pantallas/pantalla-pedido-editor.js";
 import { abrirEditorInventario } from "./pantallas/pantalla-inventario-editor.js";
 import { abrirEditorCliente } from "./pantallas/pantalla-cliente-editor.js";
 import { cerrarHoja, intentarCerrarHoja, marcarCierrePorBack } from "./ui/componentes/hoja.js";
+import { cerrarLightbox } from "./ui/componentes/lightbox.js";
 import { ocultarToast } from "./ui/componentes/toast.js";
 import { mostrarAvisoDisco, cerrarAvisoDisco } from "./ui/componentes/aviso-disco.js";
 import { avisoGuardado, avisoSoloMemoria } from "./nucleo/avisos-disco.js";
@@ -288,6 +289,12 @@ try { history.replaceState({ seccion: vista.seccion }, "", location.href); } cat
 
 /* botón atrás del navegador: cierra la hoja o vuelve a la sección anterior */
 window.addEventListener("popstate", e => {
+  /* si hay una foto ampliada, "atrás" cierra SOLO el visor y devuelve la entrada
+     de history que se acaba de consumir: la hoja de abajo sigue abierta */
+  if (cerrarLightbox()) {
+    try { history.pushState({ lightboxCerrado: 1 }, "", location.href); } catch (e) { /* sin history */ }
+    return;
+  }
   const h = qs("#hoja");
   if (h && h.classList.contains("abierta")) {
     const entrada = history.state && history.state.hoja;

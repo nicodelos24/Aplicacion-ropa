@@ -20,6 +20,7 @@ import { abrirEditorPedido } from "./pantalla-pedido-editor.js";
 import { abrirEditorArticulo } from "./pantalla-pedido-item-editor.js";
 import { abrirNuevoProductoEnPedido } from "./pantalla-pedido-nuevo-producto.js";
 import { plantilla } from "../ui/plantilla.js";
+import { ayudaHTML, cablearAyudas } from "../ui/componentes/ayuda.js";
 
 /* fracción "pagadas/total" para la barra de cuotas (en 8avos, sin estilo inline) */
 function fraccion(pagadas, cuotas, pasos = 24) {
@@ -35,10 +36,6 @@ export function abrirDetallePedido(id) {
   const st = ESTADOS[o.estado] || ESTADOS.new;
   const items = o.items || [];
   const hero = items.find(i => i.foto || i.photo);
-
-  const ayudaPie = (items.length > 1 || hero)
-    ? `Tocá una tarjeta para traerla al frente${hero ? " · otro toque amplía su foto" : ""}`
-    : "";
 
   const dcards = items.map(i => {
     const foto = i.foto ?? i.photo;
@@ -64,8 +61,6 @@ export function abrirDetallePedido(id) {
     estados,
     fecha: o.fecha ? `<span class="det-fecha">${ICONO.cal} ${fdateShort(o.fecha)}</span>` : "",
     dcards,
-    ayuda: ayudaPie ? `<p class="ayuda ayuda-izq">${ayudaPie}</p>` : "",
-    accionItem: accionItemHTML(items, ICONO),
     total: fmt(total(o)),
     cuotasHtml: o.estado === "due" ? plantilla(BLOQUE_CUOTAS, {
       r: fraccion(pagadas, cuotas),
@@ -73,9 +68,10 @@ export function abrirDetallePedido(id) {
       cuotas,
     }) : "",
     wa: o.tel ? `<button class="btn btn-wa" id="waBtn">${ICONO.wa} Escribir por WhatsApp</button>` : "",
-    icPencil: ICONO.pencil, icTrash: ICONO.trash, icX: ICONO.x,
+    icPencil: ICONO.pencil, icTrash: ICONO.trash, icX: ICONO.x, icPlus: ICONO.plus,
   }));
 
+  cablearAyudas(qs("#hoja-in") || document);
   const dstack = qs("#dstack");
   const cartas = qsa(".dcard", dstack);
   const huecos = cartas.length - 1;
@@ -87,10 +83,10 @@ export function abrirDetallePedido(id) {
   const pintarAccionItem = () => {
     if (!btnItem) return;
     const i = indiceAlFrente();
-    const nombre = i >= 0 ? (nombreItem(items[i]) || "este artículo") : "";
     btnItem.classList.toggle("oculto", i < 0);
     btnItem.dataset.indice = String(i);
-    qs(".ditem-lbl", btnItem).textContent = `Editar «${nombre}»`;
+    const nombre = i >= 0 ? (nombreItem(items[i]) || "este artículo") : "";
+    btnItem.setAttribute("aria-label", `Editar ${nombre}`);
   };
   /* foto ampliada: el visor conocido, con la acción que abre la edición del
      artículo, así no hay que volver a la tarjeta para editarlo */
@@ -214,12 +210,6 @@ export function celebrar(mensaje) {
   setTimeout(fuera, quieto ? 400 : 1250);
 }
 
-/* barra de acciones del artículo: se muestra solo si el pedido tiene artículos */
-function accionItemHTML(items, ic) {
-  if (!items) return "";
-  return plantilla(ACCION_ITEM, { pencil: ic.pencil, imagen: ic.image, plus: ic.plus });
-}
-
 const HOJA = `
   <div class="detail">
     <div class="agarre"></div>
@@ -235,8 +225,11 @@ const HOJA = `
       {{fecha}}
     </div>
     <div class="dcards" id="dstack">{{dcards}}</div>
-    {{ayuda}}
-    {{accionItem}}
+    <div class="dcards-pie">
+      <button type="button" class="dcard-editar" id="dItemEditarBtn" aria-label="Editar este artículo">{{icPencil}}<span class="ditem-lbl">Editar</span></button>
+      <button type="button" class="dcard-editar" id="dItemNuevoBtn" aria-label="Nuevo producto">{{icPlus}}<span class="ditem-lbl">Nuevo producto</span></button>
+      ${ayudaHTML("Tocá una tarjeta para traerla al frente; tocá dos veces para ampliar su foto. El lápiz edita el artículo que está al frente.", "Cómo usar las tarjetas")}
+    </div>
     <div class="totalbar"><span>Total</span><b class="monto">{{total}}</b></div>
     {{cuotasHtml}}
     {{wa}}
@@ -251,13 +244,6 @@ const DCARD = `
         <span class="dnombre contenedor-texto">{{nombre}}</span>
       </span>
     </button>`;
-
-const ACCION_ITEM = `
-    <div class="ditem-accion">
-      <button type="button" class="btn btn-ghost" id="dItemNuevoBtn">{{plus}} Nuevo producto</button>
-      <button type="button" class="btn btn-ghost" id="dItemEditarBtn">{{pencil}} <span class="ditem-lbl">Editar artículo</span></button>
-      <span class="ditem-hint">{{imagen}} Segundo toque en una tarjeta: su foto ampliada</span>
-    </div>`;
 
 const BLOQUE_CUOTAS = `
       <div class="barra-cuotas barra-det" data-r="{{r}}"><div class="relleno"></div></div>

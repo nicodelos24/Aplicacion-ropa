@@ -9,7 +9,7 @@
  *    (`listo`): si la nueva no precargó entera, se va a la red y no se fusiona;
  *  - la generación vieja se borra en `activate`, antes de tomar el control.
  */
-const VERSION = "r34";
+const VERSION = "r35";
 const CACHE = "ropa-v2-nav-1500ms-" + VERSION;
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
@@ -19,7 +19,8 @@ const ASSETS = [
   "./src/ui/componentes/componentes.css", "./src/ui/componentes/capas.css",
   "./src/ui/componentes/secciones.css",
   "./src/ui/componentes/filtros.css",
-  "./src/ui/componentes/picker.css",
+  "./src/ui/componentes/picker.css", "./src/ui/componentes/ayuda.css",
+  "./src/ui/componentes/ayuda.js", "./src/ui/componentes/mini-foto.js",
   "./src/ui/componentes/foto-picker.js",
   "./src/ui/componentes/campos-articulo.js",
   "./src/ui/componentes/aviso-disco.js",

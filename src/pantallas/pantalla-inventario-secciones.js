@@ -5,6 +5,8 @@
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
 import { abrirHoja, cerrarHoja } from "../ui/componentes/hoja.js";
+import { miniFotoHTML } from "../ui/componentes/mini-foto.js";
+import { ayudaHTML, cablearAyudas } from "../ui/componentes/ayuda.js";
 import { mostrarError } from "../ui/componentes/campo.js";
 import { confirmar } from "../ui/componentes/confirmar.js";
 import { toast } from "../ui/componentes/toast.js";
@@ -34,15 +36,15 @@ function pintarLista() {
   const sueltos = inv.filter(p => !p.seccionId || !lista.some(s => s.id === p.seccionId)).length;
 
   cont.innerHTML = `
-    <div class="hoja-cab"><h2>Tus secciones</h2><button class="hbtn" data-x aria-label="Cerrar">${ICONO.x}</button></div>
-    <p class="hoja-sub">Ordená el inventario como quieras. Borrar una sección no borra prendas.</p>
+    <div class="hoja-cab"><h2>Tus secciones ${ayudaHTML("Tocá el nombre de una sección para elegir qué prendas van adentro. Borrar una sección nunca borra tus prendas: pasan a «Sin sección».", "Cómo funcionan las secciones")}</h2><button class="hbtn" data-x aria-label="Cerrar">${ICONO.x}</button></div>
     <div class="sec-lista">
       ${lista.length ? lista.map(s => {
         const n = contarEnSeccion(inv, s.id);
         return `<div class="sec-fila" data-id="${esc(s.id)}">
-          <button class="sec-fila-abre" data-sec="abrir" aria-label="Agregar o quitar prendas de ${esc(s.nombre)}">
+          <button class="sec-fila-abre" data-sec="abrir" aria-label="Organizar las prendas de ${esc(s.nombre)}">
             <span class="sec-fila-nombre">${esc(s.nombre)}</span>
             <span class="sec-cnt">${n}</span>
+            <span class="sec-fila-organizar">Organizar ›</span>
           </button>
           <span class="sec-mas">
             <button class="sec-acc" data-sec="renombrar" aria-label="Cambiar el nombre de ${esc(s.nombre)}">${ICONO.pencil}</button>
@@ -63,6 +65,7 @@ function pintarLista() {
     </div>`;
 
   cont.querySelector("[data-x]").onclick = () => cerrarHoja();
+  cablearAyudas(cont);
   cont.querySelector("[data-acc='nueva']").onclick = crearDesdeInput;
   qs("#sec-nombre", cont).onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); crearDesdeInput(); } };
   qsa(".sec-fila", cont).forEach(fila => {
@@ -101,6 +104,7 @@ function pintarRenombrar(id) {
     </div>
     <button class="btn btn-primario btn-ancho" data-acc="guardar">Guardar nombre</button>`;
   cont.querySelector("[data-x]").onclick = () => cerrarHoja();
+  cablearAyudas(cont);
   cont.querySelector("[data-volver]").onclick = () => pintarLista();
   const input = qs("#sec-nombre", cont);
   const guardar = () => {
@@ -141,13 +145,13 @@ function pintarAsignar(id) {
   const inv = productos();
   const cont = qs("#sec-hoja");
   cont.innerHTML = `
-    <div class="hoja-cab"><button class="hbtn" data-volver aria-label="Volver">${ICONO.chevIzq}</button><h2>${esc(s.nombre)}</h2><button class="hbtn" data-x aria-label="Cerrar">${ICONO.x}</button></div>
-    <p class="hoja-sub">Marcá las prendas que van en esta sección. Se pueden cambiar cuando quieras.</p>
+    <div class="hoja-cab"><button class="hbtn" data-volver aria-label="Volver">${ICONO.chevIzq}</button><h2>${esc(s.nombre)} ${ayudaHTML("Marcá las prendas que van en esta sección. Podés cambiarlas cuando quieras; desmarcar una no la borra, solo la deja sin sección.", "Cómo organizar esta sección")}</h2><button class="hbtn" data-x aria-label="Cerrar">${ICONO.x}</button></div>
     ${inv.length ? `<div class="sec-pick">
       ${inv.map(p => {
         const dentro = p.seccionId === id;
         return `<label class="sec-pick-fila">
           <input type="checkbox" data-pick="${esc(p.id)}" ${dentro ? "checked" : ""}>
+          ${miniFotoHTML(p)}
           <span class="sec-pick-nombre">${esc(p.name)}</span>
           <span class="sec-pick-precio">${fmt(p.price)}</span>
         </label>`;
@@ -157,6 +161,7 @@ function pintarAsignar(id) {
     : `<p class="sec-vacia">Tu inventario está vacío. Agregá prendas desde la pestaña Inventario.</p>`}`;
 
   cont.querySelector("[data-x]").onclick = () => cerrarHoja();
+  cablearAyudas(cont);
   cont.querySelector("[data-volver]").onclick = () => pintarLista();
   const aplicar = cont.querySelector("[data-acc='aplicar']");
   if (aplicar) aplicar.onclick = () => {
