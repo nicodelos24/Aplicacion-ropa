@@ -21,15 +21,23 @@
   animation:hojaEntra 220ms var(--spring) both;
 }
 @keyframes hojaEntra{from{transform:translateY(100%)} to{transform:none}}
-.hoja.arrastrando .hoja-in{animation:none; transition:transform var(--t-fast) linear}
+/* Mientras el dedo arrastra, el panel lo sigue 1:1 sin transición; al soltar,
+   el rebote elástico lo devuelve a su sitio si no pasó el umbral. */
+.hoja.arrastrando .hoja-in{animation:none; transition:none}
+.hoja-in{transition:transform 320ms var(--spring)}
+/* El velo se aclara a medida que se baja la hoja (--arrastre-op lo pone el JS). */
+.hoja.arrastrando{background:color-mix(in srgb,var(--overlay) calc(var(--arrastre-op, 1) * 100%),transparent)}
 .hoja.cerrando{opacity:0}
-.hoja.cerrando .hoja-in{animation:hojaSale var(--t-med) ease both}
-@keyframes hojaSale{from{transform:none; opacity:1} to{transform:translateY(55%); opacity:0}}
+.hoja.cerrando .hoja-in{animation:hojaSale 260ms var(--ease-out) both}
+@keyframes hojaSale{from{transform:none; opacity:1} to{transform:translateY(100%); opacity:.35}}
 .agarre{
   width:46px; height:5px; border-radius:3px; background:var(--line-strong);
   margin:8px auto 8px; touch-action:none; cursor:grab; transition:background var(--t-fast);
 }
 .agarre:hover{background:var(--mut)}
+/* Toda la franja superior es zona de agarre (la cabecera de cada hoja). */
+.hoja-cab, .hoja h1, .hoja h2, .hoja h3{touch-action:pan-y}
+.hoja.arrastrando .agarre{cursor:grabbing; background:var(--mut)}
 .hoja h2{font-size:var(--fz-2xl); font-weight:850; letter-spacing:-.6px; margin:10px 0 12px; overflow-wrap:anywhere}
 .hoja .btn-ghost{margin-bottom:4px}
 

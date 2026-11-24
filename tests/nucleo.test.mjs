@@ -135,6 +135,28 @@ test("WhatsApp: 099111222 → 59899111222, con y sin prefijo tipeado", () => {
   assert.match(linkWhatsApp("099111222", "hola"), /^https:\/\/wa\.me\/59899111222\?text=/);
 });
 
+test("WhatsApp: abrirWhatsApp abre wa.me en pestaña nueva con noopener (ícono de Contactos)", async () => {
+  const { abrirWhatsApp } = await import("../src/servicios/whatsapp.js");
+  const teniaWindow = Object.prototype.hasOwnProperty.call(globalThis, "window");
+  const windowAnterior = globalThis.window;
+  const llamadas = [];
+  globalThis.window = { open: (...args) => { llamadas.push(args); return {}; } };
+  try {
+    abrirWhatsApp("099111222", "", "+598");
+    assert.equal(llamadas.length, 1, "debe abrir una pestaña (antes tiraba ReferenceError y no pasaba nada)");
+    assert.equal(llamadas[0][0], "https://wa.me/59899111222");
+    assert.equal(llamadas[0][1], "_blank");
+    assert.match(llamadas[0][2], /noopener/);
+    assert.match(llamadas[0][2], /noreferrer/);
+    // sin teléfono no se abre nada (el ícono de Contactos muestra «Sin WA»)
+    abrirWhatsApp("", "", "+598");
+    assert.equal(llamadas.length, 1, "sin teléfono no abre pestaña");
+  } finally {
+    if (teniaWindow) globalThis.window = windowAnterior;
+    else delete globalThis.window;
+  }
+});
+
 test("fechas: desplazamiento, formato largo y celdas de mes", () => {
   const d = desplazarDias(0);
   assert.match(d, /^\d{4}-\d{2}-\d{2}$/);

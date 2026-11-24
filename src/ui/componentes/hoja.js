@@ -81,28 +81,60 @@ function cerrarHojaForzado() {
   cerrandoPorBack = false;
 }
 
-/* gesto: agarrar la barra y deslizar hacia abajo cierra */
+/* Gesto: agarrar la parte de arriba del panel y deslizar hacia abajo cierra.
+   Se delega en #hoja (siempre presente) para cubrir también el contenido que
+   se pinta después de abrir (p. ej. la hoja de secciones). Zona de agarre =
+   barrita (.agarre), cabecera (.hoja-cab) o título h{1..6}. Se ignoran los
+   controles (X, ayuda «?», inputs, tlones) para no romper el tap ni el scroll.
+   El panel sigue al dedo y rebota si no pasa el umbral. */
+const UMBRAL_CIERRE = 96;   // px de arrastre para cerrar
+const RESBALON_MAX = 0.28;  // resistencia al querer subir
+
+function esControl(el) {
+  return !!(el && el.closest && el.closest("button, a, input, select, textarea, [data-x], [role=button], [data-ayuda]"));
+}
+
+function enZonaSuperior(hi, target) {
+  if (esControl(target)) return false;
+  if (target.closest(".agarre, .hoja-cab")) return true;
+  const tit = target.closest && target.closest("h1, h2, h3, h4, h5, h6");
+  if (tit && hi.contains(tit)) return true;
+  return false;
+}
+
 function engancharGesto() {
-  const h = hoja(), hi = hojaIn();
-  const agarre = hi.querySelector(".agarre");
-  if (!agarre) return;
-  let y0 = null, dy = 0;
-  const inicio = e => { y0 = (e.touches ? e.touches[0].clientY : e.clientY); h.classList.add("arrastrando"); };
-  const mover = e => {
-    if (y0 == null) return;
-    dy = Math.max(0, (e.touches ? e.touches[0].clientY : e.clientY) - y0);
+  const h = hoja();
+  if (!h || h.dataset.gesto === "1") return; // delegación persistente, una sola vez
+  h.dataset.gesto = "1";
+  let y0 = null, dy = 0, id = null;
+
+  h.onpointerdown = (e) => {
+    const hi = hojaIn();
+    if (!h.classList.contains("abierta") || !enZonaSuperior(hi, e.target)) return;
+    y0 = (e.touches ? e.touches[0].clientY : e.clientY);
+    id = e.pointerId;
+    h.classList.add("arrastrando");
+    hi.style.transition = "none";
+  };
+  h.onpointermove = (e) => {
+    if (y0 == null || (id != null && e.pointerId !== id)) return;
+    const hi = hojaIn();
+    const actual = (e.touches ? e.touches[0].clientY : e.clientY) - y0;
+    dy = actual > 0 ? actual : actual * RESBALON_MAX;
     hi.style.transform = `translateY(${dy}px)`;
-    if (e.cancelable && dy > 10) e.preventDefault();
+    h.style.setProperty("--arrastre-op", String(Math.max(0, 1 - dy / 420)));
+    if (e.cancelable && dy > 6) e.preventDefault();
   };
   const soltar = () => {
     if (y0 == null) return;
+    const hi = hojaIn();
     h.classList.remove("arrastrando");
-    if (dy > 110) { intentarCerrarHoja(); }
-    else hi.style.transform = "";
-    y0 = null; dy = 0;
+    hi.style.transition = "";
+    h.style.removeProperty("--arrastre-op");
+    if (dy > UMBRAL_CIERRE) { hi.style.transform = ""; intentarCerrarHoja(); }
+    else { hi.style.transform = ""; } // el CSS con transition rebota solo
+    y0 = null; dy = 0; id = null;
   };
-  agarre.onpointerdown = e => { agarre.setPointerCapture(e.pointerId); inicio(e); };
-  agarre.onpointermove = mover;
-  agarre.onpointerup = soltar;
-  agarre.onpointercancel = soltar;
+  h.onpointerup = soltar;
+  h.onpointercancel = soltar;
 }

@@ -1087,7 +1087,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r35"/, "el caché sube a r35 con el bloque de usabilidad");
+  assert.match(sw, /const VERSION = "r36"/, "el caché sube a r36 con el gesto de cierre y WhatsApp");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -1099,7 +1099,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.ok(sw.includes("./src/nucleo/pedido-picker.js"), "el precache incluye el módulo del selector por sección");
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
-  assert.match(cssMain, /capas\.css\?v=5/, "el aviso de guardado y las acciones del visor entran con versión propia");
+  assert.match(cssMain, /capas\.css\?v=6/, "el aviso de guardado, el visor y el gesto de cierre entran con versión propia");
   assert.match(cssMain, /componentes\.css\?v=7/, "los estilos del bloque de usabilidad entran con versión propia");
   assert.match(cssMain, /secciones\.css\?v=4/, "los estilos de secciones entran con versión propia");
   assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
@@ -1903,6 +1903,65 @@ test("detalle: cerrar la edición con cambios avisa y cancelar no los pierde", a
   await esperar(260);
   assert.equal(qs("#hoja").classList.contains("abierta"), false, "aceptar cierra sin guardar");
   assert.equal(store.pedidoPorId("d2").items[0].precio, antes, "el pedido no cambió");
+  assert.deepEqual(errores, []);
+});
+
+/* Gesto de cierre de hojas: los handlers viven en #hoja (delegación) y el
+   target es el nodo real de la zona superior. jsdom no trae PointerEvent así
+   que se invocan directamente con un evento mínimo sobre nodos del DOM. */
+function evtPointer(y, target) {
+  return { clientY: y, pointerId: 1, currentTarget: target, target,
+    touches: null, cancelable: true, preventDefault() {} };
+}
+function arrastrar(zona, desde, hasta) {
+  const h = qs("#hoja");
+  h.onpointerdown(evtPointer(desde, zona));
+  h.onpointermove(evtPointer(desde + (hasta - desde) / 2, zona));
+  h.onpointermove(evtPointer(hasta, zona));
+  h.onpointerup(evtPointer(hasta, zona));
+}
+
+test("hoja: arrastrar la barra hacia abajo la cierra; un arrastre corto vuelve", async () => {
+  await reiniciar();
+  irA("contactos");
+  click('#main .cli[data-id="dc1"]');
+  await esperar();
+  const agarre = qs("#hoja-in .agarre");
+  assert.ok(agarre, "la hoja tiene barra de agarre");
+
+  /* arrastre corto: sigue abierta y se limpia la transformación (rebote) */
+  arrastrar(agarre, 100, 140);
+  assert.equal(qs("#hoja").classList.contains("abierta"), true, "40 px no cierran");
+  assert.equal(qs("#hoja-in").style.transform, "", "vuelve a su sitio");
+
+  /* arrastre largo desde arriba: cierra */
+  arrastrar(agarre, 100, 260);
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false, "160 px cierran la hoja");
+  assert.deepEqual(errores, []);
+});
+
+test("hoja: la cabecera también cierra al arrastrar, pero sus botones siguen funcionando", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('#main [data-acc="secciones"]');
+  await esperar();
+  const cab = qs("#hoja-in .hoja-cab");
+  assert.ok(cab, "la hoja de secciones tiene cabecera");
+  arrastrar(cab, 100, 250);
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false, "arrastrar la cabecera cierra");
+
+  /* el botón X de la cabecera sigue cerrando con tap (no se lo intercepta) */
+  await reiniciar();
+  irA("inventario");
+  click('#main [data-acc="secciones"]');
+  await esperar();
+  const x = qs("#hoja-in .hoja-cab [data-x]");
+  assert.ok(x, "la cabecera tiene botón de cerrar");
+  click(x);
+  await esperar(220);
+  assert.equal(qs("#hoja").classList.contains("abierta"), false, "la X sigue funcionando");
   assert.deepEqual(errores, []);
 });
 
