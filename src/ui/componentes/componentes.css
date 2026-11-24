@@ -518,14 +518,17 @@ html[data-theme="light"] .cli-wa.none{color:#4d5168}
 }
 /* Al fondo queda la foto completa, no texto cortado por la carta de adelante. */
 .dcards:has(.dcard[aria-pressed="true"]) .dcard[aria-pressed="false"] .dcard-txt{opacity:0}
-/* barra «Editar este artículo» bajo el abanico: edita el artículo que está al frente */
-.ditem-accion{display:flex; flex-direction:column; gap:6px; margin-top:12px}
-.ditem-accion .btn{margin:0}
-.ditem-hint{
-  display:flex; align-items:center; gap:6px; justify-content:center;
-  font-size:var(--fz-xs); color:var(--mut); font-weight:600;
+/* pie del abanico: lápiz discreto para editar el artículo al frente + ayuda «?» */
+.dcards-pie{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:4px}
+.dcard-editar{
+  min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding:0 11px; border-radius:12px; background:var(--card2); color:var(--txt);
+  border:1px solid var(--line); font-size:12px; font-weight:750;
+  transition:background var(--t-fast), color var(--t-fast);
 }
-.ditem-hint svg{width:14px; height:14px; flex:none}
+.dcard-editar svg{width:17px; height:17px}
+.dcard-editar:hover{background:var(--card3); color:var(--acc-text)}
+.dcard-editar:focus-visible{outline:2px solid var(--acc-text); outline-offset:2px}
 /* hoja «Editar este artículo»: a quién pertenece y qué cantidad no se toca */
 .det-articulo-pedido{margin:-2px 0 4px}
 .cantidad-nota{
@@ -961,12 +964,10 @@ nav button.on svg{transform:translateY(-1px) scale(1.05); filter:drop-shadow(0 0
 }
 
 /* ---- editar un artículo desde el detalle del pedido ---- */
-/* barra bajo el abanico: edita el artículo que está al frente */
-.ditem-accion{display:flex; flex-direction:column; gap:6px; margin-top:12px}
-.ditem-accion .btn{margin:0; width:100%; min-height:46px; display:flex; align-items:center; justify-content:center; gap:8px}
-.ditem-accion .ditem-lbl{overflow-wrap:anywhere}
-.ditem-hint{font-size:11px; color:var(--mut); display:inline-flex; align-items:center; gap:5px; padding:0 2px}
-.ditem-hint svg{width:13px; height:13px; flex-shrink:0}
+/* pie del abanico en móvil: lápiz discreto + ayuda, en una sola fila */
+@media (max-width: 420px){
+  .dcard-editar{min-height:40px; min-width:40px}
+}
 /* hoja «Editar este artículo»: la cantidad queda a la vista, no editable */
 .det-articulo-pedido{margin:-4px 2px 10px; overflow-wrap:anywhere}
 .cantidad-nota{
