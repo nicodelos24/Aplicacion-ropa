@@ -223,7 +223,7 @@ export function setEstadoPedido(id, nuevo, usuario) {
   if (!p || !ES_ESTADO(nuevo)) return { ok: false };
   const q = cambiarEstado(p, nuevo);
   const accion = nuevo === "paid" ? "order_paid" : "order_edit";
-  const detail = nuevo === "paid" ? `${p.cliente} · ${fmt(total(p))}` : `${p.cliente} · ${ESTADOS[nuevo].label}`;
+  const detail = nuevo === "paid" ? `${p.cliente} · ${fmt(total(p))}` : `${p.cliente} · ${ESTADOS[nuevo].l}`;
   const r = set((d) => { d.orders = d.orders.map((x) => (x.id === id ? q : x)); }, { log: accion, detail, usuario });
   return { ok: true, pedido: q, persistencia: r };
 }

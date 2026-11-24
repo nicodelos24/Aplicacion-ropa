@@ -52,6 +52,27 @@ test("cambiar estado con confirmación (QA v1): cancelar no muta, aceptar paga",
   assert.equal(log[log.length - 1].action, "order_paid");
 });
 
+test("regresión: Historial nombre el estado al pasar a msg y due (nunca undefined)", () => {
+  // ESTADOS guarda la etiqueta en `l`; setEstadoPedido antes leía `.label` y
+  // escribía `<clienta> · undefined` en el log de Mensaje enviado / En cuotas.
+  for (const [id, estado, etiqueta] of [
+    ["d1", "msg", "Mensaje enviado"],
+    ["d1", "due", "En cuotas"],
+  ]) {
+    const mem = storeTest();
+    store.boot(datosDemo());
+    const r = store.setEstadoPedido(id, estado, U);
+    assert.ok(r.ok);
+    const entrada = store.log().at(-1);
+    assert.equal(entrada.action, "order_edit");
+    assert.match(entrada.detail, new RegExp(` · ${etiqueta}$`), "detail con la etiqueta del estado");
+    assert.doesNotMatch(entrada.detail, /undefined/, "sin undefined en el log");
+    // el mismo detail viaja a la persistencia (lo que ve el Historial)
+    assert.equal(mem.escrituras.at(-1).log.at(-1).detail, entrada.detail);
+    assert.doesNotMatch(mem.escrituras.at(-1).log.at(-1).detail, /undefined/);
+  }
+});
+
 test("cuotas +/−: piso 0 y auto-paso a pagado (QA v1)", () => {
   storeTest();
   store.boot(datosDemo());
