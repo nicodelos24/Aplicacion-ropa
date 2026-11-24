@@ -18,6 +18,16 @@ export const vista = {
   invOrden: "alta",
   invVista: "grilla",
 };
+/* Secciones que la app sabe abrir: es lo que puede venir en el hash.
+   La lista vive acá (no en main.js) para poder probar el arranque sin DOM. */
+export const SECCIONES = ["inicio", "agenda", "pedidos", "inventario", "contactos", "historial", "ajustes"];
+
+/** Sección pedida en la URL (`#inventario`), o null si no hay o no existe. */
+export function seccionDelHash(hash) {
+  const id = String(hash || "").trim().replace(/^#/, "").trim();
+  return SECCIONES.includes(id) ? id : null;
+}
+
 export function suscribirVista(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }
 export function emitirVista() { for (const fn of oyentes) { try { fn(vista); } catch (e) { console.error(e); } } }
 export function irA(seccion, { filtro } = {}) {
