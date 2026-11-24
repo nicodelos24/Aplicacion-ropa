@@ -677,3 +677,12 @@ Chrome del proyecto `kaia_chrome_ropaapp`: turno coordinado con Amber, tomado 09
 |---|---|
 | Búsqueda `PANTALÓN`: una coincidencia | [dino-buscador-con-tilde.png](capturas/2026-11-24/dino-buscador-con-tilde.png) |
 | Búsqueda `zzz`: sin coincidencias | [dino-buscador-sin-tildes.png](capturas/2026-11-24/dino-buscador-sin-tildes.png) |
+
+## Dino — integración foco/zoom/abanico cuadrado (24-nov-2026, vivo r41 / master `027e9ce`) · Verificado
+
+Sin datos de clientas reales: demo `?demo=1`, pedido de Paco. Correcciones integradas: el foco queda dentro de la hoja del detalle (Tab y Shift+Tab, fondo `inert`, retorno al control que abrió), el viewport permite zoom (sin `user-scalable=no`, `main.css?v=10`, meta `mobile-web-app-capable`) y las tarjetas cuadradas del abanico se seleccionan a 320 con 3 artículos. Se subió la generación del SW de r39 a r41: con r40 el vivo seguía sirviendo módulos viejos por la caché; r41fuerza la regeneración. Verificado en el vivo a 320 y 390: 17 Tabs seguidos dentro de la hoja, fondo con `inert=true`, `overflow=hidden`, clic en ambas tarjetas laterales cambia la selección, 0 errores de consola. Hubo 503 transitorios de GitHub Pages al recargar (`manifest.json`/`orden.js`) que no se reprodujeron en reintentos. Suite 231/231 y `npm run check` OK (72 archivos). Chrome del proyecto: tomado a las 09:37 y liberado a las 10:12 UTC.
+
+| Escena | Captura |
+|---|---|
+| Detalle con abanico cuadrado, local 320 oscuro | [dino-abanico-320-oscuro.png](capturas/2026-11-24/verificacion-integracion/dino-abanico-320-oscuro.png) |
+| Detalle en vivo r41, 320 claro | [vivo-r41-320-claro-detalle.png](capturas/2026-11-24/verificacion-integracion/vivo-r41-320-claro-detalle.png) |
