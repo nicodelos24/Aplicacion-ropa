@@ -369,7 +369,7 @@ export function editarCliente(id, datos, usuario) {
   const c = clientePorId(id);
   if (!c) return { ok: false, error: "Clienta inexistente" };
   if (!String(datos.name || "").trim()) return { ok: false, error: "Escribí el nombre" };
-  const q = { ...c, name: String(datos.name).trim(), tel: datos.tel !== undefined ? datos.tel : c.tel, notas: datos.notas !== undefined ? datos.notas : c.notas };
+  const q = { ...c, name: String(datos.name).trim(), tel: datos.tel !== undefined ? datos.tel : c.tel, notas: datos.notas !== undefined ? datos.notas : c.notas, foto: datos.foto !== undefined ? datos.foto : (c.foto || null) };
   const r = set((d) => { d.clients = d.clients.map((x) => (x.id === id ? q : x)); }, { log: "client_edit", detail: q.name, usuario });
   return { ok: true, cliente: q, persistencia: r };
 }

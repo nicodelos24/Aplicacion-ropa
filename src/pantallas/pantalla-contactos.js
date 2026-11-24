@@ -27,7 +27,7 @@ export function pintarContactos(main) {
       return `<div class="cli" data-id="${c.id}" role="button" tabindex="0" aria-label="Ver ${esc(c.name)}">
         <div class="card-fila">
           <div class="cli-id">
-            <div class="avatar">${esc((c.name || "?")[0].toUpperCase())}</div>
+            <div class="avatar">${c.foto ? `<img src="${esc(c.foto)}" alt="">` : esc((c.name || "?")[0].toUpperCase())}</div>
             <div class="contenedor-texto">
               <h3 class="contenedor-texto">${esc(c.name)}</h3>
               <p>${r.texto}${c.tel ? `<br><span class="cli-tel">${ICONO.tel} ${esc(fmtTel(c.tel, d.prefijo))}</span>` : ""}${c.notas ? `<div class="cli-nota">${esc(c.notas)}</div>` : ""}</p>

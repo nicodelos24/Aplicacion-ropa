@@ -102,8 +102,8 @@ export function productoNuevo({ name, price = 0, cat = CATEGORIA_DEFECTO, photo 
   };
 }
 
-export function clienteNuevo({ name, tel = "", notas = "" } = {}) {
-  return { id: uid("c"), name: name || "", tel: tel || "", notas: notas || "" };
+export function clienteNuevo({ name, tel = "", notas = "", foto = null } = {}) {
+  return { id: uid("c"), name: name || "", tel: tel || "", notas: notas || "", foto: foto || null };
 }
 
 export function eventoNuevo({ fecha, titulo = "", pedidoId = null } = {}) {

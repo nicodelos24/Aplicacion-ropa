@@ -551,6 +551,43 @@ test("editor de cliente: cerrar con cambios sin guardar avisa y no guarda solo",
   assert.deepEqual(errores, []);
 });
 
+test("fotos de contacto: se guarda con el cliente, se ve en lista y detalle, y sin foto queda la inicial", async () => {
+  await reiniciar();
+  /* alta con foto desde el editor: el flujo comprimido se simula guardando el dataURL */
+  irA("contactos");
+  click('#fab');
+  await esperar();
+  assert.ok(qs("#ce-cam") && qs("#ce-gal"), "el editor ofrece cámara y galería");
+  assert.ok(qs("#ce-prev .avatar"), "sin foto muestra el avatar con inicial");
+  qs("#ce-name").value = "Clienta con foto";
+  const dataURL = "data:image/jpeg;base64,AAA";
+  /* el picker pasa el dataURL a alElegir; acá se simula el resultado ya comprimido */
+  const r = store.crearCliente({ name: "Clienta con foto", tel: "", notas: "", foto: dataURL });
+  assert.equal(r.ok, true);
+  await esperar();
+  assert.equal(store.clientes().find((c) => c.name === "Clienta con foto").foto, dataURL, "la foto se guarda con el cliente");
+
+  irA("contactos");
+  const ficha = [...document.querySelectorAll("#main .cli")].find((n) => /Clienta con foto/.test(n.textContent));
+  assert.ok(ficha && ficha.querySelector(".avatar img"), "la lista muestra la foto en el avatar");
+  click(ficha);
+  await esperar();
+  assert.ok(qs("#hoja-in .avatar-gran img"), "el detalle muestra la foto");
+
+  /* editar conserva la foto si no se toca, y quitarla devuelve la inicial */
+  const id = r.cliente.id;
+  store.editarCliente(id, { name: "Clienta con foto", tel: "099111222", notas: "" });
+  assert.equal(store.clientePorId(id).foto, dataURL, "editar sin tocar la foto la conserva");
+  store.editarCliente(id, { name: "Clienta con foto", foto: null });
+  assert.equal(store.clientePorId(id).foto, null, "se puede quitar la foto");
+  await esperar();
+  irA("contactos");
+  const ficha2 = [...document.querySelectorAll("#main .cli")].find((n) => /Clienta con foto/.test(n.textContent));
+  assert.ok(!ficha2.querySelector(".avatar img"), "sin foto vuelve a la inicial");
+  assert.match(ficha2.querySelector(".avatar").textContent, /C/, "inicial de Clienta");
+  assert.deepEqual(errores, []);
+});
+
 test("detalle: cambiar estado pide confirmación, cancelar no muta y aceptar sí", async () => {
   await reiniciar();
   irA("pedidos");
@@ -1087,7 +1124,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   assert.doesNotMatch(sw, /ropa-v2-integracion-v2final-r4/, "versión de caché actualizada para las fotos demo");
   assert.doesNotMatch(sw, /ropa-v2-nav-auto-ocultable-r5|ropa-v2-demo-fotos-r5/, "versión de caché combinada");
   assert.match(sw, /const CACHE = "ropa-v2-nav-1500ms-" \+ VERSION/, "el nombre de caché sale de VERSION");
-  assert.match(sw, /const VERSION = "r36"/, "el caché sube a r36 con el gesto de cierre y WhatsApp");
+  assert.match(sw, /const VERSION = "r37"/, "el caché sube a r37 con las fotos de contacto");
   assert.match(sw, /gen=" \+ VERSION/, "los assets se cachean con la generación en la URL");
   assert.doesNotMatch(sw, /-r26"|-r27"/, "la versión de caché no queda en las anteriores");
   assert.doesNotMatch(sw, /-r21"|-r22"|-r23"|-r24"/, "la versión de caché no queda en las anteriores");
@@ -1100,7 +1137,7 @@ test("PWA: el ícono existe, la app carga como módulo y el service worker cache
   const cssMain = fs.readFileSync(path.join(RAIZ, "src/main.css"), "utf8");
   assert.match(cssMain, /base\.css\?v=3/, "el recorte del deslizo de la agenda entra con versión propia");
   assert.match(cssMain, /capas\.css\?v=6/, "el aviso de guardado, el visor y el gesto de cierre entran con versión propia");
-  assert.match(cssMain, /componentes\.css\?v=7/, "los estilos del bloque de usabilidad entran con versión propia");
+  assert.match(cssMain, /componentes\.css\?v=8/, "los estilos de usabilidad y fotos de contacto entran con versión propia");
   assert.match(cssMain, /secciones\.css\?v=4/, "los estilos de secciones entran con versión propia");
   assert.match(cssMain, /filtros\.css\?v=1/, "los estilos del buscador con filtros entran con versión propia");
   assert.match(cssMain, /picker\.css\?v=1/, "los estilos del selector del pedido por sección entran con versión propia");

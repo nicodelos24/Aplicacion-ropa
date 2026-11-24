@@ -44,7 +44,9 @@ export function abrirHojaCliente(id) {
   const hechos = r.pedidos.filter(o => o.estado === "paid");
 
   abrirHoja(plantilla(HOJA, {
-    inicial: esc((c.name || "?")[0].toUpperCase()),
+    avatar: c.foto
+      ? `<img src="${esc(c.foto)}" alt="Foto de ${esc(c.name)}">`
+      : esc((c.name || "?")[0].toUpperCase()),
     nombre: esc(c.name),
     tel: c.tel ? esc(fmtTel(c.tel, d.prefijo)) : "Sin teléfono",
     notas: c.notas ? plantilla(NOTA, { texto: esc(c.notas), icono: ICONO.nota }) : "",
@@ -75,7 +77,7 @@ export function abrirHojaCliente(id) {
 const HOJA = `
   <div class="agarre"></div>
   <div class="perfil">
-    <div class="avatar avatar-gran">${"{{inicial}}"}</div>
+    <div class="avatar avatar-gran">{{avatar}}</div>
     <div class="contenedor-texto">
       <h2 class="perfil-nombre">{{nombre}}</h2>
       <p class="perfil-tel">{{tel}}</p>
