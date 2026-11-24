@@ -9,7 +9,7 @@
  *    (`listo`): si la nueva no precargó entera, se va a la red y no se fusiona;
  *  - la generación vieja se borra en `activate`, antes de tomar el control.
  */
-const VERSION = "r40";
+const VERSION = "r41";
 const CACHE = "ropa-v2-nav-1500ms-" + VERSION;
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
@@ -82,6 +82,19 @@ self.addEventListener("fetch", (e) => {
         if (res.ok && (!critico || listo)) {
           const copia = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copia)).catch(() => {});
+        }
+        /* Los módulos ES y hojas de estilo se importan SIN ?gen=; si el SW
+           contestó con una copia de otra generación, el grafo queda a medias
+           (main.js nuevo con hoja.js viejo). Al venir de la red, se fuerzan
+           headers sin caché para que el próximo import no recicle el build
+           anterior desde la HTTP cache del navegador. */
+        if (critico && res.ok && !res.headers?.has?.("cache-control")) {
+          try {
+            return new Response(await res.clone().arrayBuffer(), {
+              status: res.status, statusText: res.statusText,
+              headers: { ...Object.fromEntries(res.headers.entries()), "Cache-Control": "no-store" },
+            });
+          } catch (e) { /* sin Response: se devuelve la original */ }
         }
         return res;
       } catch (err) {
