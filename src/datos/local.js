@@ -5,7 +5,8 @@ import { CATEGORIA_DEFECTO, CATEGORIAS_IDS } from "../nucleo/catalogo.js";
 import { ES_ESTADO, CUOTAS_MIN, CUOTAS_MAX, cuotasPagadasValidas } from "../nucleo/pedidos.js";
 
 export const KEY = "ropa_v2_data";
-const SIN_DATOS = () => ({
+/** Factory puro del estado vacío (sin tocar localStorage): lo usa también el store. */
+export const SIN_DATOS = () => ({
   orders: [], inventory: [], clients: [], events: [], log: [], secciones: [],
   users: [], usuarioId: "u1", prefijo: "+598", theme: "dark",
 });

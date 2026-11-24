@@ -238,6 +238,94 @@ test("borrar todo: doble confirmación arriba, acá vacía conservando cuenta (Q
   assert.ok(store.db().prefijo, "ajustes conservados");
 });
 
+/* ── guardado central: borrarDatos e importar viajan por set() ── */
+
+/** Store con persistencia controlada + canal de aviso; fallo de disco opcional. */
+function storeConDisco({ fallar = false } = {}) {
+  /* Disco que conserva la última escritura aceptada: así podemos comprobar que
+     tras un fallo la memoria y lo guardado siguen siendo el MISMO estado. */
+  const mem = { escrituras: [], avisos: [], disco: null, fallar: false };
+  const persistenciaGuardar = (d) => {
+    mem.escrituras.push(d);
+    if (mem.fallar) return { ok: false, degradado: true };
+    mem.disco = JSON.parse(JSON.stringify(d));
+    return { ok: true, degradado: false };
+  };
+  store.configurar({
+    disponible: () => true,
+    /* datosDemo() trae `demo:true` (marca de siembra); el store real al cargar
+       del disco ya no la tiene. Se quita para comparar exportar() antes/después. */
+    cargar: () => {
+      const d = datosDemo();
+      delete d.demo;
+      d.users = [{ id: "u1", nombre: "Dueña" }];
+      d.usuarioId = "u1";
+      d.prefijo = "+598";
+      d.theme = "dark";
+      return d;
+    },
+    guardar: persistenciaGuardar,
+  });
+  store.boot();
+  /* Se siembra el disco con el estado cargado y sólo DESPUÉS se activa el fallo. */
+  persistenciaGuardar(JSON.parse(store.exportar()));
+  mem.fallar = fallar;
+  mem.soltarDisco = store.suscribirDisco((r) => mem.avisos.push(r));
+  return mem;
+}
+
+test("borrarDatos: fallo de disco deja el estado intacto y avisa {ok:false}", () => {
+  const mem = storeConDisco({ fallar: true });
+  const antes = store.exportar();
+  const r = store.borrarDatos(U);
+  assert.equal(r.persistencia.ok, false, "la acción informa el fallo");
+  assert.equal(store.exportar(), antes, "memoria intacta: no se borra sin guardar");
+  assert.deepEqual(JSON.parse(store.exportar()), mem.disco, "la memoria sigue igual que el disco");
+  assert.equal(store.pedidos().length, 5);
+  assert.ok(mem.avisos.some((a) => a.ok === false && a.degradado === true), "suscribirDisco vio el fallo");
+  mem.soltarDisco();
+});
+
+test("importar: fallo de disco deja el estado intacto y avisa {ok:false}", () => {
+  const mem = storeConDisco({ fallar: true });
+  const antes = store.exportar();
+  const datos = JSON.parse(antes);
+  const respaldo = JSON.stringify({ ...datos, orders: datos.orders.slice(0, 2) });
+  const r = store.importar(respaldo);
+  assert.equal(r.persistencia.ok, false, "la acción informa el fallo");
+  assert.equal(store.exportar(), antes, "memoria intacta: no se importa sin guardar");
+  assert.deepEqual(JSON.parse(store.exportar()), mem.disco, "la memoria sigue igual que el disco");
+  assert.equal(store.pedidos().length, 5);
+  assert.ok(mem.avisos.some((a) => a.ok === false && a.degradado === true), "suscribirDisco vio el fallo");
+  mem.soltarDisco();
+});
+
+test("borrarDatos e importar conservan cuenta y ajustes y emiten por el canal central", () => {
+  const mem = storeConDisco();
+  const antes = store.exportar();
+  const datos = JSON.parse(antes);
+  store.borrarDatos(U);
+  assert.equal(store.pedidos().length, 0);
+  assert.equal(store.db().usuarioId, "u1");
+  assert.equal(store.db().prefijo, "+598");
+  assert.equal(store.db().theme, "dark");
+  const escriturasTrasBorrar = mem.escrituras.length;
+  assert.deepEqual(mem.escrituras.at(-1).orders, [], "borrar persiste el estado vacío vía set()");
+  assert.equal(mem.escrituras.at(-1).log.length, 0, "sin log de borrado");
+
+  const respaldo = JSON.stringify({ ...datos, orders: datos.orders.slice(0, 2) });
+  store.importar(respaldo);
+  assert.equal(store.pedidos().length, 2);
+  assert.equal(store.db().usuarioId, "u1");
+  assert.equal(store.db().prefijo, "+598");
+  assert.equal(store.db().theme, "dark");
+  assert.ok(mem.escrituras.length > escriturasTrasBorrar, "importar persiste vía set()");
+  assert.deepEqual(mem.escrituras.at(-1).log, datos.log, "importar no agrega entrada de log: restaura la del respaldo");
+  assert.equal(mem.avisos.length, 2, "un aviso de disco por escritura");
+  assert.deepEqual(mem.avisos, [{ ok: true, degradado: false }, { ok: true, degradado: false }]);
+  mem.soltarDisco();
+});
+
 test("cliente conocido se detecta por nombre al crear pedido", () => {
   storeTest();
   store.boot(datosDemo());

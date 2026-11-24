@@ -14,7 +14,7 @@ import {
   eventoNuevo, entradaLog, LOG_MAX, normalizarItem,
 } from "../nucleo/entidades.js";
 import { conteoFiltros, buscarPedidos, filtrarPorEstado, ordenarPedidos } from "../nucleo/filtros.js";
-import { cargar as cargarLocal, guardar as guardarLocal, borrarTodo, disponible } from "../datos/local.js";
+import { cargar as cargarLocal, guardar as guardarLocal, disponible, SIN_DATOS } from "../datos/local.js";
 import { conFotosDemo } from "../datos/fotos-demo.js";
 import { validarNombreSeccion, seccionNueva, esSeccion, contarEnSeccion } from "../nucleo/secciones.js";
 
@@ -417,16 +417,16 @@ export function setTema(tema, usuario) {
 
 /* ── Destructivas ── */
 export function borrarDatos(usuario) {
-  const limpio = borrarTodo();
-  // conserva usuarios, cuenta y ajustes (como la v1)
-  const conservado = {
-    ...limpio, users: estado.users, usuarioId: estado.usuarioId,
-    prefijo: estado.prefijo, theme: estado.theme,
-  };
-  estado = conservado;
-  const r = persistencia.guardar(estado);
-  emitir();
-  if (r && r.ok === false) avisarDisco({ ok: false, degradado: true });
+  // Estado vacío del factory puro (sin tocar localStorage directo): lo escribe
+  // el adaptador de persistencia a través de set(), igual que cualquier acción.
+  // Conserva usuarios, cuenta y ajustes (como la v1).
+  const r = set((d, previo) => {
+    for (const k of Object.keys(d)) delete d[k];
+    Object.assign(d, SIN_DATOS(), {
+      users: previo.users, usuarioId: previo.usuarioId,
+      prefijo: previo.prefijo, theme: previo.theme,
+    });
+  }, { log: null });
   return { ok: true, persistencia: r };
 }
 
@@ -459,10 +459,10 @@ export function importar(json, { confirmar } = {}) {
     usuarioId: estado.usuarioId, prefijo: estado.prefijo || "+598", theme: estado.theme,
   };
   proximo.orders = proximo.orders.map((o) => pedidoDesdeDatos(o, proximo.inventory));
-  estado = proximo;
-  const r = persistencia.guardar(estado);
-  emitir();
-  if (r && r.ok === false) avisarDisco({ ok: false, degradado: true });
+  const r = set((d) => {
+    for (const k of Object.keys(d)) delete d[k];
+    Object.assign(d, proximo);
+  }, { log: null });
   return { ok: true, counts, persistencia: r };
 }
 
