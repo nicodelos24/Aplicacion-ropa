@@ -1532,6 +1532,49 @@ test("secciones: asignar prendas desde la hoja mueve solo las marcadas", async (
   assert.deepEqual(errores, []);
 });
 
+test("secciones: desmarcar y «Guardar prendas» deja la prenda Sin sección y no la borra", async () => {
+  await reiniciar();
+  irA("inventario");
+  click('[data-acc="secciones"]');
+  await esperar();
+  click('#hoja-in .sec-fila[data-id="ds1"] [data-sec="abrir"]');
+  await esperar();
+  const totalAntes = store.db().inventory.length;
+  const marcas = qsa("#hoja-in [data-pick]");
+  assert.equal(marcas.length, totalAntes, "se listan todas las prendas");
+  marcas.find((c) => c.dataset.pick === "di1").checked = false;
+  click('#hoja-in [data-acc="aplicar"]');
+  await esperar();
+  const d1 = store.productoPorId("di1");
+  assert.ok(d1, "Guardar prendas NUNCA borra el producto desmarcado");
+  assert.equal(d1.seccionId, null, "el desmarcado queda en Sin sección");
+  assert.equal(store.db().inventory.length, totalAntes, "el total de productos no baja");
+  assert.equal(store.productoPorId("di3").seccionId, "ds1", "las que siguen marcadas no se tocan");
+  const sinSeccion = qsa("#main .sec").find((s) => s.querySelector(".sec-nombre").textContent === "Sin sección");
+  assert.equal(sinSeccion.querySelector(".sec-cnt").textContent, "3", "el cajón Sin sección refleja la movida");
+  assert.equal(store.log().at(-1).action, "inv_move", "el desmarque queda en el historial como un movimiento");
+  assert.deepEqual(errores, []);
+});
+
+test("atrás: con la foto ampliada abierta cierra solo el visor y la app sigue en la pantalla", async () => {
+  await reiniciar();
+  irA("inventario");
+  /* jsdom sí dispara popstate en history.back(); el estado raíz lo puso main.js */
+  click('#main .inv-card[data-id="di1"]');
+  await esperar();
+  assert.ok(qs(".lightbox"), "el toque abre el visor de foto ampliada");
+  const seccionAntes = vista.seccion;
+  const hojaAbierta = qs("#hoja").classList.contains("abierta");
+  /* gesto atrás del navegador/celular sobre la entrada que abrió el visor */
+  w.history.back();
+  await esperar(60);
+  assert.equal(qs(".lightbox"), null, "el visor se cerró");
+  assert.equal(vista.seccion, seccionAntes, "la app sigue en la misma pantalla");
+  assert.equal(qs("#hoja").classList.contains("abierta"), hojaAbierta, "la hoja de abajo no cambia");
+  assert.ok(qsa("#main .inv-card").length > 0, "la app sigue viva, no se fue atrás del inicio");
+  assert.deepEqual(errores, []);
+});
+
 test("usabilidad: los cajones se abren con palabras, sin flechas sueltas", async () => {
   await reiniciar();
   irA("inventario");
