@@ -628,3 +628,21 @@ Capturas del worktree `fix/usabilidad-secciones-fotos-ruido`, servidor local con
 | Detalle del pedido: lápiz compacto «Editar» + burbuja «?», sin botón gigante | 390 oscuro | [pedido-390-dark.png](capturas/2026-11-23/usabilidad-r35/pedido-390-dark.png) |
 
 Serie completa (12 capturas: inventario/organizar/pedido × 320/390 × claro/oscuro) en `capturas/2026-11-23/usabilidad-r35/`.
+
+## QA Flor — «Nuevo producto» desde el detalle del pedido (23/24-nov-2026, feat/pedido-alta-producto b62f84d + merge master) · Aprobado
+
+Informe completo en **[QA-Flor-Nuevo-Producto-23nov.md](QA-Flor-Nuevo-Producto-23nov.md)** (0 hallazgos). Capturas de Flor en `capturas/2026-11-24/`:
+
+| Escena | Archivo |
+|---|---|
+| Hoja «Nuevo producto» vacía, 390 oscuro | [nuevo-producto-01-hoja-vacia-390-oscuro.png](capturas/2026-11-24/nuevo-producto-01-hoja-vacia-390-oscuro.png) |
+| Hoja llena sin foto, 390 oscuro | [nuevo-producto-02-hoja-llena-sin-foto-390-oscuro.png](capturas/2026-11-24/nuevo-producto-02-hoja-llena-sin-foto-390-oscuro.png) |
+| Detalle con artículo nuevo sin foto (avatar por categoría), 390 oscuro | [nuevo-producto-03-detalle-sin-foto-avatar-390-oscuro.png](capturas/2026-11-24/nuevo-producto-03-detalle-sin-foto-avatar-390-oscuro.png) |
+| Hoja con foto elegida, 390 oscuro | [nuevo-producto-04-hoja-con-foto-390-oscuro.png](capturas/2026-11-24/nuevo-producto-04-hoja-con-foto-390-oscuro.png) |
+| Detalle con artículo con foto, 390 oscuro | [nuevo-producto-05-detalle-con-foto-390-oscuro.png](capturas/2026-11-24/nuevo-producto-05-detalle-con-foto-390-oscuro.png) |
+| Hoja a 320, oscuro | [nuevo-producto-06-hoja-320-oscuro.png](capturas/2026-11-24/nuevo-producto-06-hoja-320-oscuro.png) |
+| Detalle a 320, oscuro | [nuevo-producto-07-detalle-320-oscuro.png](capturas/2026-11-24/nuevo-producto-07-detalle-320-oscuro.png) |
+| Detalle 390 claro (modo real, foto en producto e ítem) | [nuevo-producto-08-detalle-claro-390-real.png](capturas/2026-11-24/nuevo-producto-08-detalle-claro-390-real.png) |
+| Hoja vacía 390 claro (real) | [nuevo-producto-09-hoja-vacia-claro-390-real.png](capturas/2026-11-24/nuevo-producto-09-hoja-vacia-claro-390-real.png) |
+
+Verificación post-merge (Dino, 24-nov): lápiz compacto de la usabilidad r35 y «Nuevo producto» conviven en `.dcards-pie`, alta en vivo OK a 390 oscuro: [verif-merge-pedido-390-oscuro.png](capturas/2026-11-24/verificacion-merge/verif-merge-pedido-390-oscuro.png).
