@@ -9,7 +9,7 @@
  *    (`listo`): si la nueva no precargó entera, se va a la red y no se fusiona;
  *  - la generación vieja se borra en `activate`, antes de tomar el control.
  */
-const VERSION = "r42";
+const VERSION = "r43";
 const CACHE = "ropa-v2-nav-1500ms-" + VERSION;
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
