@@ -36,8 +36,8 @@ export function entradasConMeta(entradas) {
   return (entradas || []).map((e) => ({ ...e, meta: LOG_META[e.action] || { icono: "•", label: e.action } }));
 }
 
-/** Filtro por autor ("all" | userId). */
+/** Filtro por autor ("all" | nombre visible `who`, el que muestran los chips). */
 export function filtrarPorAutor(entradas, autor) {
   if (!autor || autor === "all") return entradas || [];
-  return (entradas || []).filter((e) => e.user === autor);
+  return (entradas || []).filter((e) => e.who === autor);
 }

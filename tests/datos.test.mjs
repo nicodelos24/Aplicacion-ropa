@@ -4,6 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as store from "../src/estado/store.js";
 import { datosDemo } from "../src/datos/demo.js";
+import { KEY } from "../src/datos/local.js";
 
 /** localStorage mínimo en memoria, con quota opcional. */
 function localStorageSim({ quota } = {}) {
@@ -91,5 +92,35 @@ test("boot del store con localStorage: carga del disco + persistencia en cada ac
   store.setEstadoPedido("d3", "paid", { id: "u1", nombre: "Dueña" });
   const enDisco = JSON.parse(ls.getItem("ropa_v2_data"));
   assert.equal(enDisco.orders.find((o) => o.id === "d3").estado, "paid", "cambios van a disco");
+  limpiar();
+});
+
+test("arranque demo: siembra solo sin estado guardado y conserva los cambios al recargar", async () => {
+  const ls = localStorageSim();
+  const limpiar = conLS(ls);
+  const { guardar, cargar, disponible } = await import("../src/datos/local.js");
+  store.configurar({ guardar, cargar, disponible });
+
+  // Misma decisión de arranque que main.js con ?demo=1.
+  const arrancarDemo = () => store.boot(!ls.getItem(KEY) ? datosDemo() : null);
+
+  arrancarDemo();
+  assert.equal(store.pedidos().length, 5, "primera visita: siembra la demo");
+  assert.ok(ls.getItem(KEY), "la siembra queda persistida");
+
+  store.setTema("light");
+  store.crearProducto({ name: "Producto de prueba", price: 250 }, { id: "u1", nombre: "Dueña" });
+  const pedidosAntes = store.pedidos().length;
+
+  arrancarDemo();
+  assert.equal(store.db().theme, "light", "recarga conserva el tema");
+  assert.ok(store.productos().some((p) => p.name === "Producto de prueba"), "recarga conserva productos");
+  assert.equal(store.pedidos().length, pedidosAntes, "recarga no reemplaza pedidos por la demo");
+
+  // Un estado guardado vacío también es estado: no hay que volver a sembrar.
+  guardar({ ...cargar(), orders: [], inventory: [], clients: [], events: [], log: [], secciones: [] });
+  arrancarDemo();
+  assert.equal(store.pedidos().length, 0, "respeta un estado guardado vacío");
+  assert.equal(store.productos().length, 0);
   limpiar();
 });

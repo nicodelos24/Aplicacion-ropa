@@ -4,6 +4,7 @@ import { qs, qsa, espacioToast } from "./ui/dom.js";
 import { ICONO } from "./ui/iconos.js";
 import { boot, db, suscribir, setTema, suscribirDisco, enSoloMemoria } from "./estado/store.js";
 import { datosDemo } from "./datos/demo.js";
+import { KEY } from "./datos/local.js";
 import { vista, emitirVista, suscribirVista, irA, seccionDelHash } from "./estado/vista.js";
 import { aplicarTema } from "./pantallas/pantalla-ajustes.js";
 import { pintarInicio } from "./pantallas/pantalla-inicio.js";
@@ -29,7 +30,9 @@ import {
 
 /* arranque: modo demo (?demo=1) o datos locales */
 const DEMO = /[?&]demo=1/.test(location.search);
-boot(DEMO ? datosDemo() : null);
+let sinGuardado = false;
+try { sinGuardado = !localStorage.getItem(KEY); } catch { /* localStorage bloqueado */ }
+boot(DEMO && sinGuardado ? datosDemo() : null);
 
 /* La URL nombra la sección (`#inventario`): al abrir la app, o al recargar,
    se respeta. Antes arrancaba siempre en Inicio aunque el hash dijera otra cosa,
