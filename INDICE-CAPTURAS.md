@@ -744,4 +744,25 @@ Tarea `task_e2e9f472fc594b31`. Sin datos de clientas reales: demo `?demo=1`, ped
 | Disco rechaza: franja «No se guardó», sin toast de éxito | [fallo-disco-aviso-no-se-guardo.png](capturas/2026-11-24/restaurar-demo/fallo-disco-aviso-no-se-guardo.png) |
 | Vivo r46: 6→5 pedidos, tema claro y prefijo +54 conservados, 0 errores | [vivo-r46-restaurar-demo-ajustes-conservados.png](capturas/2026-11-24/restaurar-demo/vivo-r46-restaurar-demo-ajustes-conservados.png) |
 
-Confirmado en el vivo `https://nicodelos24.github.io/Aplicacion-ropa/?demo=1&gen=r46` desde contexto limpio: sw.js en r46, store servido con `restaurarDemo`, flujo completo 6→5 pedidos conservando `theme=light` y `prefijo=+54`, consola 0 errores. La pestaña vieja mostró una generación mixta al transitionar r45→r46; al recargar en contexto limpio quedó coherente.
+
+## Edu — revisión visual en equipo (25-nov-2026) · Verificado local
+
+Tarea `task_4506f4156ab544cb`. Demo `?demo=1`, datos ficticios, 393×852 (CSS) y 320×740; sin cambios de backend ni lógica de negocio. Corregidos: «Limpiar búsqueda» en el vacío de Contactos (también vacía el campo y devuelve el foco), Cancelar en Editar pedido vuelve al detalle del mismo pedido sin consumir la entrada del historial, y «1 entrega» en singular para calendario y accesibilidad. Suite **250/250** y `npm run check` **OK (74 archivos)**. Cambios sin commit/publicar, pendientes de autorización de Nico.
+
+| Hallazgo | Antes | Después |
+|---|---|---|
+| Barrido visual 390: Inicio, Pedidos, Ajustes e Historial, claro y oscuro | [inicio light](capturas/2026-11-25/ropa-equipo-2026-11-25-escritorio1440-inicio-light.png) [inventario dark](capturas/2026-11-25/ropa-equipo-2026-11-25-escritorio1440-inventario-dark.png) [inventario light](capturas/2026-11-25/ropa-equipo-2026-11-25-escritorio1440-inventario-light.png) [pedidos dark](capturas/2026-11-25/ropa-equipo-2026-11-25-escritorio1440-pedidos-dark.png) [pedidos light](capturas/2026-11-25/ropa-equipo-2026-11-25-escritorio1440-pedidos-light.png) | — |
+| Foco móvil 393: detalle de pedido y lightbox | [detalle](capturas/2026-11-25/ropa-equipo-2026-11-25-foco-movil393-detalle-pedido-light.png) [lightbox](capturas/2026-11-25/ropa-equipo-2026-11-25-foco-movil393-lightbox-light.png) | — |
+| Vacío móvil 393: Contactos, Inventario y Pedidos | [contactos](capturas/2026-11-25/ropa-equipo-2026-11-25-vacio-movil393-contactos-light.png) [inventario](capturas/2026-11-25/ropa-equipo-2026-11-25-vacio-movil393-inventario-light.png) [pedidos](capturas/2026-11-25/ropa-equipo-2026-11-25-vacio-movil393-pedidos-light.png) | — |
+
+## Toby — pulido visual P1/P2 (26-nov-2026, rama `fix/ux-busqueda-cancelar-plural`) · Verificado local
+
+Tarea `task_4506f4156ab544cb`. Demo `?demo=1`, datos ficticios, 393×852 (CSS) y 320×740; sin cambios de backend ni lógica de negocio. Corregidos: «Limpiar búsqueda» en el vacío de Contactos (también vacía el campo y devuelve el foco), Cancelar en Editar pedido vuelve al detalle del mismo pedido sin consumir la entrada del historial, y «1 entrega» en singular para calendario y accesibilidad. Suite **250/250** y `npm run check` **OK (74 archivos)**.
+
+| Hallazgo | Antes | Después |
+|---|---|---|
+| Contactos: búsqueda sin resultados sin salida |
+| Editar pedido: Cancelar volvía al listado | [antes-editar-cancelar-listado-393.png](capturas/2026-11-26/antes-editar-cancelar-listado-393.png) | [despues-editar-cancelar-vuelve-detalle-393.png](capturas/2026-11-26/despues-editar-cancelar-vuelve-detalle-393.png) |
+| Agenda: «1 entregas» | [antes-agenda-1-entregas-393.png](capturas/2026-11-26/antes-agenda-1-entregas-393.png) | [despues-agenda-1-entrega-393.png](capturas/2026-11-26/despues-agenda-1-entrega-393.png) |
+
+**Confirmación de r47 en el vivo** (`?demo=1&gen=r47`), sin rehacer: viewport `width=device-width, initial-scale=1, viewport-fit=cover` (zoom permitido); hoja con `.topbar`, `#main`, `#nav` y `#fab` en `inert=true`, `body.overflow=hidden`, 20 Tabs seguidos dentro de `#hoja`; tarjetas de 156×152 y 162×158 px a 320, selección por teclado de la lateral; cierre con Escape restaura `inert=false`; 0 errores de consola. Captura: [vivo-r47-zoom-foco-abanico-320.png](capturas/2026-11-26/vivo-r47-zoom-foco-abanico-320.png).
