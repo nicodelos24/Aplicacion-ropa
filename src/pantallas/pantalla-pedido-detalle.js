@@ -123,7 +123,10 @@ export function abrirDetallePedido(id) {
 
   qs("#hClose").onclick = intentarCerrarHoja;
   qs("#dCerrar").onclick = intentarCerrarHoja;
-  qs("#hEdit").onclick = () => abrirEditorPedido(o);
+  /* Al cancelar la edición se vuelve a ESTE pedido, no al listado: abrir el
+     detalle de nuevo conserva la hoja (ya abierta) y evita el history.back()
+     que hacía el cierre genérico. */
+  qs("#hEdit").onclick = () => abrirEditorPedido(o, null, undefined, () => abrirDetallePedido(id));
   qs("#hDel").onclick = async () => {
     if (!(await confirmar({ title: "¿Eliminar este pedido?", msg: `El pedido de ${o.cliente || "este cliente"} se quita de la lista. El inventario no cambia.`, ok: "Eliminar pedido" }))) return;
     eliminarPedido(id);
