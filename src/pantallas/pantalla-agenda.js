@@ -11,6 +11,9 @@
 import { esc, qs, qsa } from "../ui/dom.js";
 import { ICONO } from "../ui/iconos.js";
 import { celdasMes, sumarMes, fdate, fdateShort, hoy, lunesDe, sumarDias, diasSemana, DOW } from "../nucleo/fechas.js";
+/* «1 entregas» se lee mal en el calendario y en la franja; el rótulo de los
+   días con una sola entrega va en singular. */
+const entregas = (n) => `${n} ${n === 1 ? "entrega" : "entregas"}`;
 import { MESES } from "../nucleo/moneda.js";
 import { estadoDe } from "../nucleo/pedidos.js";
 import { pedidos } from "../estado/store.js";
@@ -82,7 +85,7 @@ export function pintarAgenda(main, abrirDetalle) {
   const grillaCalHTML = () => {
     const celdas = celdasMes(vista.calAnio, vista.calMes);
     return `${DOW.map(x => `<div class="dow">${x}</div>`).join("")}${celdas.map(c => c ? `
-      <div class="cal-dia ${c.esHoy ? "hoy" : ""} ${c.ds === vista.diaSel ? "sel" : ""} ${(porFecha[c.ds] || []).length ? "tiene" : ""}" data-ds="${c.ds}" role="button" tabindex="0" aria-label="${c.dia} de ${MESES[vista.calMes]}, ${(porFecha[c.ds] || []).length} entregas">${c.dia}${(porFecha[c.ds] || []).length ? `<div class="dots">${porFecha[c.ds].map(o => `<i class="d-${estadoDe(o).c}"></i>`).join("")}</div>` : ""}</div>` : `<div></div>`).join("")}`;
+      <div class="cal-dia ${c.esHoy ? "hoy" : ""} ${c.ds === vista.diaSel ? "sel" : ""} ${(porFecha[c.ds] || []).length ? "tiene" : ""}" data-ds="${c.ds}" role="button" tabindex="0" aria-label="${c.dia} de ${MESES[vista.calMes]}, ${entregas((porFecha[c.ds] || []).length)}">${c.dia}${(porFecha[c.ds] || []).length ? `<div class="dots">${porFecha[c.ds].map(o => `<i class="d-${estadoDe(o).c}"></i>`).join("")}</div>` : ""}</div>` : `<div></div>`).join("")}`;
   };
 
   const calendarioHTML = () => {
@@ -132,7 +135,7 @@ export function pintarAgenda(main, abrirDetalle) {
     const n = (porFecha[x.ds] || []).length;
     return `<button class="sem-dia ${x.esHoy ? "hoy" : ""} ${x.ds === sel ? "sel" : ""} ${n ? "tiene" : ""}"
       data-ds="${x.ds}" aria-pressed="${x.ds === sel}"
-      aria-label="${x.dow} ${x.dia} de ${MESES[x.mes]}, ${n} entregas">
+      aria-label="${x.dow} ${x.dia} de ${MESES[x.mes]}, ${entregas(n)}">
       <span class="sem-dow">${x.dow}</span>
       <span class="sem-num">${x.dia}</span>
       ${n ? `<span class="sem-dots">${porFecha[x.ds].map(o => `<i class="d-${estadoDe(o).c}"></i>`).join("")}</span>` : `<span class="sem-dots"></span>`}
