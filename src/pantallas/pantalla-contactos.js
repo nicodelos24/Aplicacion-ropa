@@ -4,7 +4,7 @@ import { ICONO, VACIO_SVG } from "../ui/iconos.js";
 import { fmtTel, resumenCliente } from "../nucleo/contacto.js";
 import { estadoDe } from "../nucleo/pedidos.js";
 import { db, clientes, pedidos } from "../estado/store.js";
-import { vista } from "../estado/vista.js";
+import { vista, emitirVista } from "../estado/vista.js";
 import { abrirHojaCliente } from "./pantalla-cliente.js";
 import { abrirWhatsApp } from "../servicios/whatsapp.js";
 import { abrirEditorCliente } from "./pantalla-cliente-editor.js";
@@ -18,7 +18,7 @@ export function pintarContactos(main) {
 
   if (!lista.length) {
     main.innerHTML = vista.busqueda
-      ? `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nadie coincide con “${esc(vista.busqueda)}”. Probá con otro nombre o teléfono.</p></div>`
+      ? `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.buscar}</div><b>Sin resultados</b><p>Nadie coincide con “${esc(vista.busqueda)}”. Probá con otro nombre o teléfono.</p><button class="btn btn-primario btn-vacio" data-acc="limpiar">Limpiar búsqueda</button></div>`
       : `<div class="vacio anim-entra"><div class="viso">${VACIO_SVG.contactos}</div><b>Aún no hay clientes</b><p>Se guardan automáticamente al registrar un pedido.<br>También podés agregarlos desde acá.</p><button class="btn btn-primario btn-vacio" data-acc="nuevo">Nuevo cliente</button></div>`;
   } else {
     main.innerHTML = `<div class="stagger pantalla-grilla grilla-cli">${lista.map(c => {
@@ -53,4 +53,11 @@ export function pintarContactos(main) {
     });
   }
   main.querySelectorAll("[data-acc='nuevo']").forEach(b => b.onclick = () => abrirEditorCliente(null));
+  main.querySelectorAll("[data-acc='limpiar']").forEach(b => b.onclick = () => {
+    vista.busqueda = "";
+    const search = document.querySelector("#search");
+    if (search) search.value = "";
+    emitirVista();
+    search?.focus({ preventScroll: true });
+  });
 }

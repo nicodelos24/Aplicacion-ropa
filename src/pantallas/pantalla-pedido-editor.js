@@ -26,7 +26,7 @@ import {
 } from "../ui/componentes/campos-articulo.js";
 import { abrirDetallePedido } from "./pantalla-pedido-detalle.js";
 
-export function abrirEditorPedido(orig, presetCliente, presetDate) {
+export function abrirEditorPedido(orig, presetCliente, presetDate, alCancelar) {
   const esNuevo = !orig;
   const inv = productos();
   const cls = clientes();
@@ -381,6 +381,9 @@ export function abrirEditorPedido(orig, presetCliente, presetDate) {
      sumar una confirmación encima de otra */
   qs("#cancelar").onclick = async () => {
     if (!(await puedeSalir())) return;
+    /* El detalle pasa un retorno explícito: reabrirlo sin ejecutar el back del
+       cierre genérico deja la hoja en el pedido que se estaba editando. */
+    if (alCancelar) { alCancelar(); return; }
     cerrarHoja();
   };
 

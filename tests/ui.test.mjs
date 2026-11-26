@@ -77,6 +77,20 @@ function click(sel) {
   return el;
 }
 
+/* Guarda temporalmente el estado de navegación y lo restaura al terminar. Se
+   necesita al probar el cierre real: jsdom implementa back/forward de otro modo
+   que Chromium y no deja solo su pila colgando al siguiente test. */
+async function conHistoryTemporal(fn) {
+  const historial = [...Array(w.history.length + 1)].map((_, i) => w.history.state);
+  try { return await fn(); } finally {
+    const raiz = historial[0];
+    let pasos = Math.max(0, w.history.length - 1);
+    try { w.history.replaceState(raiz, "", w.location.origin + w.location.pathname + w.location.search); } catch (_) { /* sin history */ }
+    while (pasos-- > 0) { try { w.history.back(); } catch (_) { break; } }
+    await esperar(0);
+  }
+}
+
 /* Editar un artículo del detalle: doble toque sobre su tarjeta → visor →
    «Editar este artículo». Es el único camino que queda tras quitar los botones
    de abajo de las tarjetas. */
@@ -509,7 +523,34 @@ test("editor de pedido: los +/− de cantidad no guardan hasta «Guardar cambios
   assert.deepEqual(errores, []);
 });
 
-test("editor de pedido: sin tocar nada, Cancelar cierra sin preguntar", async () => {
+test("contactos: el vacío de búsqueda ofrece «Limpiar búsqueda» y vuelve al listado", async () => {
+  await reiniciar();
+  irA("contactos");
+  qs("#search").value = "zzz";
+  qs("#search").dispatchEvent(new w.Event("input"));
+  await esperar();
+  assert.match(qs("#main .vacio").textContent, /Sin resultados/);
+  const limpiar = [...qsa("#main button")].find((b) => b.textContent.includes("Limpiar búsqueda"));
+  assert.ok(limpiar, "el vacío tiene botón para salir");
+  click(limpiar);
+  await esperar();
+  assert.equal(qs("#search").value, "", "el buscador se vacía arriba también");
+  assert.equal(qsa("#main .cli").length, 4, "vuelven los contactos de la demo");
+  assert.deepEqual(errores, []);
+});
+
+test("agenda: un día con una sola entrega dice «1 entrega» en el calendario", async () => {
+  await reiniciar();
+  irA("agenda");
+  const dias = qsa("#main .cal-dia");
+  assert.ok(dias.length > 0, "el calendario está en pantalla");
+  assert.ok(dias.some((b) => /, 1 entrega$/.test(b.getAttribute("aria-label") || "")), "los días con una entrega usan el singular");
+  assert.equal(dias.some((b) => /, 1 entregas/.test(b.getAttribute("aria-label") || "")), false, "no queda «1 entregas»");
+  assert.ok(dias.some((b) => /, 0 entregas/.test(b.getAttribute("aria-label") || "")), "el plural sigue para 0 y más");
+  assert.deepEqual(errores, []);
+});
+
+test("editor de pedido: sin tocar nada, Cancelar vuelve al detalle sin preguntar", async () => {
   await reiniciar();
   irA("pedidos");
   click('#main .card[data-pedido="d4"]');
@@ -519,8 +560,15 @@ test("editor de pedido: sin tocar nada, Cancelar cierra sin preguntar", async ()
   click("#cancelar");
   await esperar();
   assert.equal(qs("#confirmar").classList.contains("abierta"), false, "no hay edición: no pregunta");
-  await esperar(220);
-  assert.equal(qs("#hoja").classList.contains("abierta"), false);
+  const estadoInicial = w.history.state;
+  await esperar(350);
+  assert.equal(qs("#confirmar").classList.contains("abierta"), false, "no hay edición: no pregunta");
+  /* el editor se cerró y el detalle del pedido volvió al frente (no al listado) */
+  assert.equal(qs("#hoja").classList.contains("abierta"), true);
+  assert.equal(qs("#hEdit")?.isConnected, true, "sigue el detalle del pedido d4");
+  assert.ok(qs("#hoja-in")?.textContent.includes("Rosita"), "el detalle es del mismo pedido");
+  assert.equal(w.history.state, estadoInicial, "cancelar no consume la entrada del detalle");
+  await conHistoryTemporal(() => {});
   assert.deepEqual(errores, []);
 });
 
